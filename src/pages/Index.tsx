@@ -22,7 +22,7 @@ const Index = () => {
                   <Link to="/register">Gabung Sekarang</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10 text-lg px-8 py-6">
-                  <Link to="/webgis" className="text-green-600 hover:text-gray-200">Lihat Peta</Link>
+                  <Link to="/webgis" className="text-green-600">Lihat Peta</Link>
                 </Button>
               </div>
             </div>
