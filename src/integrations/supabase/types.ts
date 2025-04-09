@@ -42,6 +42,80 @@ export type Database = {
         }
         Relationships: []
       }
+      report_images: {
+        Row: {
+          created_at: string
+          id: string
+          report_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          report_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          report_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_images_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          latitude: number
+          longitude: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolver_id: string | null
+          status: Database["public"]["Enums"]["report_status"] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          latitude: number
+          longitude: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolver_id?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolver_id?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -77,6 +151,7 @@ export type Database = {
       }
     }
     Enums: {
+      report_status: "pending" | "processing" | "resolved" | "rejected"
       user_role: "admin" | "leader" | "stakeholder" | "volunteer"
     }
     CompositeTypes: {
@@ -193,6 +268,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      report_status: ["pending", "processing", "resolved", "rejected"],
       user_role: ["admin", "leader", "stakeholder", "volunteer"],
     },
   },

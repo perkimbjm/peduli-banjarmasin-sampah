@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,24 +9,48 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Upload, MapPin, Camera } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Loader2, Upload, MapPin, Camera, AlertCircle, Clock, Check, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { v4 as uuidv4 } from 'uuid';
+
+type Report = {
+  id: string;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  status: 'pending' | 'processing' | 'resolved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+};
 
 const CommunityReport = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState({ latitude: -6.2088, longitude: 106.8456 }); // Default to Jakarta
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [uploadedImagePreviews, setUploadedImagePreviews] = useState<string[]>([]);
 
-  // This query will be implemented when we have the reports table
+  // Fetch recent reports
   const { data: recentReports, isLoading } = useQuery({
     queryKey: ["recentReports"],
     queryFn: async () => {
-      // Note: This would be replaced with actual implementation once we have the reports table
-      return [];
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data as Report[];
     },
     enabled: !!user,
   });
@@ -34,6 +58,15 @@ const CommunityReport = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast({
+        title: "Autentikasi diperlukan",
+        description: "Anda harus login terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!title || !description) {
       toast({
         title: "Informasi tidak lengkap",
@@ -46,7 +79,49 @@ const CommunityReport = () => {
     try {
       setIsUploading(true);
       
-      // This will be implemented when we create the reports table and storage bucket
+      // Insert the report
+      const { data: reportData, error: reportError } = await supabase
+        .from('reports')
+        .insert({
+          user_id: user.id,
+          title,
+          description,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        })
+        .select()
+        .single();
+        
+      if (reportError) throw reportError;
+      
+      // Upload images if there are any
+      if (selectedImages.length > 0) {
+        const reportId = reportData.id;
+        
+        for (const imageFile of selectedImages) {
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
+          const filePath = `${fileName}`;
+          
+          // Upload to storage
+          const { error: uploadError } = await supabase.storage
+            .from('report_images')
+            .upload(filePath, imageFile);
+            
+          if (uploadError) throw uploadError;
+          
+          // Save reference in the database
+          const { error: imageRefError } = await supabase
+            .from('report_images')
+            .insert({
+              report_id: reportId,
+              storage_path: filePath,
+            });
+            
+          if (imageRefError) throw imageRefError;
+        }
+      }
+      
       toast({
         title: "Laporan berhasil dikirim",
         description: "Terima kasih atas partisipasi Anda",
@@ -56,8 +131,14 @@ const CommunityReport = () => {
       setTitle("");
       setDescription("");
       setLocation({ latitude: -6.2088, longitude: 106.8456 });
-      setUploadedImages([]);
+      setSelectedImages([]);
+      setUploadedImagePreviews([]);
+      
+      // Refresh the reports list
+      queryClient.invalidateQueries({ queryKey: ["recentReports"] });
+      
     } catch (error: any) {
+      console.error('Error submitting report:', error);
       toast({
         title: "Gagal mengirim laporan",
         description: error.message || "Terjadi kesalahan saat mengirim laporan",
@@ -68,12 +149,64 @@ const CommunityReport = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // This will be implemented when we create the storage bucket for report images
-    toast({
-      title: "Fitur upload foto",
-      description: "Fitur ini akan diimplementasikan setelah kita membuat bucket penyimpanan",
-    });
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      
+      // Filter for images only and check file size
+      const validFiles = files.filter(file => {
+        const isImage = file.type.startsWith('image/');
+        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB max
+        
+        if (!isImage) {
+          toast({
+            title: "Format file tidak didukung",
+            description: "Hanya file gambar yang diizinkan (JPG, PNG, etc.)",
+            variant: "destructive",
+          });
+        } else if (!isValidSize) {
+          toast({
+            title: "Ukuran file terlalu besar",
+            description: "Ukuran file maksimal adalah 5MB",
+            variant: "destructive",
+          });
+        }
+        
+        return isImage && isValidSize;
+      });
+      
+      if (validFiles.length > 0) {
+        setSelectedImages(prev => [...prev, ...validFiles]);
+        
+        // Create previews
+        const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+        setUploadedImagePreviews(prev => [...prev, ...newPreviews]);
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    // Revoke object URL to prevent memory leaks
+    URL.revokeObjectURL(uploadedImagePreviews[index]);
+    
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setUploadedImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Status badge styling
+  const getStatusBadge = (status: Report['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Menunggu</Badge>;
+      case 'processing':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Diproses</Badge>;
+      case 'resolved':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Selesai</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
   };
 
   return (
@@ -167,6 +300,28 @@ const CommunityReport = () => {
                       </span>
                     </Label>
                   </div>
+                  
+                  {/* Display image previews */}
+                  {uploadedImagePreviews.length > 0 && (
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      {uploadedImagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="h-24 w-full object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isUploading}>
@@ -197,7 +352,7 @@ const CommunityReport = () => {
                 <div className="bg-gray-200 dark:bg-gray-800 h-52 rounded-md flex items-center justify-center">
                   <MapPin className="h-8 w-8 text-gray-400" />
                   <span className="ml-2 text-gray-500">
-                    Peta akan ditampilkan di sini
+                    Peta akan diintegrasikan setelah implementasi WebGIS
                   </span>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
@@ -216,16 +371,31 @@ const CommunityReport = () => {
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
                 ) : recentReports && recentReports.length > 0 ? (
-                  <div className="space-y-4">
-                    {/* List of recent reports will be shown here */}
-                    <p className="text-center text-gray-500">
-                      Laporan akan ditampilkan di sini
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Judul</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Tanggal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentReports.map((report) => (
+                        <TableRow key={report.id}>
+                          <TableCell className="font-medium">{report.title}</TableCell>
+                          <TableCell>{getStatusBadge(report.status)}</TableCell>
+                          <TableCell className="text-right">{format(new Date(report.created_at), 'dd/MM/yyyy')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <AlertCircle className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-gray-500">
+                      Belum ada laporan yang dibuat
                     </p>
                   </div>
-                ) : (
-                  <p className="text-center text-gray-500">
-                    Belum ada laporan yang dibuat
-                  </p>
                 )}
               </CardContent>
             </Card>
