@@ -14,7 +14,7 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="flex flex-col justify-center animate-fade-in">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Banjarmasin Bersih, <br />Masa Depan Berseri
+                Banjarmasin Bisa Lebih Bersih, <br />Mulai Dari Kamu
               </h1>
               <p className="text-lg md:text-xl mb-8 text-white/90 max-w-lg">Banjarmasin Memerlukan Kamu. Yuk Gerak Bareng,  Jadi Bagian dari Solusi Cerdas Kelola Sampah dan Buktiin Aksi Nyata Peduli Lingkungan dari Langkah-Langkah Kecil.</p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -44,7 +44,7 @@ const Index = () => {
               Fitur Unggulan
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              PeduliSampah hadir dengan berbagai fitur canggih untuk mendukung pengelolaan sampah di Banjarmasin
+              PeduliSampah hadir dengan berbagai fitur modern untuk mendukung pengelolaan sampah di Banjarmasin
             </p>
           </div>
           

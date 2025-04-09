@@ -35,14 +35,14 @@ const Navbar = () => {
               WebGIS
             </Link>
             <Link to="/dashboard-publik" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
-              Analitik Publik
+              Analitik
             </Link>
             <Link to="/edukasi" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
               Edukasi
             </Link>
             <div className="ml-4 flex items-center">
               <Button asChild className="btn-primary mr-2">
-                <Link to="/login">Masuk</Link>
+                <Link to="/login">Login</Link>
               </Button>
               <Button asChild variant="outline" className="btn-outline">
                 <Link to="/register">Daftar</Link>
@@ -91,7 +91,7 @@ const Navbar = () => {
               className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
               onClick={() => setIsMenuOpen(false)}
             >
-              Analitik Publik
+              Analitik
             </Link>
             <Link 
               to="/edukasi" 
@@ -102,7 +102,7 @@ const Navbar = () => {
             </Link>
             <div className="flex flex-col space-y-2 mt-4">
               <Button asChild className="btn-primary w-full">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>Masuk</Link>
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
               </Button>
               <Button asChild variant="outline" className="btn-outline w-full">
                 <Link to="/register" onClick={() => setIsMenuOpen(false)}>Daftar</Link>

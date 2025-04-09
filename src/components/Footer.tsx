@@ -29,7 +29,7 @@ const Footer = () => {
                 <Link to="/webgis" className="text-gray-300 hover:text-white transition-colors">WebGIS</Link>
               </li>
               <li>
-                <Link to="/dashboard-publik" className="text-gray-300 hover:text-white transition-colors">Analitik Publik</Link>
+                <Link to="/dashboard-publik" className="text-gray-300 hover:text-white transition-colors">Analitik</Link>
               </li>
               <li>
                 <Link to="/edukasi" className="text-gray-300 hover:text-white transition-colors">Edukasi</Link>
@@ -60,16 +60,16 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <MapPin className="h-5 w-5 mr-2 text-peduli-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300">Jl. Ahmad Yani, Banjarmasin, Kalimantan Selatan</span>
+                <span className="text-gray-300">Jl. R.E. Martadinata No. 1, Banjarmasin, Kalimantan Selatan</span>
               </li>
               <li className="flex items-center">
                 <Phone className="h-5 w-5 mr-2 text-peduli-400 flex-shrink-0" />
-                <span className="text-gray-300">+62 800-1234-5678</span>
+                <span className="text-gray-300">+62 8xxxxxxxxxxx</span>
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 mr-2 text-peduli-400 flex-shrink-0" />
                 <a href="mailto:info@pedulisampah.id" className="text-gray-300 hover:text-white transition-colors">
-                  info@pedulisampah.id
+                  info@pedulisampah.web.id
                 </a>
               </li>
             </ul>
