@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
+import CommunityReport from "./pages/CommunityReport";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             
-            {/* Protected routes */}
+            {/* Protected routes - accessible to all authenticated users */}
             <Route 
               path="/dashboard" 
               element={
@@ -53,6 +54,80 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/laporan" 
+              element={
+                <ProtectedRoute>
+                  <CommunityReport />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Role-based routes */}
+            <Route 
+              path="/jadwal" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>Jadwal Pengelolaan Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/webgis-admin" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>WebGIS Admin Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/edukasi-admin" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>Manajemen Edukasi Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/kolaborasi" 
+              element={
+                <ProtectedRoute>
+                  <div>Portal Kolaborasi Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/bank-sampah" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>Manajemen Bank Sampah Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/logistik" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>Manajemen Logistik Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/pengaduan" 
+              element={
+                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                  <div>Manajemen Pengaduan Placeholder</div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <div>Manajemen User Placeholder</div>
                 </ProtectedRoute>
               } 
             />
