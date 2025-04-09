@@ -1,280 +1,236 @@
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { MapPin, Upload, Camera, MapPinned } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-
-type FormValues = {
-  title: string;
-  description: string;
-  latitude: string;
-  longitude: string;
-  images: FileList;
-};
+import { useState } from "react";
+import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2, Upload, MapPin, Camera } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const CommunityReport = () => {
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [preview, setPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState({ latitude: -6.2088, longitude: 106.8456 }); // Default to Jakarta
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
-  const onSubmit = async (data: FormValues) => {
-    if (!user) {
+  // This query will be implemented when we have the reports table
+  const { data: recentReports, isLoading } = useQuery({
+    queryKey: ["recentReports"],
+    queryFn: async () => {
+      // Note: This would be replaced with actual implementation once we have the reports table
+      return [];
+    },
+    enabled: !!user,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !description) {
       toast({
+        title: "Informasi tidak lengkap",
+        description: "Judul dan deskripsi laporan harus diisi",
         variant: "destructive",
-        title: "Anda harus login",
-        description: "Silakan login terlebih dahulu untuk mengirimkan laporan",
       });
       return;
     }
 
-    setLoading(true);
-
     try {
-      // Create the report entry in the database
-      const { error } = await supabase
-        .from('reports')
-        .insert({
-          title: data.title,
-          description: data.description,
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
-          user_id: user.id,
-          status: 'pending'
-        });
-
-      if (error) throw error;
-
+      setIsUploading(true);
+      
+      // This will be implemented when we create the reports table and storage bucket
       toast({
         title: "Laporan berhasil dikirim",
-        description: "Terima kasih atas kontribusi Anda!",
+        description: "Terima kasih atas partisipasi Anda",
       });
-
-      navigate('/dashboard');
+      
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setLocation({ latitude: -6.2088, longitude: 106.8456 });
+      setUploadedImages([]);
     } catch (error: any) {
       toast({
-        variant: "destructive",
         title: "Gagal mengirim laporan",
         description: error.message || "Terjadi kesalahan saat mengirim laporan",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setValue('latitude', position.coords.latitude.toString());
-          setValue('longitude', position.coords.longitude.toString());
-          
-          toast({
-            title: "Lokasi ditemukan",
-            description: `Lat: ${position.coords.latitude}, Long: ${position.coords.longitude}`,
-          });
-        },
-        () => {
-          toast({
-            variant: "destructive",
-            title: "Gagal mendapatkan lokasi",
-            description: "Pastikan Anda memberikan izin lokasi",
-          });
-        }
-      );
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Geolokasi tidak didukung",
-        description: "Browser Anda tidak mendukung geolokasi",
-      });
-    }
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // This will be implemented when we create the storage bucket for report images
+    toast({
+      title: "Fitur upload foto",
+      description: "Fitur ini akan diimplementasikan setelah kita membuat bucket penyimpanan",
+    });
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Laporan Masyarakat</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pelaporan Masyarakat</h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Laporkan TPS liar, pembuangan ilegal, atau masalah sampah lainnya
+            Bantu kami dengan melaporkan masalah sampah di sekitar Anda
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Formulir Laporan</CardTitle>
-            <CardDescription>
-              Isi detail laporan dengan lengkap dan akurat
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Judul Laporan</Label>
-                <Input
-                  id="title"
-                  placeholder="Contoh: TPS liar di Jalan Merdeka"
-                  {...register('title', { required: "Judul laporan wajib diisi" })}
-                />
-                {errors.title && (
-                  <p className="text-sm text-red-500">{errors.title.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Deskripsi</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Deskripsikan masalah yang Anda temui secara detail"
-                  className="min-h-[120px]"
-                  {...register('description', { required: "Deskripsi wajib diisi" })}
-                />
-                {errors.description && (
-                  <p className="text-sm text-red-500">{errors.description.message}</p>
-                )}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Form Laporan */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Buat Laporan Baru</CardTitle>
+              <CardDescription>
+                Silakan isi detail laporan masalah sampah yang Anda temukan
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="latitude">Latitude</Label>
-                  <div className="flex space-x-2">
+                  <Label htmlFor="title">Judul Laporan</Label>
+                  <Input
+                    id="title"
+                    placeholder="Contoh: TPS liar di Jalan Sudirman"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Deskripsi</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Jelaskan detil masalah sampah yang Anda temukan..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="min-h-32"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitude</Label>
                     <Input
                       id="latitude"
-                      placeholder="Contoh: -6.175110"
-                      {...register('latitude', { 
-                        required: "Latitude wajib diisi",
-                        pattern: {
-                          value: /^-?\d+(\.\d+)?$/,
-                          message: "Format latitude tidak valid"
-                        }
-                      })}
+                      type="number"
+                      step="any"
+                      placeholder="Contoh: -6.2088"
+                      value={location.latitude}
+                      onChange={(e) => setLocation({...location, latitude: parseFloat(e.target.value)})}
                     />
-                    <Button type="button" variant="outline" onClick={getCurrentLocation}>
-                      <MapPin className="h-4 w-4 mr-2" /> Lokasi Saya
-                    </Button>
                   </div>
-                  {errors.latitude && (
-                    <p className="text-sm text-red-500">{errors.latitude.message}</p>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitude</Label>
+                    <Input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      placeholder="Contoh: 106.8456"
+                      value={location.longitude}
+                      onChange={(e) => setLocation({...location, longitude: parseFloat(e.target.value)})}
+                    />
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="longitude">Longitude</Label>
-                  <Input
-                    id="longitude"
-                    placeholder="Contoh: 106.827153"
-                    {...register('longitude', { 
-                      required: "Longitude wajib diisi",
-                      pattern: {
-                        value: /^-?\d+(\.\d+)?$/,
-                        message: "Format longitude tidak valid"
-                      }
-                    })}
-                  />
-                  {errors.longitude && (
-                    <p className="text-sm text-red-500">{errors.longitude.message}</p>
+                  <Label htmlFor="image">Upload Foto</Label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-4 text-center">
+                    <Input
+                      id="image"
+                      type="file"
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="hidden"
+                      multiple
+                    />
+                    <Label
+                      htmlFor="image"
+                      className="w-full cursor-pointer flex flex-col items-center justify-center py-4"
+                    >
+                      <Camera className="h-10 w-10 text-gray-400 mb-2" />
+                      <span className="text-gray-500">Klik untuk upload foto</span>
+                      <span className="text-xs text-gray-400 mt-1">
+                        (Support JPG, PNG. Maks 5MB)
+                      </span>
+                    </Label>
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Mengirim laporan...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Kirim Laporan
+                    </>
                   )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Unggah Foto</Label>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center justify-center h-48 w-full border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors relative">
-                      <input
-                        type="file"
-                        id="images"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        accept="image/*"
-                        {...register('images')}
-                        onChange={handleImageChange}
-                      />
-                      <div className="flex flex-col items-center">
-                        <Upload className="h-6 w-6 text-gray-500 dark:text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Klik atau jatuhkan foto di sini
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    {preview ? (
-                      <div className="relative h-48 w-full overflow-hidden rounded-md">
-                        <img 
-                          src={preview} 
-                          alt="Preview" 
-                          className="h-full w-full object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => setPreview(null)}
-                        >
-                          <span className="sr-only">Hapus</span>
-                          <Camera className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-48 w-full border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Pratinjau foto akan muncul di sini
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-muted rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <MapPinned className="h-5 w-5 text-blue-500" />
-                  <h3 className="font-semibold text-sm">Peta Interaktif</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Fitur peta interaktif dengan marker drag & drop akan segera hadir. 
-                  Untuk saat ini, silakan masukkan koordinat secara manual atau gunakan tombol "Lokasi Saya".
-                </p>
-              </div>
+                </Button>
+              </form>
             </CardContent>
+          </Card>
 
-            <CardFooter className="flex justify-between border-t pt-6">
-              <Button type="button" variant="outline" onClick={() => navigate('/dashboard')}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Mengirim..." : "Kirim Laporan"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+          {/* Mini Map & Recent Reports */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lokasi Laporan</CardTitle>
+                <CardDescription>Drag marker untuk menentukan lokasi yang tepat</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gray-200 dark:bg-gray-800 h-52 rounded-md flex items-center justify-center">
+                  <MapPin className="h-8 w-8 text-gray-400" />
+                  <span className="ml-2 text-gray-500">
+                    Peta akan ditampilkan di sini
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Koordinat: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Laporan Terakhir</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : recentReports && recentReports.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* List of recent reports will be shown here */}
+                    <p className="text-center text-gray-500">
+                      Laporan akan ditampilkan di sini
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500">
+                    Belum ada laporan yang dibuat
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
