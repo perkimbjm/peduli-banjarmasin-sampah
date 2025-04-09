@@ -247,6 +247,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </div>
                   <span className="font-bold text-lg">PeduliSampah</span>
                 </div>
+
                 <nav className="space-y-1">
                   {filteredMenuItems.map((item) => (
                     <Button 
@@ -261,6 +262,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   ))}
                 </nav>
               </SheetContent>
+
             </Sheet>
             
             {/* Logo */}
