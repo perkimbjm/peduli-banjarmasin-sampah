@@ -9,7 +9,7 @@ import {
   Maximize2,
   Minimize2,
   Table as TableIcon,
-  Layout,
+  LayoutPanelLeft,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,6 @@ const WebGisAdmin = () => {
   const [splitViewEnabled, setSplitViewEnabled] = useState(false);
   const [currentTab, setCurrentTab] = useState("view");
 
-  // Close all panels when switching to fullscreen mode
   useEffect(() => {
     if (fullscreenMode) {
       setIsLayersPanelOpen(false);
@@ -39,7 +38,6 @@ const WebGisAdmin = () => {
     }
   }, [fullscreenMode]);
 
-  // Handle layer toggle
   const handleLayerToggle = (layer: LayerType) => {
     if (activeLayers.includes(layer)) {
       setActiveLayers(activeLayers.filter(l => l !== layer));
@@ -48,16 +46,12 @@ const WebGisAdmin = () => {
     }
   };
 
-  // Handle location select from search
   const handleLocationSelect = (coordinates: [number, number]) => {
-    // In an actual implementation, this would pan the map to the coordinates
     console.log("Selected location coordinates:", coordinates);
   };
 
-  // Handle applying filters
   const handleFilterApply = (filters: any) => {
     console.log("Applied filters:", filters);
-    // In a real application, we would filter the map data here
   };
 
   return (
@@ -127,7 +121,7 @@ const WebGisAdmin = () => {
                       className="flex items-center"
                       onClick={() => setSplitViewEnabled(!splitViewEnabled)}
                     >
-                      <Layout className="h-4 w-4 mr-2" />
+                      <LayoutPanelLeft className="h-4 w-4 mr-2" />
                       {splitViewEnabled ? "Single View" : "Split View"}
                     </Button>
                     <Button

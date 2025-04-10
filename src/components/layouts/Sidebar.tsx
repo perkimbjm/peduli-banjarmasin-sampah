@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -29,15 +30,20 @@ const Sidebar = ({ isCollapsed }: SidebarProps) => {
   ];
 
   return (
-    <aside className={cn(
-      "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-[80px]" : "w-[280px]"
-    )}>
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-[80px]" : "w-[280px]"
+      )}
+      data-collapsed={isCollapsed}
+    >
       {/* Logo area */}
-      <div className={cn(
-        "flex h-16 items-center border-b px-6",
-        isCollapsed ? "justify-center" : "justify-start"
-      )}>
+      <div
+        className={cn(
+          "flex h-16 items-center border-b px-6",
+          isCollapsed ? "justify-center" : "justify-start"
+        )}
+      >
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold">PS</span>
@@ -73,14 +79,18 @@ const Sidebar = ({ isCollapsed }: SidebarProps) => {
       </nav>
 
       {/* User profile section */}
-      <div className={cn(
-        "border-t p-4",
-        isCollapsed ? "items-center" : "items-start"
-      )}>
-        <div className={cn(
-          "flex items-center gap-3",
-          isCollapsed && "justify-center"
-        )}>
+      <div
+        className={cn(
+          "border-t p-4",
+          isCollapsed ? "items-center" : "items-start"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            isCollapsed && "justify-center"
+          )}
+        >
           <div className="h-8 w-8 rounded-full bg-muted" />
           {!isCollapsed && (
             <div className="space-y-1">
