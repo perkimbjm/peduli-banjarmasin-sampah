@@ -1,23 +1,42 @@
 
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
-import { Menu, Sun, Moon } from "lucide-react";
+import { Menu, Sun, Moon, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ProtectedLayout = () => {
-  const { user } = useAuth();
+  const { signOut, user } = useAuth();
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
+  const navigate = useNavigate();
   const [theme, setTheme] = useState<'light' | 'dark'>(
     localStorage.getItem('theme') as 'light' | 'dark' || 
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   );
+
+    // Handle sign out
+    const handleSignOut = async () => {
+      try {
+        await signOut();
+        navigate("/login");
+      } catch (error) {
+        console.error("Failed to sign out", error);
+      }
+    };
 
   // Update collapsed state when screen size changes
   useEffect(() => {
@@ -33,7 +52,7 @@ const ProtectedLayout = () => {
   };
 
   // Get user's display information
-  const userEmail = user?.email || 'admin@example.com';
+  const userEmail = user?.email || 'User';
   const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
 
   return (
@@ -62,8 +81,7 @@ const ProtectedLayout = () => {
           </SidebarFooter>
         </Sidebar>
         
-        {/* Top header bar */}
-        <div className="flex flex-col flex-1">
+          {/* Top header bar */}
           <div className="sticky top-0 z-30 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-full items-center gap-4 px-4 sm:px-6">
               <Button 
@@ -81,15 +99,43 @@ const ProtectedLayout = () => {
                   {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                   <span className="sr-only">Toggle theme</span>
                 </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={userEmail} />
+                        <AvatarFallback>{userInitials}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userEmail}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.user_metadata?.role || 'User'}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <button className="w-full flex cursor-pointer items-center" onClick={() => navigate('/profile')}>
+                        <User className="mr-2 h-4 w-4" />
+                        Profil
+                      </button>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button className="w-full flex cursor-pointer items-center" onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Keluar
+                      </button>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
-          
-          {/* Main content */}
-          <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
-            <Outlet />
-          </main>
-        </div>
       </div>
     </SidebarProvider>
   );
