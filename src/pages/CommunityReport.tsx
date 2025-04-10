@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2, AlertCircle, CheckCircle, Clock, MapPin } from "lucide-react";
+import { Trash2, AlertCircle, CheckCircle, Clock, MapPin, Loader2, Upload, Camera, Check, X  } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { format } from "date-fns";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Upload, MapPin, Camera, AlertCircle, Clock, Check, X } from "lucide-react";
+import { } from "lucide-react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
