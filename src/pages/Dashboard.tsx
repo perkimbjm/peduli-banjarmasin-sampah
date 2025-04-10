@@ -183,15 +183,13 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyWasteData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Bar dataKey="volume" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <BarChart width={500} height={300} data={dailyWasteData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="volume" fill="#10B981" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -207,26 +205,24 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={wasteCompositionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {wasteCompositionData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
+                <RechartsPieChart width={500} height={300}>
+                  <Pie
+                    data={wasteCompositionData}
+                    cx={250}
+                    cy={150}
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {wasteCompositionData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Legend />
+                </RechartsPieChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -246,25 +242,23 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={wasteSourceData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {wasteSourceData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
+                <RechartsPieChart width={500} height={300}>
+                  <Pie
+                    data={wasteSourceData}
+                    cx={250}
+                    cy={150}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {wasteSourceData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Legend />
+                </RechartsPieChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -280,25 +274,23 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={collectionStatusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      <Cell fill="#10B981" />
-                      <Cell fill="#EF4444" />
-                    </Pie>
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
+                <RechartsPieChart width={500} height={300}>
+                  <Pie
+                    data={collectionStatusData}
+                    cx={250}
+                    cy={150}
+                    innerRadius={60}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    <Cell fill="#10B981" />
+                    <Cell fill="#EF4444" />
+                  </Pie>
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Legend />
+                </RechartsPieChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -318,17 +310,15 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={processingCapacityData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="location" type="category" width={80} />
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Legend />
-                    <Bar dataKey="capacity" fill="#8884d8" name="Kapasitas" />
-                    <Bar dataKey="used" fill="#82ca9d" name="Terpakai" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <BarChart width={500} height={300} data={processingCapacityData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="location" type="category" width={80} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Legend />
+                  <Bar dataKey="capacity" fill="#8884d8" name="Kapasitas" />
+                  <Bar dataKey="used" fill="#82ca9d" name="Terpakai" />
+                </BarChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -344,15 +334,13 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="h-[300px]">
               <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={wasteTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                    <Area type="monotone" dataKey="waste" stroke="#10B981" fill="#10B98180" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <AreaChart width={500} height={300} data={wasteTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Area type="monotone" dataKey="waste" stroke="#10B981" fill="#10B98180" />
+                </AreaChart>
               </ChartContainer>
             </CardContent>
           </Card>
@@ -371,17 +359,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={{}}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={wasteManagementComparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
-                  <Legend />
-                  <Line type="monotone" dataKey="waste" stroke="#EF4444" name="Volume Sampah" strokeWidth={2} />
-                  <Line type="monotone" dataKey="capacity" stroke="#10B981" name="Kapasitas Pengelolaan" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              <LineChart width={800} height={300} data={wasteManagementComparisonData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
+                <Legend />
+                <Line type="monotone" dataKey="waste" stroke="#EF4444" name="Volume Sampah" strokeWidth={2} />
+                <Line type="monotone" dataKey="capacity" stroke="#10B981" name="Kapasitas Pengelolaan" strokeWidth={2} />
+              </LineChart>
             </ChartContainer>
           </CardContent>
         </Card>

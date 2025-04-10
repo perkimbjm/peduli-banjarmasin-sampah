@@ -1,11 +1,12 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,11 +43,15 @@ const Navbar = () => {
             </Link>
             <div className="ml-4 flex items-center">
               <Button asChild className="btn-primary mr-2">
-                <Link to="/login">Login</Link>
+                <Link to={isAuthenticated ? "/dashboard" : "/login"}>
+                  {isAuthenticated ? "Dashboard" : "Login"}
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="btn-outline">
-                <Link to="/register">Daftar</Link>
-              </Button>
+              {!isAuthenticated && (
+                <Button asChild variant="outline" className="btn-outline">
+                  <Link to="/register">Daftar</Link>
+                </Button>
+              )}
             </div>
           </div>
           
@@ -102,11 +107,15 @@ const Navbar = () => {
             </Link>
             <div className="flex flex-col space-y-2 mt-4">
               <Button asChild className="btn-primary w-full">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
+                <Link to={isAuthenticated ? "/dashboard" : "/login"} onClick={() => setIsMenuOpen(false)}>
+                  {isAuthenticated ? "Dashboard" : "Login"}
+                </Link>
               </Button>
-              <Button asChild variant="outline" className="btn-outline w-full">
-                <Link to="/register" onClick={() => setIsMenuOpen(false)}>Daftar</Link>
-              </Button>
+              {!isAuthenticated && (
+                <Button asChild variant="outline" className="btn-outline w-full">
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>Daftar</Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

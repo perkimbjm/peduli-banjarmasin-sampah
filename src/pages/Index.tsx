@@ -18,11 +18,11 @@ const Index = () => {
               </h1>
               <p className="text-lg md:text-xl mb-8 text-white/90 max-w-lg">Banjarmasin Memerlukan Kamu. Yuk Gerak Bareng,  Jadi Bagian dari Solusi Cerdas Kelola Sampah dan Buktiin Aksi Nyata Peduli Lingkungan dari Langkah-Langkah Kecil.</p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="bg-white text-peduli-600 hover:bg-gray-100 text-lg px-8 py-6">
+                <Button asChild variant="outline" size="lg" className="bg-white hover:bg-white/10 border-white hover:text-white text-peduli-600 text-lg px-8 py-6 transition-color">
                   <Link to="/register">Gabung Sekarang</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10 text-lg px-8 py-6">
-                  <Link to="/webgis" className="text-green-600">Lihat Peta</Link>
+                <Button asChild variant="outline" size="lg" className="border-white hover:text-white hover:bg-white/10 text-lg px-8 py-6 transition-color">
+                  <Link to="/webgis" className="text-peduli-600">Lihat Peta</Link>
                 </Button>
               </div>
             </div>
