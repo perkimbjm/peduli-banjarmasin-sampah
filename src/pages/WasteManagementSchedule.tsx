@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -44,21 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-
-// Define the shape of our schedule data
-type Schedule = {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string;
-  latitude: number | null;
-  longitude: number | null;
-  start_date: string;
-  end_date: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-};
+import { Schedule } from "@/types/supabase";
 
 // Define our form schema using Zod
 const scheduleFormSchema = z.object({

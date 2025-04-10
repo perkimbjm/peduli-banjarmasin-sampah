@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -41,32 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
-
-type Schedule = {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string;
-  latitude: number | null;
-  longitude: number | null;
-  start_date: string;
-  end_date: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-};
-
-type Participant = {
-  id: string;
-  schedule_id: string;
-  user_id: string;
-  status: "pending" | "confirmed" | "declined";
-  created_at: string;
-  user: {
-    full_name: string | null;
-    email: string;
-  };
-};
+import { Schedule, Participant } from "@/types/supabase";
 
 const ScheduleDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -110,10 +84,7 @@ const ScheduleDetail = () => {
         .from("schedule_participants")
         .select(`
           *,
-          user:user_id(
-            full_name:profiles!inner(full_name),
-            email:auth.users!inner(email)
-          )
+          user:profiles!inner(full_name)
         `)
         .eq("schedule_id", id);
 
@@ -122,7 +93,13 @@ const ScheduleDetail = () => {
         throw new Error("Failed to fetch participants");
       }
 
-      return data as unknown as Participant[];
+      return data.map(participant => ({
+        ...participant,
+        user: {
+          full_name: participant.user?.full_name,
+          email: participant.user_id
+        }
+      })) as Participant[];
     },
     enabled: !!id,
   });

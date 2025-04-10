@@ -1,6 +1,12 @@
-
-import { useState, useEffect } from "react";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trash2, AlertCircle, CheckCircle, Clock, MapPin } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
+import { format } from "date-fns";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,11 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Upload, MapPin, Camera, AlertCircle, Clock, Check, X } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { v4 as uuidv4 } from 'uuid';
 
 type Report = {
   id: string;
@@ -34,12 +37,11 @@ const CommunityReport = () => {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState({ latitude: -6.2088, longitude: 106.8456 }); // Default to Jakarta
+  const [location, setLocation] = useState({ latitude: -6.2088, longitude: 106.8456 });
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [uploadedImagePreviews, setUploadedImagePreviews] = useState<string[]>([]);
 
-  // Fetch recent reports
   const { data: recentReports, isLoading } = useQuery({
     queryKey: ["recentReports"],
     queryFn: async () => {
@@ -79,7 +81,6 @@ const CommunityReport = () => {
     try {
       setIsUploading(true);
       
-      // Insert the report
       const { data: reportData, error: reportError } = await supabase
         .from('reports')
         .insert({
@@ -94,7 +95,6 @@ const CommunityReport = () => {
         
       if (reportError) throw reportError;
       
-      // Upload images if there are any
       if (selectedImages.length > 0) {
         const reportId = reportData.id;
         
@@ -103,14 +103,12 @@ const CommunityReport = () => {
           const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
           const filePath = `${fileName}`;
           
-          // Upload to storage
           const { error: uploadError } = await supabase.storage
             .from('report_images')
             .upload(filePath, imageFile);
             
           if (uploadError) throw uploadError;
           
-          // Save reference in the database
           const { error: imageRefError } = await supabase
             .from('report_images')
             .insert({
@@ -127,14 +125,12 @@ const CommunityReport = () => {
         description: "Terima kasih atas partisipasi Anda",
       });
       
-      // Reset form
       setTitle("");
       setDescription("");
       setLocation({ latitude: -6.2088, longitude: 106.8456 });
       setSelectedImages([]);
       setUploadedImagePreviews([]);
       
-      // Refresh the reports list
       queryClient.invalidateQueries({ queryKey: ["recentReports"] });
       
     } catch (error: any) {
@@ -153,10 +149,9 @@ const CommunityReport = () => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       
-      // Filter for images only and check file size
       const validFiles = files.filter(file => {
         const isImage = file.type.startsWith('image/');
-        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB max
+        const isValidSize = file.size <= 5 * 1024 * 1024;
         
         if (!isImage) {
           toast({
@@ -178,7 +173,6 @@ const CommunityReport = () => {
       if (validFiles.length > 0) {
         setSelectedImages(prev => [...prev, ...validFiles]);
         
-        // Create previews
         const newPreviews = validFiles.map(file => URL.createObjectURL(file));
         setUploadedImagePreviews(prev => [...prev, ...newPreviews]);
       }
@@ -186,14 +180,12 @@ const CommunityReport = () => {
   };
 
   const removeImage = (index: number) => {
-    // Revoke object URL to prevent memory leaks
     URL.revokeObjectURL(uploadedImagePreviews[index]);
     
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setUploadedImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Status badge styling
   const getStatusBadge = (status: Report['status']) => {
     switch (status) {
       case 'pending':
@@ -220,7 +212,6 @@ const CommunityReport = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Form Laporan */}
           <Card>
             <CardHeader>
               <CardTitle>Buat Laporan Baru</CardTitle>
@@ -301,7 +292,6 @@ const CommunityReport = () => {
                     </Label>
                   </div>
                   
-                  {/* Display image previews */}
                   {uploadedImagePreviews.length > 0 && (
                     <div className="mt-4 grid grid-cols-3 gap-2">
                       {uploadedImagePreviews.map((preview, index) => (
@@ -341,7 +331,6 @@ const CommunityReport = () => {
             </CardContent>
           </Card>
 
-          {/* Mini Map & Recent Reports */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
