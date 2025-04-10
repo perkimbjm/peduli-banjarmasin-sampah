@@ -1,3 +1,4 @@
+
 // src/components/Navbar.tsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -18,6 +19,7 @@ const Navbar = () => {
     return null;
   }
 
+  // Check if user exists instead of using isAuthenticated
   const isAuthenticated = !!user;
 
   return (

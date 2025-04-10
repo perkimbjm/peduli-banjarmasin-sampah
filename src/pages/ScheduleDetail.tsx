@@ -1,5 +1,4 @@
-// Fix the TypeScript errors by properly typing the participants
-// Specific fix needed for the types in this file - update import and typing
+
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { useEffect, useState } from "react";
@@ -51,7 +50,7 @@ import { Participant as ParticipantType, Schedule } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
 
 const ScheduleDetail = () => {
-  const { scheduleId } = useParams<{ scheduleId: string }>();
+  const { id: scheduleId } = useParams<{ id: string }>();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [participants, setParticipants] = useState<ParticipantType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +63,7 @@ const ScheduleDetail = () => {
 
   useEffect(() => {
     if (!scheduleId) {
-      toast("Schedule ID not found", { type: "error" });
+      toast("Schedule ID not found");
       return;
     }
 
@@ -82,7 +81,7 @@ const ScheduleDetail = () => {
         }
 
         if (!scheduleData) {
-          toast("Schedule not found", { type: "error" });
+          toast("Schedule not found");
           return;
         }
 
@@ -108,7 +107,7 @@ const ScheduleDetail = () => {
 
         setParticipants(participantsData as ParticipantType[]);
       } catch (error: any) {
-        toast(error.message, { type: "error" });
+        toast(error.message);
       } finally {
         setLoading(false);
       }
@@ -144,15 +143,15 @@ const ScheduleDetail = () => {
         throw error;
       }
 
-      toast("Participant status updated successfully!", { type: "success" });
+      toast("Participant status updated successfully!");
     } catch (error: any) {
-      toast(error.message, { type: "error" });
+      toast(error.message);
     }
   };
 
   const handleJoinSchedule = async () => {
     if (!scheduleId || !user) {
-      toast("Schedule ID or user not found", { type: "error" });
+      toast("Schedule ID or user not found");
       return;
     }
 
@@ -175,9 +174,9 @@ const ScheduleDetail = () => {
       }
 
       setParticipants((prevParticipants) => [...prevParticipants, data]);
-      toast("Successfully joined the schedule!", { type: "success" });
+      toast("Successfully joined the schedule!");
     } catch (error: any) {
-      toast(error.message, { type: "error" });
+      toast(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -198,7 +197,7 @@ const ScheduleDetail = () => {
       }
 
       if (!userData) {
-        toast("User with this email not found", { type: "error" });
+        toast("User with this email not found");
         return;
       }
 
@@ -231,9 +230,9 @@ const ScheduleDetail = () => {
         ...prevParticipants,
         participantData as ParticipantType,
       ]);
-      toast("Participant added successfully!", { type: "success" });
+      toast("Participant added successfully!");
     } catch (error: any) {
-      toast(error.message, { type: "error" });
+      toast(error.message);
     } finally {
       setIsSubmitting(false);
       setOpen(false);
