@@ -19,6 +19,8 @@ import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import CommunityReport from "./pages/CommunityReport";
+import WasteManagementSchedule from "./pages/WasteManagementSchedule";
+import ScheduleDetail from "./pages/ScheduleDetail";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +72,16 @@ const App = () => (
             <Route 
               path="/jadwal" 
               element={
-                <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                  <div>Jadwal Pengelolaan Placeholder</div>
+                <ProtectedRoute>
+                  <WasteManagementSchedule />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/jadwal/:id" 
+              element={
+                <ProtectedRoute>
+                  <ScheduleDetail />
                 </ProtectedRoute>
               } 
             />
