@@ -1,4 +1,3 @@
-
 import { useState, ReactNode, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +32,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import {
-  SidebarProvider,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -44,7 +42,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarProvider
 } from "@/components/ui/sidebar";
+
+
+
+
+
+
+
+
+
 
 type MenuItem = {
   title: string;
@@ -66,8 +74,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     localStorage.getItem('theme') as 'light' | 'dark' || 
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   );
-  
-  // Set initial theme on mount
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -79,13 +86,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
     localStorage.setItem('theme', newTheme);
   };
 
@@ -102,68 +103,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   };
 
-  // Define menu items with their access restrictions
   const menuItems: MenuItem[] = [
-    { 
-      title: "Dashboard", 
-      path: "/dashboard", 
-      icon: LayoutDashboard 
-    },
-    { 
-      title: "Pelaporan Masyarakat", 
-      path: "/laporan", 
-      icon: Trash2 
-    },
-    { 
-      title: "Jadwal Pengelolaan", 
-      path: "/jadwal", 
-      icon: Calendar,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "WebGIS Interaktif", 
-      path: "/webgis-admin", 
-      icon: Map,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "Manajemen Edukasi", 
-      path: "/edukasi-admin", 
-      icon: BookOpen,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "Portal Kolaborasi", 
-      path: "/kolaborasi", 
-      icon: MessageSquare
-    },
-    { 
-      title: "Bank Sampah", 
-      path: "/bank-sampah", 
-      icon: Landmark,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "Logistik", 
-      path: "/logistik", 
-      icon: Truck,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "Manajemen Pengaduan", 
-      path: "/pengaduan", 
-      icon: AlertCircle,
-      allowedRoles: ['admin', 'leader', 'stakeholder']
-    },
-    { 
-      title: "Manajemen User", 
-      path: "/users", 
-      icon: Users,
-      allowedRoles: ['admin']
-    },
+    { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { title: "Pelaporan Masyarakat", path: "/laporan", icon: Trash2 },
+    { title: "Jadwal Pengelolaan", path: "/jadwal", icon: Calendar, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "WebGIS Interaktif", path: "/webgis-admin", icon: Map, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "Manajemen Edukasi", path: "/edukasi-admin", icon: BookOpen, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "Portal Kolaborasi", path: "/kolaborasi", icon: MessageSquare },
+    { title: "Bank Sampah", path: "/bank-sampah", icon: Landmark, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "Logistik", path: "/logistik", icon: Truck, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "Manajemen Pengaduan", path: "/pengaduan", icon: AlertCircle, allowedRoles: ['admin', 'leader', 'stakeholder'] },
+    { title: "Manajemen User", path: "/users", icon: Users, allowedRoles: ['admin'] },
   ];
 
-  // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(
     (item) => !item.allowedRoles || (userRole && item.allowedRoles.includes(userRole))
   );
@@ -172,70 +124,66 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen w-full flex bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar for desktop */}
       <SidebarProvider>
-      <Sidebar variant="inset" collapsible="icon" className="hidden md:block">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 py-2 px-4">
-            <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">PS</span>
-            </div>
-            <span className="font-bold text-lg">PeduliSampah</span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton 
-                      isActive={isMenuItemActive(item.path)}
-                      onClick={() => navigate(item.path)}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="border-t">
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-green-600 text-white">
-                    {user?.email?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {user?.email?.split('@')[0]}
-                  </span>
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {userRole || 'volunteer'}
-                  </span>
-                </div>
+        <Sidebar variant="inset" collapsible="icon" className="hidden md:block">
+          <SidebarHeader>
+            <div className="flex items-center gap-2 py-2 px-4">
+              <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">PS</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <span className="font-bold text-lg">PeduliSampah</span>
             </div>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Menu</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {filteredMenuItems.map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton 
+                        isActive={isMenuItemActive(item.path)}
+                        onClick={() => navigate(item.path)}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter className="border-t">
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-green-600 text-white">
+                      {user?.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">
+                      {user?.email?.split('@')[0]}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {userRole || 'volunteer'}
+                    </span>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
       </SidebarProvider>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col">
-        {/* Header for mobile and desktop */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex h-16 items-center px-4">
-            {/* Mobile menu button */}
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
                 <Button variant="ghost" size="icon" className="mr-2">
@@ -250,7 +198,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </div>
                   <span className="font-bold text-lg">PeduliSampah</span>
                 </div>
-
                 <nav className="space-y-1">
                   {filteredMenuItems.map((item) => (
                     <Button 
@@ -265,32 +212,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   ))}
                 </nav>
               </SheetContent>
-
             </Sheet>
-            
-            {/* Logo */}
+
             <div className="flex items-center mr-4">
               <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center mr-2 md:hidden">
                 <span className="text-white font-bold text-sm">PS</span>
               </div>
               <span className="font-bold text-lg md:hidden">PeduliSampah</span>
             </div>
-            
+
             <div className="ml-auto flex items-center space-x-4">
-              {/* Theme toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleTheme}
-              >
-                {theme === 'light' ? (
-                  <Moon className="h-5 w-5" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               </Button>
-              
-              {/* User dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 flex items-center gap-2 pl-2 pr-1">
@@ -334,9 +268,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
           </div>
         </header>
-        
-        {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-4">
           {children}
         </main>
       </div>
