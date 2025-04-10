@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -163,10 +162,8 @@ const mockCampaigns = [
 
 const EdukasiAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(
-    undefined
-  );
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -336,13 +333,13 @@ const EdukasiAdmin = () => {
                       onValueChange={setCategoryFilter}
                     >
                       <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Kategori" />
+                        <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Kategori</SelectItem>
-                        <SelectItem value="Artikel">Artikel</SelectItem>
-                        <SelectItem value="Video">Video</SelectItem>
-                        <SelectItem value="Infografik">Infografik</SelectItem>
+                        <SelectItem value="all">Semua Kategori</SelectItem>
+                        <SelectItem value="artikel">Artikel</SelectItem>
+                        <SelectItem value="video">Video</SelectItem>
+                        <SelectItem value="infografik">Infografik</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select
@@ -353,7 +350,7 @@ const EdukasiAdmin = () => {
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Status</SelectItem>
+                        <SelectItem value="all">Semua Status</SelectItem>
                         <SelectItem value="published">Dipublikasi</SelectItem>
                         <SelectItem value="draft">Draf</SelectItem>
                       </SelectContent>
