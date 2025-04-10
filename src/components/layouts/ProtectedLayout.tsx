@@ -1,4 +1,3 @@
-
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
@@ -67,7 +66,13 @@ const ProtectedLayout = () => {
               <span className="font-bold text-lg">PeduliSampah</span>
             </div>
           </SidebarHeader>
-          <SidebarContent></SidebarContent>
+          <SidebarContent>
+            <div className="p-4">
+              <p>Menu Item 1</p>
+              <p>Menu Item 2</p>
+              <p>Menu Item 3</p>
+            </div>
+          </SidebarContent>
           <SidebarFooter>
             <div className="flex items-center gap-3 p-4">
               <Avatar className="h-8 w-8">
