@@ -1,3 +1,4 @@
+
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -27,12 +28,14 @@ import NotFound from "@/pages/NotFound";
 import CommunityReport from "@/pages/CommunityReport";
 import WasteManagementSchedule from "@/pages/WasteManagementSchedule";
 import ScheduleDetail from "@/pages/ScheduleDetail";
+import WebGisAdmin from "@/pages/WebGisAdmin";
+import EdukasiAdmin from "@/pages/EdukasiAdmin";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
@@ -97,7 +100,7 @@ const App = () => (
                 path="/webgis-admin"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <div>WebGIS Admin Placeholder</div>
+                    <WebGisAdmin />
                   </ProtectedRoute>
                 }
               />
@@ -105,7 +108,7 @@ const App = () => (
                 path="/edukasi-admin"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <div>Manajemen Edukasi Placeholder</div>
+                    <EdukasiAdmin />
                   </ProtectedRoute>
                 }
               />
@@ -156,8 +159,8 @@ const App = () => (
           </Routes>
         </TooltipProvider>
       </AuthProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;

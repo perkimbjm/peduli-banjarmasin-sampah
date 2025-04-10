@@ -182,16 +182,16 @@ const Dashboard = () => {
                 Data volume sampah dalam 7 hari terakhir (kg)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dailyWasteData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Bar dataKey="volume" fill="#10B981" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
           <Card>
@@ -204,8 +204,8 @@ const Dashboard = () => {
                 Berdasarkan jenis sampah yang dikumpulkan (%)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={wasteCompositionData}
@@ -221,10 +221,10 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Legend />
                 </RechartsPieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
@@ -241,8 +241,8 @@ const Dashboard = () => {
                 Berdasarkan sumber penghasil sampah (%)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={wasteSourceData}
@@ -257,10 +257,10 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Legend />
                 </RechartsPieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
           <Card>
@@ -273,8 +273,8 @@ const Dashboard = () => {
                 Persentase sampah terkumpul vs belum terkumpul
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={collectionStatusData}
@@ -289,10 +289,10 @@ const Dashboard = () => {
                     <Cell fill="#10B981" />
                     <Cell fill="#EF4444" />
                   </Pie>
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Legend />
                 </RechartsPieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
@@ -309,18 +309,18 @@ const Dashboard = () => {
                 Perbandingan kapasitas dan penggunaan (kg)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={processingCapacityData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="location" type="category" width={80} />
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Legend />
                   <Bar dataKey="capacity" fill="#8884d8" name="Kapasitas" />
                   <Bar dataKey="used" fill="#82ca9d" name="Terpakai" />
                 </BarChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
           <Card>
@@ -333,16 +333,16 @@ const Dashboard = () => {
                 Tren volume sampah dalam 12 bulan terakhir
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={wasteTrendData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                   <Area type="monotone" dataKey="waste" stroke="#10B981" fill="#10B98180" />
                 </AreaChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
@@ -358,18 +358,18 @@ const Dashboard = () => {
               Data volume sampah dan kapasitas pengelolaan dalam 12 bulan terakhir
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={{}} className="h-[300px]">
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={wasteManagementComparisonData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
+                <Tooltip content={(props) => <ChartTooltipContent {...props} />} />
                 <Legend />
                 <Line type="monotone" dataKey="waste" stroke="#EF4444" name="Volume Sampah" strokeWidth={2} />
                 <Line type="monotone" dataKey="capacity" stroke="#10B981" name="Kapasitas Pengelolaan" strokeWidth={2} />
               </LineChart>
-            </ChartContainer>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
