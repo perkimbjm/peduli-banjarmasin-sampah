@@ -1,228 +1,166 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Edit, 
-  Trash, 
-  ArrowLeft, 
-  CheckCircle, 
-  XCircle 
-} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Spinner } from "@/components/ui/spinner";
-import { Schedule, Participant } from "@/types/supabase";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, MapPin, Users, ArrowLeft } from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+
+// Define schedule participant types
+interface ScheduleParticipant {
+  id: string;
+  user_id: string;
+  status: string;
+  profiles?: {
+    id: string;
+    full_name?: string;
+  };
+}
+
+interface Schedule {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  latitude?: number;
+  longitude?: number;
+  created_at: string;
+  created_by: string;
+  participants?: ScheduleParticipant[];
+}
 
 const ScheduleDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  
-  const isManagerRole = userRole === "admin" || userRole === "leader" || userRole === "stakeholder";
 
-  // Query to fetch schedule details
-  const { data: schedule, isLoading: isLoadingSchedule } = useQuery({
+  const canManageSchedule = userRole === "admin" || userRole === "leader" || userRole === "stakeholder";
+
+  // Fetch schedule details
+  const { data: schedule, isLoading, isError } = useQuery({
     queryKey: ["schedule", id],
     queryFn: async () => {
-      if (!id) return null;
-      
       const { data, error } = await supabase
         .from("waste_management_schedules")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) {
-        console.error("Error fetching schedule:", error);
-        throw new Error("Failed to fetch schedule details");
-      }
-
+      if (error) throw error;
       return data as Schedule;
     },
-    enabled: !!id,
   });
 
-  // Query to fetch schedule participants
-  const { data: participants = [], isLoading: isLoadingParticipants } = useQuery({
-    queryKey: ["schedule-participants", id],
+  // Fetch participants
+  const { data: participants } = useQuery({
+    queryKey: ["participants", id],
     queryFn: async () => {
-      if (!id) return [];
-      
       const { data, error } = await supabase
         .from("schedule_participants")
-        .select(`
-          *,
-          user:profiles!inner(full_name)
-        `)
+        .select("*, profiles:user_id(id, full_name)")
         .eq("schedule_id", id);
 
-      if (error) {
-        console.error("Error fetching participants:", error);
-        throw new Error("Failed to fetch participants");
-      }
-
-      return data.map(participant => ({
-        ...participant,
-        user: {
-          full_name: participant.user?.full_name,
-          email: participant.user_id
-        }
-      })) as Participant[];
+      if (error) throw error;
+      return data as ScheduleParticipant[];
     },
     enabled: !!id,
   });
 
-  // Mutation to delete a schedule
-  const deleteScheduleMutation = useMutation({
+  // Join schedule mutation
+  const joinMutation = useMutation({
     mutationFn: async () => {
-      if (!id) throw new Error("Schedule ID is required");
+      const { data, error } = await supabase
+        .from("schedule_participants")
+        .insert([
+          { 
+            schedule_id: id, 
+            user_id: user?.id,
+            status: "confirmed"
+          }
+        ]);
 
-      const { error } = await supabase
-        .from("waste_management_schedules")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        console.error("Error deleting schedule:", error);
-        throw new Error("Failed to delete schedule");
-      }
-
-      return true;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["participants", id] });
       toast({
-        title: "Jadwal berhasil dihapus",
-        description: "Jadwal pengelolaan sampah telah dihapus dari sistem.",
-      });
-      navigate("/jadwal");
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Gagal menghapus jadwal",
-        description: error.message,
-      });
-    },
-  });
-
-  // Mutation to join/leave a schedule
-  const participateMutation = useMutation({
-    mutationFn: async (action: "join" | "leave") => {
-      if (!id || !user) throw new Error("User must be logged in");
-
-      if (action === "join") {
-        const { error } = await supabase
-          .from("schedule_participants")
-          .insert({
-            schedule_id: id,
-            user_id: user.id,
-            status: "pending",
-          });
-
-        if (error) {
-          console.error("Error joining schedule:", error);
-          throw new Error("Failed to join schedule");
-        }
-      } else {
-        // Leave schedule
-        const { error } = await supabase
-          .from("schedule_participants")
-          .delete()
-          .eq("schedule_id", id)
-          .eq("user_id", user.id);
-
-        if (error) {
-          console.error("Error leaving schedule:", error);
-          throw new Error("Failed to leave schedule");
-        }
-      }
-
-      return true;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["schedule-participants", id] });
-      
-      toast({
-        title: variables === "join" ? "Berhasil tergabung" : "Berhasil membatalkan",
-        description: variables === "join" 
-          ? "Anda telah bergabung dengan jadwal kegiatan pengelolaan sampah ini." 
-          : "Anda telah membatalkan partisipasi dalam kegiatan ini.",
+        title: "Berhasil bergabung",
+        description: "Anda telah bergabung dengan jadwal pengelolaan sampah ini",
       });
     },
     onError: (error) => {
       toast({
         variant: "destructive",
-        title: "Gagal memproses permintaan",
+        title: "Gagal bergabung",
         description: error.message,
       });
-    },
+    }
   });
 
-  // Check if current user is participating in this schedule
-  const userParticipation = participants.find(
-    (participant) => participant.user_id === user?.id
-  );
+  // Leave schedule mutation
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("schedule_participants")
+        .delete()
+        .eq("schedule_id", id)
+        .eq("user_id", user?.id);
 
-  // Determine if the current date is past the schedule date
-  const isPastEvent = schedule 
-    ? new Date(schedule.end_date) < new Date() 
-    : false;
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["participants", id] });
+      toast({
+        title: "Berhasil keluar",
+        description: "Anda telah keluar dari jadwal pengelolaan sampah ini",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Gagal keluar",
+        description: error.message,
+      });
+    }
+  });
 
-  if (isLoadingSchedule) {
+  const isParticipant = participants?.some(p => p.user_id === user?.id);
+  
+  const formatDate = (dateString) => {
+    return format(new Date(dateString), "d MMMM yyyy, HH:mm", { locale: id });
+  };
+
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-6 flex justify-center items-center min-h-[50vh]">
-          <Spinner size="lg" />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-pulse text-lg">Memuat data jadwal...</div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (!schedule) {
+  if (isError || !schedule) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-6">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-2">Jadwal tidak ditemukan</h2>
-            <p className="text-muted-foreground mb-6">
-              Jadwal yang Anda cari tidak ada atau telah dihapus.
-            </p>
-            <Button onClick={() => navigate("/jadwal")}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Daftar Jadwal
-            </Button>
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+          <h1 className="text-xl font-bold mb-4">Jadwal tidak ditemukan</h1>
+          <Button onClick={() => navigate("/jadwal")}>Kembali ke Daftar Jadwal</Button>
         </div>
       </DashboardLayout>
     );
@@ -230,188 +168,118 @@ const ScheduleDetail = () => {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/jadwal")}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kembali
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <Button variant="outline" onClick={() => navigate("/jadwal")} className="w-fit">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight mr-2">
-            Detail Jadwal Pengelolaan
-          </h1>
-          {isPastEvent ? (
-            <Badge variant="outline" className="ml-2">Selesai</Badge>
-          ) : (
-            <Badge variant="outline" className="ml-2">Mendatang</Badge>
+          {canManageSchedule && (
+            <div className="flex gap-2">
+              <Button variant="outline">Edit Jadwal</Button>
+              <Button variant="destructive">Hapus</Button>
+            </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{schedule.title}</CardTitle>
-                <CardDescription className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {schedule.location}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>
-                        Tanggal: {format(new Date(schedule.start_date), "dd MMMM yyyy")}
-                        {format(new Date(schedule.start_date), "dd MMMM yyyy") !==
-                          format(new Date(schedule.end_date), "dd MMMM yyyy") &&
-                          ` - ${format(new Date(schedule.end_date), "dd MMMM yyyy")}`}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>
-                        Waktu: {format(new Date(schedule.start_date), "HH:mm")} - {format(new Date(schedule.end_date), "HH:mm")}
-                      </span>
-                    </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-2xl">{schedule.title}</CardTitle>
+              <CardDescription>Detail jadwal pengelolaan sampah</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-md bg-green-100 p-2 dark:bg-green-900">
+                    <Calendar className="h-5 w-5 text-green-700 dark:text-green-300" />
                   </div>
-
-                  <Separator />
-
                   <div>
-                    <h3 className="font-medium mb-2">Deskripsi Kegiatan</h3>
-                    <p className="text-muted-foreground">
-                      {schedule.description || "Tidak ada deskripsi untuk kegiatan ini."}
-                    </p>
+                    <p className="font-medium text-sm text-gray-500 dark:text-gray-400">Waktu Mulai</p>
+                    <p className="font-medium">{formatDate(schedule.start_date)}</p>
                   </div>
-
-                  {(schedule.latitude && schedule.longitude) && (
-                    <div className="mt-4">
-                      <h3 className="font-medium mb-2">Koordinat Lokasi</h3>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <span>Lat: {schedule.latitude}</span>
-                        <span>Lng: {schedule.longitude}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {isManagerRole && (
-                    <>
-                      <Separator />
-
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/jadwal/${id}/edit`)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash className="h-4 w-4 mr-2" />
-                              Hapus
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus Jadwal</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus jadwal ini? Tindakan ini tidak dapat dibatalkan.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteScheduleMutation.mutate()}
-                                disabled={deleteScheduleMutation.isPending}
-                              >
-                                {deleteScheduleMutation.isPending ? "Menghapus..." : "Hapus"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </>
-                  )}
                 </div>
-              </CardContent>
-              {!isPastEvent && !isManagerRole && (
-                <CardFooter className="flex justify-end">
-                  {userParticipation ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => participateMutation.mutate("leave")}
-                      disabled={participateMutation.isPending}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      {participateMutation.isPending ? "Memproses..." : "Batalkan Partisipasi"}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => participateMutation.mutate("join")}
-                      disabled={participateMutation.isPending}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {participateMutation.isPending ? "Memproses..." : "Berpartisipasi"}
-                    </Button>
-                  )}
-                </CardFooter>
-              )}
-            </Card>
-          </div>
 
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  Peserta ({participants.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingParticipants ? (
-                  <div className="flex justify-center py-4">
-                    <Spinner />
+                <div className="flex items-start gap-3">
+                  <div className="rounded-md bg-red-100 p-2 dark:bg-red-900">
+                    <Clock className="h-5 w-5 text-red-700 dark:text-red-300" />
                   </div>
-                ) : participants.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Belum ada peserta yang bergabung.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {participants.map((participant) => (
-                      <li key={participant.id} className="flex justify-between items-center text-sm">
-                        <span>{participant.user?.full_name || participant.user?.email || "Pengguna"}</span>
-                        <Badge
-                          variant={
-                            participant.status === "confirmed"
-                              ? "default"
-                              : participant.status === "declined"
-                              ? "destructive"
-                              : "outline"
-                          }
-                        >
-                          {participant.status === "confirmed"
-                            ? "Hadir"
-                            : participant.status === "declined"
-                            ? "Tidak hadir"
-                            : "Menunggu"}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  <div>
+                    <p className="font-medium text-sm text-gray-500 dark:text-gray-400">Waktu Selesai</p>
+                    <p className="font-medium">{formatDate(schedule.end_date)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="rounded-md bg-blue-100 p-2 dark:bg-blue-900">
+                    <MapPin className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm text-gray-500 dark:text-gray-400">Lokasi</p>
+                    <p className="font-medium">{schedule.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-medium mb-2">Deskripsi Kegiatan</h3>
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                  {schedule.description || "Tidak ada deskripsi kegiatan"}
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              {isParticipant ? (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => leaveMutation.mutate()}
+                  disabled={leaveMutation.isPending}
+                  className="w-full sm:w-auto"
+                >
+                  {leaveMutation.isPending ? "Memproses..." : "Batalkan Keikutsertaan"}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => joinMutation.mutate()}
+                  disabled={joinMutation.isPending}
+                  className="w-full sm:w-auto"
+                >
+                  {joinMutation.isPending ? "Memproses..." : "Bergabung dengan Kegiatan Ini"}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                <span>Peserta ({participants?.length || 0})</span>
+              </CardTitle>
+              <CardDescription>Daftar peserta yang tergabung</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {participants && participants.length > 0 ? (
+                <div className="space-y-4">
+                  {participants.map((participant) => (
+                    <div key={participant.id} className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {participant.profiles?.full_name || "Nama tidak tersedia"}
+                      </div>
+                      <Badge variant={participant.status === "confirmed" ? "default" : "outline"}>
+                        {participant.status === "confirmed" ? "Terkonfirmasi" : "Menunggu"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                  Belum ada peserta terdaftar
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>

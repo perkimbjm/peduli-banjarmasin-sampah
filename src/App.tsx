@@ -48,9 +48,7 @@ const App = () => (
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
-                    <Dashboard />
-                  </SidebarProvider>
+                  <Dashboard />
                 </ProtectedRoute>
               } 
             />

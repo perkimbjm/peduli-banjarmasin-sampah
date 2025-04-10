@@ -1,204 +1,88 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2, AlertCircle, CheckCircle, Clock, MapPin, Loader2, Upload, Camera, Check, X  } from "lucide-react";
-import { v4 as uuidv4 } from 'uuid';
-import { format } from "date-fns";
-import { DashboardLayout } from "@/components/layouts/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { } from "lucide-react";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
-type Report = {
-  id: string;
-  title: string;
-  description: string;
-  latitude: number;
-  longitude: number;
-  status: 'pending' | 'processing' | 'resolved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  user_id: string;
+import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Clock, MapPin } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DashboardLayout from "@/components/layouts/DashboardLayout";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+// Mock data for reports
+const reportsData = [
+  {
+    id: 1,
+    title: "Tumpukan sampah di Jl. Sudirman",
+    location: "Jl. Sudirman No. 123",
+    status: "pending",
+    createdAt: "2025-04-08T09:30:00Z",
+    description: "Ada tumpukan sampah yang belum diangkut selama 3 hari.",
+    reporter: "warga@example.com",
+  },
+  {
+    id: 2,
+    title: "Saluran air tersumbat sampah",
+    location: "Jl. Gatot Subroto No. 45",
+    status: "in_progress",
+    createdAt: "2025-04-07T14:15:00Z",
+    description: "Saluran air tersumbat oleh sampah plastik dan menyebabkan genangan.",
+    reporter: "komunitas@example.com",
+  },
+  {
+    id: 3,
+    title: "Pembuangan sampah ilegal",
+    location: "Taman Kota Blok C",
+    status: "resolved",
+    createdAt: "2025-04-05T10:45:00Z",
+    description: "Ada aktivitas pembuangan sampah ilegal di area taman kota.",
+    reporter: "petugas@example.com",
+  },
+];
+
+const statusColors = {
+  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  resolved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+};
+
+const statusLabels = {
+  pending: "Menunggu",
+  in_progress: "Diproses",
+  resolved: "Selesai",
 };
 
 const CommunityReport = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState({ latitude: -6.2088, longitude: 106.8456 });
-  const [isUploading, setIsUploading] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [uploadedImagePreviews, setUploadedImagePreviews] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = React.useState("all");
+  const [open, setOpen] = React.useState(false);
+  const [selectedReport, setSelectedReport] = React.useState(null);
 
-  const { data: recentReports, isLoading } = useQuery({
-    queryKey: ["recentReports"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (error) throw error;
-      return data as Report[];
-    },
-    enabled: !!user,
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      toast({
-        title: "Autentikasi diperlukan",
-        description: "Anda harus login terlebih dahulu",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!title || !description) {
-      toast({
-        title: "Informasi tidak lengkap",
-        description: "Judul dan deskripsi laporan harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      
-      const { data: reportData, error: reportError } = await supabase
-        .from('reports')
-        .insert({
-          user_id: user.id,
-          title,
-          description,
-          latitude: location.latitude,
-          longitude: location.longitude,
-        })
-        .select()
-        .single();
-        
-      if (reportError) throw reportError;
-      
-      if (selectedImages.length > 0) {
-        const reportId = reportData.id;
-        
-        for (const imageFile of selectedImages) {
-          const fileExt = imageFile.name.split('.').pop();
-          const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
-          const filePath = `${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('report_images')
-            .upload(filePath, imageFile);
-            
-          if (uploadError) throw uploadError;
-          
-          const { error: imageRefError } = await supabase
-            .from('report_images')
-            .insert({
-              report_id: reportId,
-              storage_path: filePath,
-            });
-            
-          if (imageRefError) throw imageRefError;
-        }
-      }
-      
-      toast({
-        title: "Laporan berhasil dikirim",
-        description: "Terima kasih atas partisipasi Anda",
-      });
-      
-      setTitle("");
-      setDescription("");
-      setLocation({ latitude: -6.2088, longitude: 106.8456 });
-      setSelectedImages([]);
-      setUploadedImagePreviews([]);
-      
-      queryClient.invalidateQueries({ queryKey: ["recentReports"] });
-      
-    } catch (error: any) {
-      console.error('Error submitting report:', error);
-      toast({
-        title: "Gagal mengirim laporan",
-        description: error.message || "Terjadi kesalahan saat mengirim laporan",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+  const handleViewDetail = (report) => {
+    setSelectedReport(report);
+    setOpen(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      
-      const validFiles = files.filter(file => {
-        const isImage = file.type.startsWith('image/');
-        const isValidSize = file.size <= 5 * 1024 * 1024;
-        
-        if (!isImage) {
-          toast({
-            title: "Format file tidak didukung",
-            description: "Hanya file gambar yang diizinkan (JPG, PNG, etc.)",
-            variant: "destructive",
-          });
-        } else if (!isValidSize) {
-          toast({
-            title: "Ukuran file terlalu besar",
-            description: "Ukuran file maksimal adalah 5MB",
-            variant: "destructive",
-          });
-        }
-        
-        return isImage && isValidSize;
-      });
-      
-      if (validFiles.length > 0) {
-        setSelectedImages(prev => [...prev, ...validFiles]);
-        
-        const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-        setUploadedImagePreviews(prev => [...prev, ...newPreviews]);
-      }
-    }
-  };
+  const filteredReports = activeTab === "all" ? reportsData : reportsData.filter(report => report.status === activeTab);
 
-  const removeImage = (index: number) => {
-    URL.revokeObjectURL(uploadedImagePreviews[index]);
-    
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setUploadedImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const getStatusBadge = (status: Report['status']) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Menunggu</Badge>;
-      case 'processing':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Diproses</Badge>;
-      case 'resolved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Selesai</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('id-ID', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
   return (
@@ -207,191 +91,132 @@ const CommunityReport = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pelaporan Masyarakat</h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Bantu kami dengan melaporkan masalah sampah di sekitar Anda
+            Lihat dan kelola laporan terkait sampah dari masyarakat
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Buat Laporan Baru</CardTitle>
-              <CardDescription>
-                Silakan isi detail laporan masalah sampah yang Anda temukan
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Judul Laporan</Label>
-                  <Input
-                    id="title"
-                    placeholder="Contoh: TPS liar di Jalan Sudirman"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Deskripsi</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Jelaskan detil masalah sampah yang Anda temukan..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-32"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="latitude">Latitude</Label>
-                    <Input
-                      id="latitude"
-                      type="number"
-                      step="any"
-                      placeholder="Contoh: -6.2088"
-                      value={location.latitude}
-                      onChange={(e) => setLocation({...location, latitude: parseFloat(e.target.value)})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="longitude">Longitude</Label>
-                    <Input
-                      id="longitude"
-                      type="number"
-                      step="any"
-                      placeholder="Contoh: 106.8456"
-                      value={location.longitude}
-                      onChange={(e) => setLocation({...location, longitude: parseFloat(e.target.value)})}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="image">Upload Foto</Label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-4 text-center">
-                    <Input
-                      id="image"
-                      type="file"
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      className="hidden"
-                      multiple
-                    />
-                    <Label
-                      htmlFor="image"
-                      className="w-full cursor-pointer flex flex-col items-center justify-center py-4"
-                    >
-                      <Camera className="h-10 w-10 text-gray-400 mb-2" />
-                      <span className="text-gray-500">Klik untuk upload foto</span>
-                      <span className="text-xs text-gray-400 mt-1">
-                        (Support JPG, PNG. Maks 5MB)
-                      </span>
-                    </Label>
-                  </div>
-                  
-                  {uploadedImagePreviews.length > 0 && (
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                      {uploadedImagePreviews.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="h-24 w-full object-cover rounded-md"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Mengirim laporan...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Kirim Laporan
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lokasi Laporan</CardTitle>
-                <CardDescription>Drag marker untuk menentukan lokasi yang tepat</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-200 dark:bg-gray-800 h-52 rounded-md flex items-center justify-center">
-                  <MapPin className="h-8 w-8 text-gray-400" />
-                  <span className="ml-2 text-gray-500">
-                    Peta akan diintegrasikan setelah implementasi WebGIS
-                  </span>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Koordinat: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Laporan Terakhir</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : recentReports && recentReports.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Judul</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Tanggal</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentReports.map((report) => (
-                        <TableRow key={report.id}>
-                          <TableCell className="font-medium">{report.title}</TableCell>
-                          <TableCell>{getStatusBadge(report.status)}</TableCell>
-                          <TableCell className="text-right">{format(new Date(report.created_at), 'dd/MM/yyyy')}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <AlertCircle className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-gray-500">
-                      Belum ada laporan yang dibuat
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex justify-between items-center">
+            <TabsList>
+              <TabsTrigger value="all">Semua</TabsTrigger>
+              <TabsTrigger value="pending">Menunggu</TabsTrigger>
+              <TabsTrigger value="in_progress">Diproses</TabsTrigger>
+              <TabsTrigger value="resolved">Selesai</TabsTrigger>
+            </TabsList>
+            <Button>Buat Laporan Baru</Button>
           </div>
-        </div>
+          
+          <TabsContent value="all" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredReports.map((report) => (
+                <ReportCard key={report.id} report={report} onViewDetail={handleViewDetail} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="pending" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredReports.map((report) => (
+                <ReportCard key={report.id} report={report} onViewDetail={handleViewDetail} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="in_progress" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredReports.map((report) => (
+                <ReportCard key={report.id} report={report} onViewDetail={handleViewDetail} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="resolved" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredReports.map((report) => (
+                <ReportCard key={report.id} report={report} onViewDetail={handleViewDetail} />
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedReport?.title}</DialogTitle>
+            <DialogDescription>
+              Detail laporan dari masyarakat
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedReport && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-500" />
+                <span>{selectedReport.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span>{formatDate(selectedReport.createdAt)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-gray-500" />
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[selectedReport.status]}`}>
+                  {statusLabels[selectedReport.status]}
+                </span>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Deskripsi:</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedReport.description}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Pelapor:</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedReport.reporter}</p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Tutup
+            </Button>
+            {selectedReport?.status !== 'resolved' && (
+              <Button>
+                {selectedReport?.status === 'pending' ? 'Proses Laporan' : 'Selesaikan Laporan'}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+  );
+};
+
+const ReportCard = ({ report, onViewDetail }) => {
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg">{report.title}</CardTitle>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[report.status]}`}>
+            {statusLabels[report.status]}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <MapPin className="h-4 w-4" />
+          <span>{report.location}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <Clock className="h-4 w-4" />
+          <span>{new Date(report.createdAt).toLocaleDateString('id-ID')}</span>
+        </div>
+        <Button variant="outline" className="w-full mt-2" onClick={() => onViewDetail(report)}>
+          Lihat Detail
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

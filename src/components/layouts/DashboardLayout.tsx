@@ -1,3 +1,4 @@
+
 import { useState, ReactNode, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,15 +46,6 @@ import {
   SidebarProvider
 } from "@/components/ui/sidebar";
 
-
-
-
-
-
-
-
-
-
 type MenuItem = {
   title: string;
   path: string;
@@ -81,7 +73,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -123,8 +115,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const isMenuItemActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen w-full flex bg-gray-100 dark:bg-gray-900">
-      <SidebarProvider>
+    <SidebarProvider>
+      <div className="min-h-screen w-full flex bg-gray-100 dark:bg-gray-900">
         <Sidebar variant="inset" collapsible="icon" className="hidden md:block">
           <SidebarHeader>
             <div className="flex items-center gap-2 py-2 px-4">
@@ -179,100 +171,100 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
           </SidebarFooter>
         </Sidebar>
-      </SidebarProvider>
 
-      <div className="flex-1 flex flex-col">
-        <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex h-16 items-center px-4">
-            <Sheet>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" className="mr-2">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[240px]">
-                <div className="flex items-center mb-6">
-                  <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center mr-2">
-                    <span className="text-white font-bold text-sm">PS</span>
-                  </div>
-                  <span className="font-bold text-lg">PeduliSampah</span>
-                </div>
-                <nav className="space-y-1">
-                  {filteredMenuItems.map((item) => (
-                    <Button 
-                      key={item.path}
-                      variant={isMenuItemActive(item.path) ? "secondary" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => navigate(item.path)}
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.title}
-                    </Button>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
-
-            <div className="flex items-center mr-4">
-              <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center mr-2 md:hidden">
-                <span className="text-white font-bold text-sm">PS</span>
-              </div>
-              <span className="font-bold text-lg md:hidden">PeduliSampah</span>
-            </div>
-
-            <div className="ml-auto flex items-center space-x-4">
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 flex items-center gap-2 pl-2 pr-1">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-green-600 text-white">
-                        {user?.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden md:inline-flex text-sm font-medium">
-                      {user?.email?.split('@')[0]}
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
+        <div className="flex-1 flex flex-col">
+          <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex h-16 items-center px-4">
+              <Sheet>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="mr-2">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle menu</span>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      {user?.email && (
-                        <>
-                          <p className="font-medium">{user.email.split('@')[0]}</p>
-                          <p className="w-[200px] truncate text-sm text-muted-foreground">
-                            {user.email}
-                          </p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            Role: {userRole || 'volunteer'}
-                          </p>
-                        </>
-                      )}
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[240px]">
+                  <div className="flex items-center mb-6">
+                    <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center mr-2">
+                      <span className="text-white font-bold text-sm">PS</span>
                     </div>
+                    <span className="font-bold text-lg">PeduliSampah</span>
                   </div>
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Keluar</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <nav className="space-y-1">
+                    {filteredMenuItems.map((item) => (
+                      <Button 
+                        key={item.path}
+                        variant={isMenuItemActive(item.path) ? "secondary" : "ghost"} 
+                        className="w-full justify-start"
+                        onClick={() => navigate(item.path)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.title}
+                      </Button>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+
+              <div className="flex items-center mr-4">
+                <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center mr-2 md:hidden">
+                  <span className="text-white font-bold text-sm">PS</span>
+                </div>
+                <span className="font-bold text-lg md:hidden">PeduliSampah</span>
+              </div>
+
+              <div className="ml-auto flex items-center space-x-4">
+                <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 flex items-center gap-2 pl-2 pr-1">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-green-600 text-white">
+                          {user?.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden md:inline-flex text-sm font-medium">
+                        {user?.email?.split('@')[0]}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        {user?.email && (
+                          <>
+                            <p className="font-medium">{user.email.split('@')[0]}</p>
+                            <p className="w-[200px] truncate text-sm text-muted-foreground">
+                              {user.email}
+                            </p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              Role: {userRole || 'volunteer'}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Keluar</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
-        </header>
-        <main className="flex-1 p-4">
-          {children}
-        </main>
+          </header>
+          <main className="flex-1 p-4">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
