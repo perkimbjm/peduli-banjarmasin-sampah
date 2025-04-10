@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -21,6 +30,10 @@ const Navbar = () => {
 
   // Check if user exists instead of using isAuthenticated
   const isAuthenticated = !!user;
+  
+  // Get user's display information if authenticated
+  const userEmail = user?.email || 'admin@example.com';
+  const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -52,15 +65,49 @@ const Navbar = () => {
               Edukasi
             </Link>
             <div className="ml-4 flex items-center">
-              <Button asChild className="btn-primary mr-2">
-                <Link to={isAuthenticated ? "/dashboard" : "/login"}>
-                  {isAuthenticated ? "Dashboard" : "Login"}
-                </Link>
-              </Button>
-              {!isAuthenticated && (
-                <Button asChild variant="outline" className="btn-outline">
-                  <Link to="/register">Daftar</Link>
-                </Button>
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={userEmail} />
+                        <AvatarFallback>{userInitials}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userEmail}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.user_metadata?.role || 'User'}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="flex cursor-pointer items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button className="w-full flex cursor-pointer items-center" onClick={() => signOut()}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Keluar
+                      </button>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button asChild className="btn-primary mr-2">
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="btn-outline">
+                    <Link to="/register">Daftar</Link>
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -115,16 +162,44 @@ const Navbar = () => {
             >
               Edukasi
             </Link>
+            
             <div className="flex flex-col space-y-2 mt-4">
-              <Button asChild className="btn-primary w-full">
-                <Link to={isAuthenticated ? "/dashboard" : "/login"} onClick={() => setIsMenuOpen(false)}>
-                  {isAuthenticated ? "Dashboard" : "Login"}
-                </Link>
-              </Button>
-              {!isAuthenticated && (
-                <Button asChild variant="outline" className="btn-outline w-full">
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>Daftar</Link>
-                </Button>
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center px-3 py-2">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src="" alt={userEmail} />
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{userEmail}</p>
+                    </div>
+                  </div>
+                  <Button asChild className="btn-primary w-full">
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="btn-outline w-full" onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }}>
+                    Keluar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild className="btn-primary w-full">
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                      Login
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="btn-outline w-full">
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                      Daftar
+                    </Link>
+                  </Button>
+                </>
               )}
             </div>
           </div>
