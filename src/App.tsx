@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useQueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -21,8 +21,9 @@ import NotFound from "./pages/NotFound";
 import CommunityReport from "./pages/CommunityReport";
 import WasteManagementSchedule from "./pages/WasteManagementSchedule";
 import ScheduleDetail from "./pages/ScheduleDetail";
+import { SidebarProvider } from "./components/ui/sidebar";
 
-const queryClient = new QueryClient();
+const queryClient = new useQueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -47,7 +48,9 @@ const App = () => (
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <SidebarProvider>
+                    <Dashboard />
+                  </SidebarProvider>
                 </ProtectedRoute>
               } 
             />
