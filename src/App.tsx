@@ -23,7 +23,7 @@ import WasteManagementSchedule from "./pages/WasteManagementSchedule";
 import ScheduleDetail from "./pages/ScheduleDetail";
 import { SidebarProvider } from "./components/ui/sidebar";
 
-const queryClient = new useQueryClient();
+const queryClient = useQueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
