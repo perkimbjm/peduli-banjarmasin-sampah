@@ -1,3 +1,4 @@
+// src/components/Navbar.tsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,18 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  // Don't show auth buttons while loading
+  if (isLoading) {
+    return null;
+  }
+
+  const isAuthenticated = !!user;
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -61,8 +69,8 @@ const Navbar = () => {
               type="button"
               onClick={toggleMenu}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Toggle menu"
             >
-              <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (
                 <X className="block h-6 w-6" aria-hidden="true" />
               ) : (
@@ -75,7 +83,7 @@ const Navbar = () => {
 
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
+        <div className="md:hidden bg-white dark:bg-gray-900">
           <div className="pt-2 pb-3 space-y-1 px-4">
             <Link 
               to="/" 
