@@ -33,6 +33,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import {
+  SidebarProvider,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -172,6 +173,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen w-full flex bg-gray-100 dark:bg-gray-900">
       {/* Sidebar for desktop */}
+      <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon" className="hidden md:block">
         <SidebarHeader>
           <div className="flex items-center gap-2 py-2 px-4">
@@ -226,6 +228,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
         </SidebarFooter>
       </Sidebar>
+      </SidebarProvider>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
