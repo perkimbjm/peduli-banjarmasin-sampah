@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { useEffect, useState } from "react";
@@ -46,17 +45,26 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { Participant as ParticipantType, Schedule } from "@/types/supabase";
+import { Schedule, Participant as BaseParticipant } from "@/types/supabase";
 import { supabase } from "@/integrations/supabase/client";
+
+// Aliases to simplify types and avoid deep instantiations
+type ParticipantStatus = "pending" | "confirmed" | "declined";
+
+type Participant = Omit<BaseParticipant, "user"> & {
+  user?: {
+    full_name: string | null;
+    email: string;
+  } | null;
+};
 
 const ScheduleDetail = () => {
   const { id: scheduleId } = useParams<{ id: string }>();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
-  const [participants, setParticipants] = useState<ParticipantType[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [participantStatus, setParticipantStatus] =
-    useState<ParticipantType["status"]>("pending");
+  const [participantStatus, setParticipantStatus] = useState<ParticipantStatus>("pending");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -70,46 +78,33 @@ const ScheduleDetail = () => {
     const fetchSchedule = async () => {
       setLoading(true);
       try {
-        // Fix: Change "schedules" to "waste_management_schedules"
         const { data: scheduleData, error: scheduleError } = await supabase
           .from("waste_management_schedules")
           .select("*")
           .eq("id", scheduleId)
           .single();
 
-        if (scheduleError) {
-          throw scheduleError;
-        }
-
+        if (scheduleError) throw scheduleError;
         if (!scheduleData) {
           toast("Schedule not found");
           return;
         }
 
-        // Fix: Type assertion to ensure scheduleData matches the Schedule type
-        setSchedule(scheduleData as unknown as Schedule);
+        setSchedule(scheduleData as Schedule);
 
-        // Fix: Change "participants" to "schedule_participants"
-        const { data: participantsData, error: participantsError } =
-          await supabase
-            .from("schedule_participants")
-            .select(
-              `
-              *,
-              user:user_id (
-                full_name,
-                email
-              )
-            `
+        const { data: participantsData, error: participantsError } = await supabase
+          .from("schedule_participants")
+          .select(`
+            *,
+            user:user_id (
+              full_name,
+              email
             )
-            .eq("schedule_id", scheduleId);
+          `)
+          .eq("schedule_id", scheduleId);
 
-        if (participantsError) {
-          throw participantsError;
-        }
-
-        // Fix: Type assertion to ensure participantsData matches the ParticipantType[]
-        setParticipants(participantsData as unknown as ParticipantType[]);
+        if (participantsError) throw participantsError;
+        setParticipants(participantsData as Participant[]);
       } catch (error: any) {
         toast(error.message);
       } finally {
@@ -120,33 +115,22 @@ const ScheduleDetail = () => {
     fetchSchedule();
   }, [scheduleId]);
 
-  const handleStatusChange = (
-    participantId: string,
-    newStatus: ParticipantType["status"]
-  ) => {
-    setParticipants((prevParticipants) =>
-      prevParticipants.map((participant) =>
-        participant.id === participantId
-          ? { ...participant, status: newStatus }
-          : participant
+  const handleStatusChange = (participantId: string, newStatus: ParticipantStatus) => {
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.id === participantId ? { ...p, status: newStatus } : p
       )
     );
   };
 
-  const updateParticipantStatus = async (
-    participantId: string,
-    newStatus: ParticipantType["status"]
-  ) => {
+  const updateParticipantStatus = async (participantId: string, newStatus: ParticipantStatus) => {
     try {
-      // Fix: Change "participants" to "schedule_participants"
       const { error } = await supabase
         .from("schedule_participants")
         .update({ status: newStatus })
         .eq("id", participantId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast("Participant status updated successfully!");
     } catch (error: any) {
@@ -162,7 +146,6 @@ const ScheduleDetail = () => {
 
     setIsSubmitting(true);
     try {
-      // Fix: Change "participants" to "schedule_participants"
       const { data, error } = await supabase
         .from("schedule_participants")
         .insert([
@@ -175,12 +158,8 @@ const ScheduleDetail = () => {
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
-
-      // Fix: Type assertion
-      setParticipants((prevParticipants) => [...prevParticipants, data as unknown as ParticipantType]);
+      if (error) throw error;
+      setParticipants((prev) => [...prev, data as Participant]);
       toast("Successfully joined the schedule!");
     } catch (error: any) {
       toast(error.message);
@@ -192,24 +171,18 @@ const ScheduleDetail = () => {
   const handleAddParticipant = async (email: string) => {
     setIsSubmitting(true);
     try {
-      // Fix: Fetch user from profiles table
       const { data: userData, error: userError } = await supabase
         .from("profiles")
         .select("*")
         .eq("email", email)
         .single();
 
-      if (userError) {
-        throw userError;
-      }
-
+      if (userError) throw userError;
       if (!userData) {
         toast("User with this email not found");
         return;
       }
 
-      // Insert participant
-      // Fix: Change "participants" to "schedule_participants"
       const { data: participantData, error: participantError } = await supabase
         .from("schedule_participants")
         .insert([
@@ -230,15 +203,9 @@ const ScheduleDetail = () => {
         )
         .single();
 
-      if (participantError) {
-        throw participantError;
-      }
+      if (participantError) throw participantError;
 
-      // Fix: Type assertion
-      setParticipants((prevParticipants) => [
-        ...prevParticipants,
-        participantData as unknown as ParticipantType,
-      ]);
+      setParticipants((prev) => [...prev, participantData as Participant]);
       toast("Participant added successfully!");
     } catch (error: any) {
       toast(error.message);
@@ -248,17 +215,10 @@ const ScheduleDetail = () => {
     }
   };
 
-  const isUserJoined = participants.some(
-    (participant) => participant.user_id === user?.id
-  );
+  const isUserJoined = participants.some((p) => p.user_id === user?.id);
 
-  if (loading) {
-    return <div>Loading schedule details...</div>;
-  }
-
-  if (!schedule) {
-    return <div>Schedule not found.</div>;
-  }
+  if (loading) return <div>Loading schedule details...</div>;
+  if (!schedule) return <div>Schedule not found.</div>;
 
   return (
     <DashboardLayout>
@@ -305,9 +265,7 @@ const ScheduleDetail = () => {
                           />
                         ) : (
                           <AvatarFallback>
-                            {participant.user?.email
-                              ?.charAt(0)
-                              .toUpperCase() || "U"}
+                            {participant.user?.email?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         )}
                       </Avatar>
@@ -335,8 +293,9 @@ const ScheduleDetail = () => {
                         <Select
                           value={participant.status}
                           onValueChange={(value) => {
-                            handleStatusChange(participant.id, value as ParticipantType["status"]);
-                            updateParticipantStatus(participant.id, value as ParticipantType["status"]);
+                            const status = value as ParticipantStatus;
+                            handleStatusChange(participant.id, status);
+                            updateParticipantStatus(participant.id, status);
                           }}
                         >
                           <SelectTrigger className="w-[180px]">
@@ -378,8 +337,7 @@ const ScheduleDetail = () => {
             <DialogHeader>
               <DialogTitle>Tambah Peserta</DialogTitle>
               <DialogDescription>
-                Tambahkan peserta ke jadwal ini dengan memasukkan alamat email
-                mereka.
+                Tambahkan peserta ke jadwal ini dengan memasukkan alamat email mereka.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -397,7 +355,7 @@ const ScheduleDetail = () => {
                 <Label htmlFor="status" className="text-right">
                   Status
                 </Label>
-                <Select onValueChange={(value) => setParticipantStatus(value as ParticipantType["status"])}>
+                <Select onValueChange={(value) => setParticipantStatus(value as ParticipantStatus)}>
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Pilih status" />
                   </SelectTrigger>
@@ -415,7 +373,11 @@ const ScheduleDetail = () => {
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" onClick={() => handleAddParticipant("test@gmail.com")} disabled={isSubmitting}>
+              <Button
+                type="submit"
+                onClick={() => handleAddParticipant("test@gmail.com")}
+                disabled={isSubmitting}
+              >
                 Confirm
               </Button>
             </DialogFooter>
