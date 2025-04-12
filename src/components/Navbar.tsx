@@ -1,9 +1,8 @@
-
 // src/components/Navbar.tsx
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Menu, X, LogOut, User, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -14,10 +13,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isLoading, signOut } = useAuth();
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    localStorage.getItem('theme') as 'light' | 'dark' || 
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  );
+
+  // Set theme on mount
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    localStorage.setItem('theme', newTheme);
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -34,6 +52,11 @@ const Navbar = () => {
   // Get user's display information if authenticated
   const userEmail = user?.email || 'admin@example.com';
   const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
+
+  // Function to check if a path is active
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -52,28 +75,67 @@ const Navbar = () => {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link to="/" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
+            <Link 
+              to="/" 
+              className={cn(
+                "px-3 py-2 font-medium rounded-md",
+                isActive('/') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400"
+              )}
+            >
               Beranda
             </Link>
-            <Link to="/webgis" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
+            <Link 
+              to="/webgis" 
+              className={cn(
+                "px-3 py-2 font-medium rounded-md",
+                isActive('/webgis') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400"
+              )}
+            >
               WebGIS
             </Link>
-            <Link to="/dashboard-publik" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
+            <Link 
+              to="/dashboard-publik" 
+              className={cn(
+                "px-3 py-2 font-medium rounded-md",
+                isActive('/dashboard-publik') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400"
+              )}
+            >
               Analitik
             </Link>
-            <Link to="/edukasi" className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400 font-medium">
+            <Link 
+              to="/edukasi" 
+              className={cn(
+                "px-3 py-2 font-medium rounded-md",
+                isActive('/edukasi') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400"
+              )}
+            >
               Edukasi
             </Link>
-            <div className="ml-4 flex items-center">
+            <div className="ml-4 flex items-center space-x-2">
+              <button 
+                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400")}
+                onClick={toggleTheme}
+              >
+                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                <span className="sr-only">Toggle theme</span>
+              </button>
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <button className={cn(buttonVariants({ variant: "ghost" }), "relative h-8 w-8 rounded-full")}>
                       <Avatar className="h-8 w-8">
                         <AvatarImage src="" alt={userEmail} />
                         <AvatarFallback>{userInitials}</AvatarFallback>
                       </Avatar>
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
@@ -101,19 +163,26 @@ const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <>
-                  <Button asChild className="btn-primary mr-2">
-                    <Link to="/login">Login</Link>
-                  </Button>
-                  <Button asChild variant="outline" className="btn-outline">
-                    <Link to="/register">Daftar</Link>
-                  </Button>
+                  <Link to="/login" className={cn(buttonVariants(), "mr-2")}>
+                    Login
+                  </Link>
+                  <Link to="/register" className={cn(buttonVariants({ variant: "outline" }))}>
+                    Daftar
+                  </Link>
                 </>
               )}
             </div>
           </div>
           
           {/* Mobile Navigation Button */}
-          <div className="flex md:hidden">
+          <div className="flex md:hidden items-center space-x-2">
+            <button 
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-gray-700 dark:text-gray-300 hover:text-peduli-600 dark:hover:text-peduli-400")}
+              onClick={toggleTheme}
+            >
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <span className="sr-only">Toggle theme</span>
+            </button>
             <button
               type="button"
               onClick={toggleMenu}
@@ -136,28 +205,48 @@ const Navbar = () => {
           <div className="pt-2 pb-3 space-y-1 px-4">
             <Link 
               to="/" 
-              className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className={cn(
+                "block px-3 py-2 text-base font-medium rounded-md",
+                isActive('/') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
               onClick={() => setIsMenuOpen(false)}
             >
               Beranda
             </Link>
             <Link 
               to="/webgis" 
-              className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className={cn(
+                "block px-3 py-2 text-base font-medium rounded-md",
+                isActive('/webgis') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
               onClick={() => setIsMenuOpen(false)}
             >
               WebGIS
             </Link>
             <Link 
               to="/dashboard-publik" 
-              className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className={cn(
+                "block px-3 py-2 text-base font-medium rounded-md",
+                isActive('/dashboard-publik') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
               onClick={() => setIsMenuOpen(false)}
             >
               Analitik
             </Link>
             <Link 
               to="/edukasi" 
-              className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className={cn(
+                "block px-3 py-2 text-base font-medium rounded-md",
+                isActive('/edukasi') 
+                  ? "bg-peduli-100 dark:bg-peduli-900 text-peduli-600 dark:text-peduli-400" 
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
               onClick={() => setIsMenuOpen(false)}
             >
               Edukasi
@@ -175,30 +264,27 @@ const Navbar = () => {
                       <p className="text-sm font-medium">{userEmail}</p>
                     </div>
                   </div>
-                  <Button asChild className="btn-primary w-full">
-                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                      Dashboard
-                    </Link>
-                  </Button>
-                  <Button variant="outline" className="btn-outline w-full" onClick={() => {
-                    signOut();
-                    setIsMenuOpen(false);
-                  }}>
+                  <Link to="/dashboard" className={cn(buttonVariants(), "w-full")} onClick={() => setIsMenuOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <button 
+                    className={cn(buttonVariants({ variant: "outline" }), "w-full")} 
+                    onClick={() => {
+                      signOut();
+                      setIsMenuOpen(false);
+                    }}
+                  >
                     Keluar
-                  </Button>
+                  </button>
                 </>
               ) : (
                 <>
-                  <Button asChild className="btn-primary w-full">
-                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                      Login
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="btn-outline w-full">
-                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      Daftar
-                    </Link>
-                  </Button>
+                  <Link to="/login" className={cn(buttonVariants(), "w-full")} onClick={() => setIsMenuOpen(false)}>
+                    Login
+                  </Link>
+                  <Link to="/register" className={cn(buttonVariants({ variant: "outline" }), "w-full")} onClick={() => setIsMenuOpen(false)}>
+                    Daftar
+                  </Link>
                 </>
               )}
             </div>

@@ -22,7 +22,7 @@ const Index = () => {
                 <Button asChild variant="outline" size="lg" className="bg-white hover:bg-white/10 border-white hover:text-white text-peduli-600 text-lg px-8 py-6 transition-color">
                   <Link to="/register">Gabung Sekarang</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="border-white hover:text-white hover:bg-white/10 text-lg px-8 py-6 transition-color">
+                <Button asChild variant="outline" size="lg" className="border-white hover:text-white hover:bg-white/10 text-lg px-8 py-6 transition-color dark:bg-gray-200 dark:border-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
                   <Link to="/webgis" className="text-peduli-600">Lihat Peta</Link>
                 </Button>
               </div>
