@@ -149,6 +149,13 @@ export type Database = {
             referencedRelation: "waste_management_schedules"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "schedule_participants_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -296,8 +297,8 @@ const ScheduleDetail = () => {
                     <Card key={p.id} className="mb-2">
                       <CardContent className="p-4 flex justify-between items-center">
                         <div>
-                          <p className="font-medium">{p.user?.full_name || "Unnamed User"}</p>
-                          <p className="text-sm text-muted-foreground">{p.user?.email || "No email available"}</p>
+                          <p className="font-medium">{p.user?.full_name ?? "Unnamed User"}</p>
+                          <p className="text-sm text-muted-foreground">{p.user?.email ?? "No email available"}</p>
                         </div>
                         <Badge variant={p.status === 'confirmed' ? 'default' : p.status === 'pending' ? 'outline' : 'destructive'}>
                           {p.status === 'confirmed' ? 'Confirmed' : p.status === 'pending' ? 'Pending' : 'Declined'}
