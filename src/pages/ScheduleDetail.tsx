@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +29,6 @@ const ScheduleDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userStatus, setUserStatus] = useState<"pending" | "confirmed" | "declined" | null>(null);
 
-  // Format date to human readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("id-ID", {
@@ -47,7 +45,6 @@ const ScheduleDetail = () => {
       try {
         setIsLoading(true);
         
-        // Fetch the schedule
         const { data: scheduleData, error: scheduleError } = await supabase
           .from("waste_management_schedules")
           .select("*")
@@ -59,7 +56,6 @@ const ScheduleDetail = () => {
           setSchedule(scheduleData as Schedule);
         }
         
-        // Fetch participants
         const { data: participantsData, error: participantsError } = await supabase
           .from("schedule_participants")
           .select("*, user:profiles!schedule_participants_user_id_fkey(full_name, email)")
@@ -67,11 +63,17 @@ const ScheduleDetail = () => {
           
         if (participantsError) throw participantsError;
         if (participantsData) {
-          // Using type assertion to resolve the deep type instantiation issue
-          setParticipants(participantsData as Participant[]);
+          const typedParticipants = participantsData.map(p => ({
+            ...p,
+            user: p.user && typeof p.user === 'object' ? {
+              full_name: p.user.full_name || null,
+              email: p.user.email || ''
+            } : null
+          })) as Participant[];
           
-          // Find the current user's participation status
-          const currentUserParticipation = participantsData.find(
+          setParticipants(typedParticipants);
+          
+          const currentUserParticipation = typedParticipants.find(
             (p) => p.user_id === user?.id
           );
           if (currentUserParticipation) {
@@ -99,11 +101,9 @@ const ScheduleDetail = () => {
     try {
       if (!user?.id || !id) return;
 
-      // Check if user is already a participant
       const userParticipation = participants.find((p) => p.user_id === user.id);
       
       if (userParticipation) {
-        // Update existing participation
         const { error } = await supabase
           .from("schedule_participants")
           .update({ status })
@@ -111,7 +111,6 @@ const ScheduleDetail = () => {
           
         if (error) throw error;
       } else {
-        // Create new participation
         const { error } = await supabase
           .from("schedule_participants")
           .insert({
@@ -123,17 +122,14 @@ const ScheduleDetail = () => {
         if (error) throw error;
       }
       
-      // Update local state
       setUserStatus(status);
       
-      // Update participants list
       const updatedParticipants = [...participants];
       const existingIndex = updatedParticipants.findIndex((p) => p.user_id === user.id);
       
       if (existingIndex >= 0) {
         updatedParticipants[existingIndex].status = status;
       } else {
-        // Type assertion to fix the conversion issue
         const newParticipant = {
           id: crypto.randomUUID(),
           schedule_id: id,
@@ -163,8 +159,7 @@ const ScheduleDetail = () => {
       });
     }
   };
-  
-  // Get user's initials for avatar fallback
+
   const getUserInitials = (name: string | undefined) => {
     if (!name) return "U";
     const initials = name.match(/\b\w/g) || [];

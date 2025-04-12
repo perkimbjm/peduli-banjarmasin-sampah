@@ -11,6 +11,10 @@ export type Schedule = {
   created_by: string;
   created_at: string;
   updated_at: string;
+  waste_type?: string;
+  expected_volume?: number;
+  actual_volume?: number;
+  status?: string;
 };
 
 export type Participant = {
@@ -23,5 +27,5 @@ export type Participant = {
   user?: {
     full_name: string | null;
     email: string;
-  };
+  } | null;
 };
