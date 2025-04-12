@@ -81,7 +81,7 @@ const DataTable = ({ selectedType }: DataTableProps) => {
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[600px] caption-bottom text-sm">
+        <table className="w-full min-w-[600px] caption-bottom text-sm my-4 overflow-x-hidden">
           <thead>
             <tr className="border-b">
               <th className="h-12 px-4 text-left align-middle font-medium">Nama</th>
@@ -94,11 +94,11 @@ const DataTable = ({ selectedType }: DataTableProps) => {
           <tbody>
             {sortedData.length > 0 ? (
               sortedData.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/50">
-                  <td className="font-medium">{item.name}</td>
-                  <td>{item.type}</td>
-                  <td>{item.location}</td>
-                  <td>
+                <tr key={item.id} className="hover:bg-muted/50 my-2">
+                  <td className="font-medium px-4 py-2">{item.name}</td>
+                  <td className="px-4 py-2">{item.type}</td>
+                  <td className="px-4 py-2">{item.location}</td>
+                  <td className="px-4 py-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       item.status === 'Aktif' 
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
@@ -107,7 +107,7 @@ const DataTable = ({ selectedType }: DataTableProps) => {
                       {item.status}
                     </span>
                   </td>
-                  <td>{item.lastUpdated}</td>
+                  <td className="px-4 py-2">{item.lastUpdated}</td>
                 </tr>
               ))
             ) : (

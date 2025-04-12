@@ -20,7 +20,8 @@ import {
   UserRound,
   ClipboardList,
   Menu,
-  X
+  X,
+  Flag
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -80,6 +81,7 @@ const ProtectedLayout = () => {
     { name: "Edukasi", href: "/edukasi-admin", icon: BookOpen, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Portal Kolaborasi", href: "/kolaborasi", icon: MessagesSquare, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
     { name: "Bank Sampah", href: "/bank-sampah", icon: Building2, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Pelaporan Masyarakat", href: "/pelaporan", icon: Flag, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
     { name: "Pengaduan", href: "/pengaduan", icon: AlertCircle, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Logistik", href: "/logistik", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Manajemen Petugas", href: "/petugas", icon: UserRound, roles: ['admin', 'leader', 'stakeholder'] },

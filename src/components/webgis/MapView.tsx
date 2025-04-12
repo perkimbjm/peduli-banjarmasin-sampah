@@ -232,7 +232,7 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
 
   return (
     <div className={`relative ${fullscreenMode ? 'h-[calc(100vh-4rem)]' : 'h-[600px]'} ${splitViewEnabled ? 'w-1/2' : 'w-full'}`}>
-      <div ref={mapContainerRef} className="h-full w-full rounded-lg border border-border" />
+      <div ref={mapContainerRef} className="h-full w-full rounded-lg border border-border z-40" />
       
       <div className="absolute bottom-4 right-4 flex gap-2">
         <Button 

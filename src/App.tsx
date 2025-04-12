@@ -1,4 +1,3 @@
-
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,6 +38,8 @@ import Logistik from "@/pages/Logistik";
 import UsersAdmin from "@/pages/UsersAdmin";
 import ManajemenPetugas from "@/pages/ManajemenPetugas";
 import ManajemenTugas from "@/pages/ManajemenTugas";
+import SettingsPage from "@/pages/SettingsPage";
+import PelaporanPage from "@/pages/PelaporanPage";
 
 const queryClient = new QueryClient();
 
@@ -176,6 +177,94 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
                     <ManajemenTugas />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard-admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/edukasi-admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Edukasi />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/kolaborasi"
+                element={
+                  <ProtectedRoute>
+                    <Kolaborasi />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bank-sampah"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <BankSampah />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pelaporan"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <PelaporanPage/>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pengaduan"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Pengaduan />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/logistik"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Logistik />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/petugas"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ManajemenPetugas />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tugas"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <ManajemenTugas />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="users"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <UsersAdmin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <SettingsPage />
                   </ProtectedRoute>
                 }
               />

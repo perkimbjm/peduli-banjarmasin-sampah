@@ -17,7 +17,7 @@ const Index = () => {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-relaxed">
                 Aksi Tanggap Darurat Sampah, <br />Kota Banjarmasin
               </h1>
-              <p className="text-lg md:text-xl mb-8 text-white/90 max-w-lg">Banjarmasin Memerlukan Kamu. Yuk Gerak Bareng,  Jadi Bagian dari Solusi Cerdas Kelola Sampah dan Buktiin Aksi Nyata Peduli Lingkungan dari Langkah-Langkah Kecil.</p>
+              <p className="text-lg md:text-xl mb-8 text-white/90 max-w-lg">Banjarmasin Memerlukan Kamu. Yuk Gerak Bareng, Jadi Bagian dari Solusi Cerdas Kelola Sampah dan Buktiin Aksi Nyata Peduli Lingkungan dari Langkah-Langkah Kecil.</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild variant="outline" size="lg" className="bg-white hover:bg-white/10 border-white hover:text-white text-peduli-600 text-lg px-8 py-6 transition-color">
                   <Link to="/register">Gabung Sekarang</Link>
