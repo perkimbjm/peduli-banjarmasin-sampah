@@ -37,6 +37,8 @@ import BankSampah from "@/pages/BankSampah";
 import Pengaduan from "@/pages/Pengaduan";
 import Logistik from "@/pages/Logistik";
 import UsersAdmin from "@/pages/UsersAdmin";
+import ManajemenPetugas from "@/pages/ManajemenPetugas";
+import ManajemenTugas from "@/pages/ManajemenTugas";
 
 const queryClient = new QueryClient();
 
@@ -157,6 +159,23 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <UsersAdmin />
+                  </ProtectedRoute>
+                }
+              />
+              {/* New Management Routes */}
+              <Route
+                path="/petugas"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <ManajemenPetugas />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tugas"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <ManajemenTugas />
                   </ProtectedRoute>
                 }
               />

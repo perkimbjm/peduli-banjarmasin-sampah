@@ -27,7 +27,9 @@ import {
   MessagesSquare,
   Building2,
   AlertCircle,
-  Truck
+  Truck,
+  UserRound,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -75,6 +77,8 @@ const ProtectedLayout = () => {
     { name: "Bank Sampah", href: "/bank-sampah", icon: Building2, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Pengaduan", href: "/pengaduan", icon: AlertCircle, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Logistik", href: "/logistik", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Manajemen Petugas", href: "/petugas", icon: UserRound, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Manajemen Tugas", href: "/tugas", icon: ClipboardList, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Pengguna", href: "/users", icon: Users, roles: ['admin'] },
     { name: "Pengaturan", href: "/settings", icon: Settings, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
   ];

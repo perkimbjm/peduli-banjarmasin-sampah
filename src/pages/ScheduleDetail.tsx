@@ -1,390 +1,339 @@
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { Schedule, Participant as BaseParticipant } from "@/types/supabase";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-
-// Aliases to simplify types and avoid deep instantiations
-type ParticipantStatus = "pending" | "confirmed" | "declined";
-
-type Participant = Omit<BaseParticipant, "user"> & {
-  user?: {
-    full_name: string | null;
-    email: string;
-  } | null;
-};
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Schedule, Participant } from "@/types/supabase";
 
 const ScheduleDetail = () => {
-  const { id: scheduleId } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [participantStatus, setParticipantStatus] = useState<ParticipantStatus>("pending");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [userStatus, setUserStatus] = useState<"pending" | "confirmed" | "declined" | null>(null);
+
+  // Format date to human readable format
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
 
   useEffect(() => {
-    if (!scheduleId) {
-      toast("Schedule ID not found");
-      return;
-    }
-
-    const fetchSchedule = async () => {
-      setLoading(true);
+    const fetchScheduleDetails = async () => {
       try {
+        setIsLoading(true);
+        
+        // Fetch the schedule
         const { data: scheduleData, error: scheduleError } = await supabase
           .from("waste_management_schedules")
           .select("*")
-          .eq("id", scheduleId)
+          .eq("id", id)
           .single();
-
+          
         if (scheduleError) throw scheduleError;
-        if (!scheduleData) {
-          toast("Schedule not found");
-          return;
+        if (scheduleData) {
+          setSchedule(scheduleData as Schedule);
         }
-
-        setSchedule(scheduleData as Schedule);
-
+        
+        // Fetch participants
         const { data: participantsData, error: participantsError } = await supabase
           .from("schedule_participants")
-          .select(`
-            *,
-            user:user_id (
-              full_name,
-              email
-            )
-          `)
-          .eq("schedule_id", scheduleId);
-
+          .select("*, user:profiles!schedule_participants_user_id_fkey(full_name, email)")
+          .eq("schedule_id", id);
+          
         if (participantsError) throw participantsError;
-        setParticipants(participantsData as Participant[]);
-      } catch (error: any) {
-        toast(error.message);
+        if (participantsData) {
+          // Using type assertion to resolve the deep type instantiation issue
+          setParticipants(participantsData as Participant[]);
+          
+          // Find the current user's participation status
+          const currentUserParticipation = participantsData.find(
+            (p) => p.user_id === user?.id
+          );
+          if (currentUserParticipation) {
+            setUserStatus(currentUserParticipation.status as "pending" | "confirmed" | "declined");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching details:", error);
+        toast({
+          variant: "destructive",
+          title: "Error fetching schedule details",
+          description: "Could not load schedule information. Please try again."
+        });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchSchedule();
-  }, [scheduleId]);
-
-  const handleStatusChange = (participantId: string, newStatus: ParticipantStatus) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.id === participantId ? { ...p, status: newStatus } : p
-      )
-    );
-  };
-
-  const updateParticipantStatus = async (participantId: string, newStatus: ParticipantStatus) => {
-    try {
-      const { error } = await supabase
-        .from("schedule_participants")
-        .update({ status: newStatus })
-        .eq("id", participantId);
-
-      if (error) throw error;
-
-      toast("Participant status updated successfully!");
-    } catch (error: any) {
-      toast(error.message);
+    if (id) {
+      fetchScheduleDetails();
     }
-  };
+  }, [id, user?.id, toast]);
 
-  const handleJoinSchedule = async () => {
-    if (!scheduleId || !user) {
-      toast("Schedule ID or user not found");
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleParticipation = async (status: "confirmed" | "declined") => {
     try {
-      const { data, error } = await supabase
-        .from("schedule_participants")
-        .insert([
-          {
-            schedule_id: scheduleId,
+      if (!user?.id || !id) return;
+
+      // Check if user is already a participant
+      const userParticipation = participants.find((p) => p.user_id === user.id);
+      
+      if (userParticipation) {
+        // Update existing participation
+        const { error } = await supabase
+          .from("schedule_participants")
+          .update({ status })
+          .eq("id", userParticipation.id);
+          
+        if (error) throw error;
+      } else {
+        // Create new participation
+        const { error } = await supabase
+          .from("schedule_participants")
+          .insert({
+            schedule_id: id,
             user_id: user.id,
-            status: "pending",
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      setParticipants((prev) => [...prev, data as Participant]);
-      toast("Successfully joined the schedule!");
-    } catch (error: any) {
-      toast(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAddParticipant = async (email: string) => {
-    setIsSubmitting(true);
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("email", email)
-        .single();
-
-      if (userError) throw userError;
-      if (!userData) {
-        toast("User with this email not found");
-        return;
+            status
+          });
+          
+        if (error) throw error;
       }
-
-      const { data: participantData, error: participantError } = await supabase
-        .from("schedule_participants")
-        .insert([
-          {
-            schedule_id: scheduleId,
-            user_id: userData.id,
-            status: participantStatus,
-          },
-        ])
-        .select(
-          `
-          *,
-          user:user_id (
-            full_name,
-            email
-          )
-        `
-        )
-        .single();
-
-      if (participantError) throw participantError;
-
-      setParticipants((prev) => [...prev, participantData as Participant]);
-      toast("Participant added successfully!");
-    } catch (error: any) {
-      toast(error.message);
-    } finally {
-      setIsSubmitting(false);
-      setOpen(false);
+      
+      // Update local state
+      setUserStatus(status);
+      
+      // Update participants list
+      const updatedParticipants = [...participants];
+      const existingIndex = updatedParticipants.findIndex((p) => p.user_id === user.id);
+      
+      if (existingIndex >= 0) {
+        updatedParticipants[existingIndex].status = status;
+      } else {
+        // Type assertion to fix the conversion issue
+        const newParticipant = {
+          id: crypto.randomUUID(),
+          schedule_id: id,
+          user_id: user.id,
+          status,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as Participant;
+        
+        updatedParticipants.push(newParticipant);
+      }
+      
+      setParticipants(updatedParticipants);
+      
+      toast({
+        title: status === "confirmed" ? "Berhasil bergabung!" : "Anda menolak jadwal ini",
+        description: status === "confirmed" 
+          ? "Anda berhasil bergabung dengan jadwal ini." 
+          : "Anda menolak untuk bergabung dengan jadwal ini."
+      });
+    } catch (error) {
+      console.error("Error updating participation:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not update your participation status. Please try again."
+      });
     }
   };
+  
+  // Get user's initials for avatar fallback
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return "U";
+    const initials = name.match(/\b\w/g) || [];
+    return ((initials.shift() || "") + (initials.pop() || "")).toUpperCase();
+  };
 
-  const isUserJoined = participants.some((p) => p.user_id === user?.id);
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-peduli-600"></div>
+      </div>
+    );
+  }
 
-  if (loading) return <div>Loading schedule details...</div>;
-  if (!schedule) return <div>Schedule not found.</div>;
+  if (!schedule) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+          </Button>
+        </div>
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold mb-2">Jadwal tidak ditemukan</h2>
+          <p className="text-gray-500">
+            Jadwal yang anda cari tidak ditemukan atau telah dihapus.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>{schedule.title}</CardTitle>
-            <CardDescription>{schedule.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Lokasi</Label>
-                <p className="text-sm font-medium">{schedule.location}</p>
-              </div>
-              <div>
-                <Label>Tanggal Mulai</Label>
-                <p className="text-sm font-medium">
-                  {format(new Date(schedule.start_date), "PPPP", { locale: id })}
-                </p>
-              </div>
-              <div>
-                <Label>Tanggal Selesai</Label>
-                <p className="text-sm font-medium">
-                  {format(new Date(schedule.end_date), "PPPP", { locale: id })}
-                </p>
-              </div>
-            </div>
-            <Separator />
-            <div>
-              <Label>Peserta</Label>
-              <ul className="mt-2">
-                {participants.map((participant) => (
-                  <li
-                    key={participant.id}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        {participant.user?.full_name ? (
-                          <AvatarImage
-                            src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${participant.user.full_name}`}
-                            alt={participant.user.full_name}
-                          />
-                        ) : (
-                          <AvatarFallback>
-                            {participant.user?.email?.charAt(0).toUpperCase() || "U"}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-semibold">
-                          {participant.user?.full_name || "Unknown User"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {participant.user?.email || "No Email"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          participant.status === "pending" && "bg-yellow-500",
-                          participant.status === "confirmed" && "bg-green-500",
-                          participant.status === "declined" && "bg-red-500"
-                        )}
-                      >
-                        {participant.status}
-                      </Badge>
-                      {user?.id === schedule.created_by && (
-                        <Select
-                          value={participant.status}
-                          onValueChange={(value) => {
-                            const status = value as ParticipantStatus;
-                            handleStatusChange(participant.id, status);
-                            updateParticipantStatus(participant.id, status);
-                          }}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder={participant.status} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="declined">Declined</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="ghost" onClick={() => navigate("/jadwal")}>
-              Kembali
-            </Button>
-            {!isUserJoined ? (
-              <Button onClick={handleJoinSchedule} disabled={isSubmitting}>
-                Ikuti Jadwal
-              </Button>
-            ) : (
-              <Button variant="secondary" disabled>
-                Sudah Bergabung
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">Tambah Peserta</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Tambah Peserta</DialogTitle>
-              <DialogDescription>
-                Tambahkan peserta ke jadwal ini dengan memasukkan alamat email mereka.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  placeholder="example@gmail.com"
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select onValueChange={(value) => setParticipantStatus(value as ParticipantStatus)}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="declined">Declined</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button
-                type="submit"
-                onClick={() => handleAddParticipant("test@gmail.com")}
-                disabled={isSubmitting}
-              >
-                Confirm
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <Button variant="ghost" onClick={() => navigate(-1)}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+        </Button>
       </div>
-    </DashboardLayout>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-2xl font-bold">{schedule.title}</CardTitle>
+                </div>
+                <Badge 
+                  className="bg-peduli-600 hover:bg-peduli-700"
+                >
+                  Jadwal Pengelolaan
+                </Badge>
+              </div>
+              <div className="flex items-center text-muted-foreground mt-2">
+                <Clock className="mr-2 h-4 w-4" />
+                <div>
+                  <span className="font-semibold">Waktu: </span>
+                  {formatDate(schedule.start_date)} - {formatDate(schedule.end_date)}
+                </div>
+              </div>
+              <div className="flex items-center text-muted-foreground mt-1">
+                <MapPin className="mr-2 h-4 w-4" />
+                <div>
+                  <span className="font-semibold">Lokasi: </span>
+                  {schedule.location}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <h3 className="font-semibold mb-2">Deskripsi</h3>
+              <p className="text-muted-foreground whitespace-pre-line">
+                {schedule.description || "Tidak ada deskripsi tersedia."}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <div className="flex gap-2 justify-end w-full">
+                {userStatus === null && (
+                  <>
+                    <Button variant="outline" onClick={() => handleParticipation("declined")}>
+                      <XCircle className="mr-2 h-4 w-4" /> Tolak
+                    </Button>
+                    <Button onClick={() => handleParticipation("confirmed")}>
+                      <CheckCircle className="mr-2 h-4 w-4" /> Gabung
+                    </Button>
+                  </>
+                )}
+                {userStatus === "pending" && (
+                  <>
+                    <Button variant="outline" onClick={() => handleParticipation("declined")}>
+                      <XCircle className="mr-2 h-4 w-4" /> Tolak
+                    </Button>
+                    <Button onClick={() => handleParticipation("confirmed")}>
+                      <CheckCircle className="mr-2 h-4 w-4" /> Konfirmasi
+                    </Button>
+                  </>
+                )}
+                {userStatus === "confirmed" && (
+                  <Button variant="outline" onClick={() => handleParticipation("declined")}>
+                    <XCircle className="mr-2 h-4 w-4" /> Batalkan Partisipasi
+                  </Button>
+                )}
+                {userStatus === "declined" && (
+                  <Button onClick={() => handleParticipation("confirmed")}>
+                    <CheckCircle className="mr-2 h-4 w-4" /> Gabung
+                  </Button>
+                )}
+              </div>
+            </CardFooter>
+          </Card>
+        </div>
+        
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" /> Peserta
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {participants.length > 0 ? (
+                  participants.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="flex items-center justify-between border-b pb-2 last:border-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{getUserInitials(participant.user?.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium leading-none">
+                            {participant.user?.full_name || "Pengguna"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {participant.user?.email || ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        className={
+                          participant.status === "confirmed"
+                            ? "bg-green-500 hover:bg-green-600"
+                            : participant.status === "declined"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-yellow-500 hover:bg-yellow-600"
+                        }
+                      >
+                        {participant.status === "confirmed"
+                          ? "Bergabung"
+                          : participant.status === "declined"
+                          ? "Menolak"
+                          : "Menunggu"}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <User className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                    <p>Belum ada peserta</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 };
 
