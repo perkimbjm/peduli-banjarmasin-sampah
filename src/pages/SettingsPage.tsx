@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const profileFormSchema = z.object({
   nama: z.string().min(2, "Nama minimal 2 karakter"),
@@ -47,13 +48,61 @@ const SettingsPage = () => {
     push: true,
     sms: false,
   });
+  const [userData, setUserData] = useState<{
+    full_name: string | null;
+    email: string | null;
+    phone_number: string | null;
+    avatar_url: string | null;
+  }>({
+    full_name: "",
+    email: "",
+    phone_number: "",
+    avatar_url: "",
+  });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url, phone_number')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error("Error fetching user profile:", error);
+            return;
+          }
+
+          if (data) {
+            setUserData({
+              full_name: data.full_name || "",
+              email: user.email,
+              phone_number: data.phone_number || "",
+              avatar_url: data.avatar_url || "",
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      nama: user?.displayName || "",
-      email: user?.email || "",
-      telepon: user?.phoneNumber || "",
+      nama: userData.full_name || "",
+      email: userData.email || "",
+      telepon: userData.phone_number || "",
+    },
+    values: {
+      nama: userData.full_name || "",
+      email: userData.email || "",
+      telepon: userData.phone_number || "",
     },
   });
 
@@ -68,8 +117,25 @@ const SettingsPage = () => {
 
   const onProfileSubmit = async (values: z.infer<typeof profileFormSchema>) => {
     try {
-      // TODO: Implementasi update profil
-      console.log(values);
+      if (!user?.id) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: values.nama,
+          phone_number: values.telepon,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setUserData(prev => ({
+        ...prev,
+        full_name: values.nama,
+        phone_number: values.telepon,
+      }));
+
+      console.log("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -77,11 +143,24 @@ const SettingsPage = () => {
 
   const onSecuritySubmit = async (values: z.infer<typeof securityFormSchema>) => {
     try {
-      // TODO: Implementasi update password
-      console.log(values);
+      const { error } = await supabase.auth.updateUser({ 
+        password: values.passwordBaru 
+      });
+
+      if (error) throw error;
+      
+      securityForm.reset();
+      
+      console.log("Password updated successfully");
     } catch (error) {
       console.error("Error updating password:", error);
     }
+  };
+
+  const getUserInitials = (name: string | null) => {
+    if (!name) return "U";
+    const initials = name.match(/\b\w/g) || [];
+    return ((initials.shift() || "") + (initials.pop() || "")).toUpperCase();
   };
 
   return (
@@ -99,8 +178,8 @@ const SettingsPage = () => {
         <TabsContent value="profil" className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || ""} />
-              <AvatarFallback>{user?.displayName?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarImage src={userData.avatar_url || ""} alt={userData.full_name || ""} />
+              <AvatarFallback>{getUserInitials(userData.full_name)}</AvatarFallback>
             </Avatar>
             <Button variant="outline">Ubah Foto</Button>
           </div>
@@ -128,7 +207,7 @@ const SettingsPage = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Masukkan email Anda" {...field} />
+                      <Input placeholder="Masukkan email Anda" {...field} readOnly />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -294,4 +373,4 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage; 
+export default SettingsPage;
