@@ -282,40 +282,18 @@ const ScheduleDetail = () => {
             <CardContent>
               <div className="space-y-4">
                 {participants.length > 0 ? (
-                  participants.map((participant) => (
-                    <div
-                      key={participant.id}
-                      className="flex items-center justify-between border-b pb-2 last:border-0"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{getUserInitials(participant.user?.full_name)}</AvatarFallback>
-                        </Avatar>
+                  participants.map((p) => (
+                    <Card key={p.id} className="mb-2">
+                      <CardContent className="p-4 flex justify-between items-center">
                         <div>
-                          <p className="text-sm font-medium leading-none">
-                            {participant.user?.full_name || "Pengguna"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {participant.user?.email || ""}
-                          </p>
+                          <p className="font-medium">{p.user?.full_name || "Unnamed User"}</p>
+                          <p className="text-sm text-muted-foreground">{p.user?.email || "No email available"}</p>
                         </div>
-                      </div>
-                      <Badge
-                        className={
-                          participant.status === "confirmed"
-                            ? "bg-green-500 hover:bg-green-600"
-                            : participant.status === "declined"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-yellow-500 hover:bg-yellow-600"
-                        }
-                      >
-                        {participant.status === "confirmed"
-                          ? "Bergabung"
-                          : participant.status === "declined"
-                          ? "Menolak"
-                          : "Menunggu"}
-                      </Badge>
-                    </div>
+                        <Badge variant={p.status === 'confirmed' ? 'default' : p.status === 'pending' ? 'outline' : 'destructive'}>
+                          {p.status === 'confirmed' ? 'Confirmed' : p.status === 'pending' ? 'Pending' : 'Declined'}
+                        </Badge>
+                      </CardContent>
+                    </Card>
                   ))
                 ) : (
                   <div className="text-center py-4 text-muted-foreground">

@@ -36,3 +36,6 @@ export interface TaskAssignment {
   assigned_at: string;
   staff?: Staff;
 }
+
+// Import Staff from staff.ts to avoid circular references
+import { Staff } from './staff';

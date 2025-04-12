@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +28,7 @@ const mockTasks: Task[] = [
     end_date: "2025-04-10T14:00:00Z",
     priority: "high",
     progress: 60,
+    created_by: "user-1",
     created_at: "2025-04-08T10:00:00Z",
     updated_at: "2025-04-10T09:30:00Z"
   },
@@ -44,6 +44,7 @@ const mockTasks: Task[] = [
     end_date: "2025-04-11T16:00:00Z",
     priority: "medium",
     progress: 0,
+    created_by: "user-1",
     created_at: "2025-04-08T11:00:00Z",
     updated_at: "2025-04-08T11:00:00Z"
   },
@@ -59,6 +60,7 @@ const mockTasks: Task[] = [
     end_date: "2025-04-05T15:00:00Z",
     priority: "low",
     progress: 100,
+    created_by: "user-2",
     created_at: "2025-04-03T14:00:00Z",
     updated_at: "2025-04-06T08:00:00Z"
   },
@@ -74,6 +76,7 @@ const mockTasks: Task[] = [
     end_date: "2025-04-10T12:00:00Z",
     priority: "high",
     progress: 75,
+    created_by: "user-1",
     created_at: "2025-04-09T16:00:00Z",
     updated_at: "2025-04-10T08:30:00Z"
   },
@@ -89,6 +92,7 @@ const mockTasks: Task[] = [
     end_date: "2025-04-16T16:00:00Z",
     priority: "medium",
     progress: 0,
+    created_by: "user-2",
     created_at: "2025-04-08T13:00:00Z",
     updated_at: "2025-04-08T13:00:00Z"
   }
@@ -227,6 +231,7 @@ const ManajemenTugas = () => {
       end_date: newTask.end_date || now,
       priority: newTask.priority as 'low' | 'medium' | 'high' || "medium",
       progress: newTask.progress || 0,
+      created_by: "current-user",
       created_at: now,
       updated_at: now
     };
@@ -623,7 +628,6 @@ const ManajemenTugas = () => {
             </Card>
           </TabsContent>
 
-          {/* Other tabs with similar structure */}
           <TabsContent value="planned" className="mt-4">
             <Card>
               <CardContent className="p-0">
