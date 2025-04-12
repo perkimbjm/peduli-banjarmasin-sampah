@@ -70,8 +70,9 @@ const ScheduleDetail = () => {
     const fetchSchedule = async () => {
       setLoading(true);
       try {
+        // Fix: Change "schedules" to "waste_management_schedules"
         const { data: scheduleData, error: scheduleError } = await supabase
-          .from("schedules")
+          .from("waste_management_schedules")
           .select("*")
           .eq("id", scheduleId)
           .single();
@@ -85,11 +86,13 @@ const ScheduleDetail = () => {
           return;
         }
 
-        setSchedule(scheduleData);
+        // Fix: Type assertion to ensure scheduleData matches the Schedule type
+        setSchedule(scheduleData as unknown as Schedule);
 
+        // Fix: Change "participants" to "schedule_participants"
         const { data: participantsData, error: participantsError } =
           await supabase
-            .from("participants")
+            .from("schedule_participants")
             .select(
               `
               *,
@@ -105,7 +108,8 @@ const ScheduleDetail = () => {
           throw participantsError;
         }
 
-        setParticipants(participantsData as ParticipantType[]);
+        // Fix: Type assertion to ensure participantsData matches the ParticipantType[]
+        setParticipants(participantsData as unknown as ParticipantType[]);
       } catch (error: any) {
         toast(error.message);
       } finally {
@@ -134,8 +138,9 @@ const ScheduleDetail = () => {
     newStatus: ParticipantType["status"]
   ) => {
     try {
+      // Fix: Change "participants" to "schedule_participants"
       const { error } = await supabase
-        .from("participants")
+        .from("schedule_participants")
         .update({ status: newStatus })
         .eq("id", participantId);
 
@@ -157,8 +162,9 @@ const ScheduleDetail = () => {
 
     setIsSubmitting(true);
     try {
+      // Fix: Change "participants" to "schedule_participants"
       const { data, error } = await supabase
-        .from("participants")
+        .from("schedule_participants")
         .insert([
           {
             schedule_id: scheduleId,
@@ -173,7 +179,8 @@ const ScheduleDetail = () => {
         throw error;
       }
 
-      setParticipants((prevParticipants) => [...prevParticipants, data]);
+      // Fix: Type assertion
+      setParticipants((prevParticipants) => [...prevParticipants, data as unknown as ParticipantType]);
       toast("Successfully joined the schedule!");
     } catch (error: any) {
       toast(error.message);
@@ -185,9 +192,9 @@ const ScheduleDetail = () => {
   const handleAddParticipant = async (email: string) => {
     setIsSubmitting(true);
     try {
-      // Fetch user by email
+      // Fix: Fetch user from profiles table
       const { data: userData, error: userError } = await supabase
-        .from("users")
+        .from("profiles")
         .select("*")
         .eq("email", email)
         .single();
@@ -202,8 +209,9 @@ const ScheduleDetail = () => {
       }
 
       // Insert participant
+      // Fix: Change "participants" to "schedule_participants"
       const { data: participantData, error: participantError } = await supabase
-        .from("participants")
+        .from("schedule_participants")
         .insert([
           {
             schedule_id: scheduleId,
@@ -226,9 +234,10 @@ const ScheduleDetail = () => {
         throw participantError;
       }
 
+      // Fix: Type assertion
       setParticipants((prevParticipants) => [
         ...prevParticipants,
-        participantData as ParticipantType,
+        participantData as unknown as ParticipantType,
       ]);
       toast("Participant added successfully!");
     } catch (error: any) {

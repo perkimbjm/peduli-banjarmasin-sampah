@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -528,7 +527,7 @@ const Logistik = () => {
                               <div className="flex-1 bg-muted rounded-full h-2">
                                 <div 
                                   className="h-2 rounded-full bg-peduli-600" 
-                                  style={{ width: `${Math.round(route.completedStops / parseInt(route.stops) * 100)}%` }}
+                                  style={{ width: `${Math.round(route.completedStops / parseInt(route.stops.toString()) * 100)}%` }}
                                 />
                               </div>
                               <span className="text-xs whitespace-nowrap">
