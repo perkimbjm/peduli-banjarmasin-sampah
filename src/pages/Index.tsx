@@ -1,4 +1,5 @@
-import { ArrowRight, BarChart3, Globe, User } from "lucide-react";
+import { ArrowRight, BarChart3, Globe, User,  AlertTriangle, Trash2, ShieldAlert,
+  Truck,  Wind,  Biohazard,} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -13,8 +14,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="flex flex-col justify-center animate-fade-in">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Banjarmasin Bisa Lebih Bersih, <br />Mulai Dari Kamu
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-relaxed">
+                Aksi Tanggap Darurat Sampah, <br />Kota Banjarmasin
               </h1>
               <p className="text-lg md:text-xl mb-8 text-white/90 max-w-lg">Banjarmasin Memerlukan Kamu. Yuk Gerak Bareng,  Jadi Bagian dari Solusi Cerdas Kelola Sampah dan Buktiin Aksi Nyata Peduli Lingkungan dari Langkah-Langkah Kecil.</p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -29,12 +30,94 @@ const Index = () => {
             <div className="flex justify-center items-center">
               <div className="relative w-full max-w-md">
                 <div className="aspect-square rounded-full bg-white/10 absolute inset-0 blur-3xl"></div>
-                <img src="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80" alt="Manajemen sampah" className="w-full h-auto object-cover rounded-lg shadow-xl relative z-10" />
+                <img src="/hero.png" alt="Manajemen sampah" className="w-full h-auto object-cover rounded-lg shadow-xl relative z-10" />
               </div>
             </div>
           </div>
         </div>
       </section>
+
+            {/* New Section: TPA Basirih Closure Information */}
+            <section className="py-20 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+                    TPA Basirih Ditutup
+                  </h2>
+                  <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    Sampah menumpuk, bau, dan berisiko bagi kesehatan kita! Berikut adalah dampak dari penutupan TPA Basirih sejak 1 Februari 2025.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[
+                    {
+                      icon: <AlertTriangle className="h-8 w-8 text-yellow-500 dark:text-yellow-400 mb-4" />,
+                      title: "Belum Beroperasi Normal",
+                      desc: "TPA Basirih belum beroperasi secara normal, menyebabkan penumpukan sampah.",
+                      bg: "bg-red-50 dark:bg-red-900/20",
+                    },
+                    {
+                      icon: <Trash2 className="h-8 w-8 text-green-600 dark:text-green-400 mb-4" />,
+                      title: "Timbunan Sampah",
+                      desc: "Timbunan sampah semakin banyak di berbagai titik di kota.",
+                      bg: "bg-yellow-50 dark:bg-yellow-900/20",
+                    },
+                    {
+                      icon: <ShieldAlert className="h-8 w-8 text-gray-600 dark:text-gray-400 mb-4" />,
+                      title: "Kota Tidak Nyaman",
+                      desc: "Pemandangan kota menjadi kotor dan tidak nyaman untuk ditinggali.",
+                      bg: "bg-orange-50 dark:bg-orange-900/20",
+                    },
+                    {
+                      icon: <Truck className="h-8 w-8 text-blue-600 dark:text-blue-400 mb-4" />,
+                      title: "Pengangkutan Terbatas",
+                      desc: "Pengangkutan sampah masih sangat terbatas, memperburuk situasi.",
+                      bg: "bg-blue-50 dark:bg-blue-900/20",
+                    },
+                    {
+                      icon: <Wind className="h-8 w-8 text-red-600 dark:text-red-400 mb-4" />,
+                      title: "Bau Tak Sedap",
+                      desc: "Bau tak sedap menyebar, mengganggu kesehatan masyarakat.",
+                      bg: "bg-green-50 dark:bg-green-900/20",
+                    },
+                    {
+                      icon: <Biohazard className="h-8 w-8 text-rose-600 dark:text-rose-400 mb-4" />,
+                      title: "Risiko Penyakit",
+                      desc: "Risiko penyakit meningkat akibat pencemaran lingkungan yang terjadi.",
+                      bg: "bg-purple-50 dark:bg-purple-900/20",
+                    },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className={`${item.bg} rounded-xl shadow-md p-6 transform transition-transform duration-300 hover:scale-105 hover:shadow-lg group`}
+                    >
+                      <div className="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-white dark:bg-white/10">
+                        {item.icon}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                        {item.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-16 text-center">
+                  <h3 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Saatnya Bersama Jaga Lingkungan!
+                  </h3>
+                  <p className="text-2xl text-gray-600 dark:text-gray-300 max-w-xl mx-auto mb-6">
+                    Penutupan TPA Basirih bukan hanya masalah pemerintah—ini adalah panggilan untuk kita semua. Mari ambil peran aktif dalam memilah sampah, mengurangi limbah, dan menjaga kebersihan kota.
+                  </p>
+                  <Link
+                    to="/edukasi"
+                    className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300"
+                  >
+                    Pelajari Cara Mengelola Sampah
+                  </Link>
+                </div>
+              </div>
+            </section>
       
       {/* Features Section */}
       <section className="py-20 bg-gray-50 dark:bg-gray-900">
@@ -63,6 +146,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
+            
             
             {/* Feature 2 */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
@@ -97,6 +181,8 @@ const Index = () => {
         </div>
       </section>
       
+
+
       {/* Contact Us Section */}
       <section className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
