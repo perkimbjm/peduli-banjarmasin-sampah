@@ -40,6 +40,16 @@ const ScheduleDetail = () => {
     }).format(date);
   };
 
+  const getParticipantList = () => {
+    if (!participants) return [];
+    
+    return participants.map((p) => ({
+      name: p.user?.full_name || "Unknown User",
+      email: p.user?.email || "No email",
+      status: p.status
+    }));
+  };
+
   useEffect(() => {
     const fetchScheduleDetails = async () => {
       try {

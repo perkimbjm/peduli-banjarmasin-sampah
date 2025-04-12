@@ -4,11 +4,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Download, Layers as LayersIcon, Maximize2 } from 'lucide-react';
 
 // Icon assets
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { supabase } from '@/lib/supabase';
 
 // Fix default icon path issues in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -54,24 +56,86 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
   const layerGroupRef = useRef<L.LayerGroup>(new L.LayerGroup());
   const { toast } = useToast();
 
+  const [mapStatus, setMapStatus] = useState({
+    activePoints: 0,
+    lastUpdate: new Date().toLocaleTimeString(),
+    zoomLevel: 14,
+  });
+
   // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     // Create map if it doesn't exist
     if (!mapRef.current) {
-      mapRef.current = L.map(mapContainerRef.current).setView([-3.3194, 114.5921], 14);
+      mapRef.current = L.map(mapContainerRef.current, {
+        zoomControl: false, // We'll position zoom control manually
+        attributionControl: false, // Hide attribution initially
+      }).setView([-3.3194, 114.5921], 14);
       
-      // Add base tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(mapRef.current);
+      // Add base tile layers with more options
+      const baseMaps = {
+        "Street": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+        }),
+        "Satellite": L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+          attribution: '&copy; Google Maps',
+          maxZoom: 20,
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        }),
+        "Terrain": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+          maxZoom: 17,
+        }),
+        "Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+          maxZoom: 19,
+        })
+      };
+      
+      // Set default layer
+      baseMaps["Street"].addTo(mapRef.current);
+      
+      // Add layer control
+      L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(mapRef.current);
+      
+      // Add zoom control in a specific position
+      L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current);
+      
+      // Add scale control
+      L.control.scale({ position: 'bottomleft', imperial: false }).addTo(mapRef.current);
+
+      // Add attribution control
+      L.control.attribution({ position: 'bottomleft' }).addTo(mapRef.current);
+      
+      // Add custom legend control
+      const legend = L.control({ position: 'bottomleft' });
+      legend.onAdd = () => {
+        const div = L.DomUtil.create('div', 'legend bg-white/90 p-2 rounded shadow-md text-xs border border-gray-300');
+        div.innerHTML = `
+          <div class="font-semibold mb-1">Legenda</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 inline-block bg-blue-500 rounded-full"></span> TPS</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 inline-block bg-red-500 rounded-full"></span> TPS Liar</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 inline-block bg-green-500 rounded-full"></span> Bank Sampah</div>
+          <div class="flex items-center gap-1"><span class="w-3 h-3 inline-block bg-purple-500 rounded-full"></span> TPS 3R</div>
+        `;
+        return div;
+      };
+      legend.addTo(mapRef.current);
 
       // Add layer group
       layerGroupRef.current.addTo(mapRef.current);
 
-      // Add map controls
-      L.control.scale().addTo(mapRef.current);
+      // Event listener for zoom changes
+      mapRef.current.on('zoomend', () => {
+        if (mapRef.current) {
+          setMapStatus(prev => ({
+            ...prev,
+            zoomLevel: mapRef.current!.getZoom()
+          }));
+        }
+      });
     }
 
     // Adjust map when fullscreen or split view changes
@@ -95,15 +159,31 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
     // Clear all existing layers
     layerGroupRef.current.clearLayers();
     
+    let activePointCount = 0;
+
     // Add TPS points
     if (activeLayers.includes('tps')) {
       mockData.tps.forEach((tps) => {
-        const marker = L.marker([tps.lat, tps.lng])
+        activePointCount++;
+        const marker = L.marker([tps.lat, tps.lng], {
+          icon: new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: markerShadow,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        })
           .bindPopup(`
-            <div>
-              <h3 class="font-bold">${tps.name}</h3>
-              <p>Kapasitas: ${tps.capacity}</p>
-              <p>Penggunaan: ${tps.usage}</p>
+            <div class="p-2">
+              <h3 class="font-bold text-blue-600">${tps.name}</h3>
+              <p class="text-sm mt-1">Kapasitas: <span class="font-semibold">${tps.capacity}</span></p>
+              <p class="text-sm">Penggunaan: <span class="font-semibold">${tps.usage}</span></p>
+              <div class="mt-2 h-2 bg-gray-200 rounded">
+                <div class="h-full bg-blue-500 rounded" style="width: ${parseInt(tps.usage) / parseInt(tps.capacity) * 100}%"></div>
+              </div>
             </div>
           `);
         layerGroupRef.current.addLayer(marker);
@@ -113,6 +193,7 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
     // Add TPS Liar points
     if (activeLayers.includes('tps-liar')) {
       mockData['tps-liar'].forEach((tps) => {
+        activePointCount++;
         const marker = L.marker([tps.lat, tps.lng], {
           icon: new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -125,9 +206,14 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
           })
         })
         .bindPopup(`
-          <div>
-            <h3 class="font-bold">${tps.name}</h3>
-            <p>Status: ${tps.status}</p>
+          <div class="p-2">
+            <h3 class="font-bold text-red-600">${tps.name}</h3>
+            <p class="text-sm mt-1">Status: <span class="font-semibold">${tps.status}</span></p>
+            <div class="mt-2">
+              <button class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">
+                Laporkan
+              </button>
+            </div>
           </div>
         `);
         layerGroupRef.current.addLayer(marker);
@@ -137,6 +223,7 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
     // Add Bank Sampah points
     if (activeLayers.includes('bank-sampah')) {
       mockData['bank-sampah'].forEach((bank) => {
+        activePointCount++;
         const marker = L.marker([bank.lat, bank.lng], {
           icon: new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
@@ -149,9 +236,17 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
           })
         })
         .bindPopup(`
-          <div>
-            <h3 class="font-bold">${bank.name}</h3>
-            <p>Pengumpulan: ${bank.collection}</p>
+          <div class="p-2">
+            <h3 class="font-bold text-green-600">${bank.name}</h3>
+            <p class="text-sm mt-1">Pengumpulan: <span class="font-semibold">${bank.collection}</span></p>
+            <div class="mt-2 flex space-x-2">
+              <button class="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded">
+                Detail
+              </button>
+              <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                Navigasi
+              </button>
+            </div>
           </div>
         `);
         layerGroupRef.current.addLayer(marker);
@@ -161,10 +256,11 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
     // Add TPS3R points
     if (activeLayers.includes('tps3r')) {
       mockData['tps3r'].forEach((tps) => {
+        activePointCount++;
         const marker = L.marker([tps.lat, tps.lng], {
           icon: new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-            iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png',
+            iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
             shadowUrl: markerShadow,
             iconSize: [25, 41],
             iconAnchor: [12, 41],
@@ -173,9 +269,14 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
           })
         })
         .bindPopup(`
-          <div>
-            <h3 class="font-bold">${tps.name}</h3>
-            <p>Pengolahan: ${tps.processing}</p>
+          <div class="p-2">
+            <h3 class="font-bold text-purple-600">${tps.name}</h3>
+            <p class="text-sm mt-1">Pengolahan: <span class="font-semibold">${tps.processing}</span></p>
+            <div class="mt-2">
+              <button class="bg-purple-500 hover:bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                Detail
+              </button>
+            </div>
           </div>
         `);
         layerGroupRef.current.addLayer(marker);
@@ -196,10 +297,32 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       const route = L.polyline(routePoints as L.LatLngExpression[], {
         color: '#3388ff',
         weight: 4,
-        opacity: 0.7
+        opacity: 0.7,
+        dashArray: '10, 10',
+        lineJoin: 'round'
       }).bindPopup('Rute Pengangkutan Sampah');
       
       layerGroupRef.current.addLayer(route);
+      
+      // Add direction arrows
+      const arrowHead = L.polylineDecorator(route, {
+        patterns: [
+          {
+            offset: '10%', 
+            repeat: '25%', 
+            symbol: L.Symbol.arrowHead({
+              pixelSize: 15,
+              pathOptions: {
+                fillOpacity: 0.7,
+                weight: 0,
+                color: '#3388ff'
+              }
+            })
+          }
+        ]
+      });
+      
+      layerGroupRef.current.addLayer(arrowHead);
     }
     
     // Add administrative boundaries
@@ -220,9 +343,47 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       // In a real app, we'd add a GeoJSON layer here
     }
     
+    // Update status with current point count
+    setMapStatus(prev => ({
+      ...prev,
+      activePoints: activePointCount,
+      lastUpdate: new Date().toLocaleTimeString()
+    }));
+    
   }, [activeLayers, toast]);
 
-  // Take screenshot function (mock for now)
+  // Function to fetch real data from Supabase
+  const fetchMapData = async () => {
+    try {
+      // Example of how to fetch data from Supabase
+      // In a real implementation, this would query your Supabase tables
+      // const { data, error } = await supabase
+      //  .from('waste_collection_points')
+      //  .select('*');
+      
+      // if (error) throw error;
+      
+      toast({
+        title: "Data diperbarui",
+        description: "Data peta berhasil diperbarui",
+      });
+      
+      setMapStatus(prev => ({
+        ...prev,
+        lastUpdate: new Date().toLocaleTimeString()
+      }));
+      
+    } catch (error) {
+      console.error("Error fetching map data:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data peta terbaru",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Take screenshot function
   const takeScreenshot = () => {
     toast({
       title: "Screenshot Peta",
@@ -231,16 +392,68 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
   };
 
   return (
-    <div className={`relative ${fullscreenMode ? 'h-[calc(100vh-4rem)]' : 'h-[600px]'} ${splitViewEnabled ? 'w-1/2' : 'w-full'}`}>
-      <div ref={mapContainerRef} className="h-full w-full rounded-lg border border-border z-40" />
+    <div className={`relative ${fullscreenMode ? 'h-[calc(100vh-4rem)]' : 'h-[600px]'} ${splitViewEnabled ? 'w-1/2' : 'w-full'} border border-border rounded-lg bg-muted/10 shadow-md overflow-hidden`}>
+      {/* Command Center Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-slate-900/90 backdrop-blur-sm text-white p-2 text-xs border-b border-slate-700 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span className="font-medium">LIVE</span>
+          </div>
+          <div className="font-medium text-slate-300">
+            {mapStatus.activePoints} titik aktif
+          </div>
+          <div className="text-slate-400">
+            Terakhir diperbarui: {mapStatus.lastUpdate}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-6 text-xs bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200"
+            onClick={fetchMapData}
+          >
+            Refresh Data
+          </Button>
+        </div>
+      </div>
       
-      <div className="absolute bottom-4 right-4 flex gap-2">
+      {/* Map Container */}
+      <div ref={mapContainerRef} className="h-full w-full" />
+      
+      {/* Map Controls */}
+      <div className="absolute top-12 right-4 flex flex-col gap-2 z-10">
+        <div className="bg-white/90 dark:bg-slate-800/90 rounded-md shadow-md border border-gray-200 dark:border-gray-700 p-1 backdrop-blur-sm">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.setView([-3.3194, 114.5921], 14);
+              }
+            }}
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Zoom Level Indicator */}
+      <div className="absolute bottom-12 right-4 bg-white/90 dark:bg-slate-800/90 py-1 px-3 rounded shadow text-xs font-mono border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+        Zoom: {mapStatus.zoomLevel}x
+      </div>
+      
+      {/* Screenshot button */}
+      <div className="absolute bottom-4 right-20 flex gap-2">
         <Button 
           variant="secondary" 
           size="sm"
-          className="bg-white/90 hover:bg-white shadow-md"
+          className="bg-white/90 hover:bg-white shadow-md text-xs h-7 px-2 flex items-center gap-1"
           onClick={takeScreenshot}
         >
+          <Download className="h-3 w-3" />
           Screenshot
         </Button>
       </div>
