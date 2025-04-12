@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -532,7 +533,7 @@ const ManajemenTugas = () => {
           </Select>
         </div>
 
-        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab as any}>
+        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setActiveTab(value as TaskStatus | 'all')}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">Semua</TabsTrigger>
             <TabsTrigger value="planned">Direncanakan</TabsTrigger>
@@ -762,3 +763,110 @@ const ManajemenTugas = () => {
                           <TableCell>
                             <div className="flex items-center gap-2 w-full">
                               <Progress value={task.progress} className={`h-2 ${getProgressColor(task.progress)}`} />
+                              <span className="text-xs whitespace-nowrap">{task.progress}%</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex flex-col items-center justify-center">
+                            <ClipboardList className="h-8 w-8 text-muted-foreground mb-2" />
+                            <p>Tidak ada tugas yang sedang dikerjakan.</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="completed" className="mt-4">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Judul</TableHead>
+                      <TableHead className="hidden md:table-cell">Kategori</TableHead>
+                      <TableHead className="hidden md:table-cell">Area</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden md:table-cell">Prioritas</TableHead>
+                      <TableHead>Progres</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTasks.length > 0 ? (
+                      filteredTasks.map((task) => (
+                        <TableRow key={task.id} className="cursor-pointer hover:bg-muted">
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-semibold">{task.title}</div>
+                              <div className="text-xs text-muted-foreground truncate max-w-xs">
+                                {task.description}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" /> 
+                                {formatDate(task.start_date)} - {formatDate(task.end_date)}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge variant="outline" className="whitespace-nowrap">
+                              {getCategoryLabel(task.category)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-muted-foreground" />
+                              {task.area}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <UserRound className="h-3 w-3" /> 
+                              {getAssignedStaff(task.assigned_to)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusBadgeClass(task.status)}>
+                              {getStatusLabel(task.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge className={getPriorityBadgeClass(task.priority)}>
+                              {task.priority === 'high' ? 'Tinggi' : 
+                               task.priority === 'medium' ? 'Sedang' : 'Rendah'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 w-full">
+                              <Progress value={task.progress} className={`h-2 ${getProgressColor(task.progress)}`} />
+                              <span className="text-xs whitespace-nowrap">{task.progress}%</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex flex-col items-center justify-center">
+                            <ClipboardList className="h-8 w-8 text-muted-foreground mb-2" />
+                            <p>Tidak ada tugas yang selesai.</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default ManajemenTugas;
