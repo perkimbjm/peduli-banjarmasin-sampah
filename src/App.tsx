@@ -31,6 +31,13 @@ import ScheduleDetail from "@/pages/ScheduleDetail";
 import WebGisAdmin from "@/pages/WebGisAdmin";
 import EdukasiAdmin from "@/pages/EdukasiAdmin";
 
+// New Pages
+import Kolaborasi from "@/pages/Kolaborasi";
+import BankSampah from "@/pages/BankSampah";
+import Pengaduan from "@/pages/Pengaduan";
+import Logistik from "@/pages/Logistik";
+import UsersAdmin from "@/pages/UsersAdmin";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -112,11 +119,12 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              {/* New Routes */}
               <Route
                 path="/kolaborasi"
                 element={
                   <ProtectedRoute>
-                    <div>Portal Kolaborasi Placeholder</div>
+                    <Kolaborasi />
                   </ProtectedRoute>
                 }
               />
@@ -124,15 +132,7 @@ const App = () => (
                 path="/bank-sampah"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <div>Manajemen Bank Sampah Placeholder</div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/logistik"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <div>Manajemen Logistik Placeholder</div>
+                    <BankSampah />
                   </ProtectedRoute>
                 }
               />
@@ -140,7 +140,15 @@ const App = () => (
                 path="/pengaduan"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <div>Manajemen Pengaduan Placeholder</div>
+                    <Pengaduan />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/logistik"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <Logistik />
                   </ProtectedRoute>
                 }
               />
@@ -148,7 +156,7 @@ const App = () => (
                 path="/users"
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
-                    <div>Manajemen User Placeholder</div>
+                    <UsersAdmin />
                   </ProtectedRoute>
                 }
               />
