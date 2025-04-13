@@ -1,6 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
+import axios from "axios";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +11,6 @@ import { Separator } from "@/components/ui/separator";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { api } from "@/lib/api";
 
 interface Schedule {
   id: string;
@@ -30,16 +31,27 @@ interface Participant {
   status: 'pending' | 'confirmed' | 'declined';
 }
 
+// Create a type for our URL parameters
+interface ScheduleParams {
+  id: string;
+}
+
 const ScheduleDetail = () => {
-  const { id } = useParams<Record<string, string>>();
+  const { id } = useParams<ScheduleParams>();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [participantsList, setParticipantsList] = useState<Participant[]>([]);
-
-
+  
+  // Import the API config
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
-        const response = await api.get(`/schedules/${id}`);
+        const response = await axios.get(`${apiUrl}/schedules/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         setSchedule(response.data);
       } catch (error) {
         console.error("Error fetching schedule:", error);
@@ -48,7 +60,11 @@ const ScheduleDetail = () => {
 
     const fetchParticipants = async () => {
       try {
-        const response = await api.get(`/schedules/${id}/participants`);
+        const response = await axios.get(`${apiUrl}/schedules/${id}/participants`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         setParticipantsList(response.data);
       } catch (error) {
         console.error("Error fetching participants:", error);
@@ -57,7 +73,7 @@ const ScheduleDetail = () => {
 
     fetchSchedule();
     fetchParticipants();
-  }, [id]);
+  }, [id, apiUrl]);
 
   if (!schedule) {
     return <div>Loading schedule...</div>;

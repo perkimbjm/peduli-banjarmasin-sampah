@@ -1,136 +1,256 @@
-
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import {
-  Home,
-  Map,
-  FileBarChart2,
-  BookOpen,
-  Settings,
-  Users,
-  Trash2,
-  LogOut,
-} from "lucide-react";
-import { useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Map,
+  BookOpen,
+  AlignJustify,
+  Users,
+  Settings,
+  Building,
+  ClipboardList,
+  FileBarChart,
+  Truck
+} from "lucide-react";
 
-interface SidebarProps {
-  isCollapsed: boolean;
+interface NavItem {
+  title: string;
+  href: string;
+  icon: any;
+  roles?: string[];
 }
 
-const Sidebar = ({ isCollapsed }: SidebarProps) => {
+const Sidebar = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const [isHovering, setIsHovering] = useState(false);
-  
-  const navigation = [
-    { name: "Beranda", href: "/dashboard", icon: Home },
-    { name: "WebGIS", href: "/webgis-admin", icon: Map },
-    { name: "Analitik", href: "/dashboard-admin", icon: FileBarChart2 },
-    { name: "Edukasi", href: "/edukasi-admin", icon: BookOpen },
-    { name: "Pengguna", href: "/users-admin", icon: Users },
-    { name: "Sampah", href: "/waste-admin", icon: Trash2 },
-    { name: "Pengaturan", href: "/settings", icon: Settings },
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navigationItems: NavItem[] = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Laporan",
+      href: "/laporan",
+      icon: ClipboardList,
+    },
+    {
+      title: "Jadwal",
+      href: "/jadwal",
+      icon: CalendarDays,
+    },
+    {
+      title: "WebGIS",
+      href: "/webgis",
+      icon: Map,
+    },
+    {
+      title: "Edukasi",
+      href: "/edukasi",
+      icon: BookOpen,
+    },
+    // Admin Only
+    {
+      title: "WebGIS Admin",
+      href: "/webgis-admin",
+      icon: Map,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Edukasi Admin",
+      href: "/edukasi-admin",
+      icon: BookOpen,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Kolaborasi",
+      href: "/kolaborasi",
+      icon: AlignJustify,
+    },
+    {
+      title: "Bank Sampah",
+      href: "/bank-sampah",
+      icon: Building,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Pengaduan",
+      href: "/pengaduan",
+      icon: AlignJustify,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Logistik",
+      href: "/logistik",
+      icon: AlignJustify,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Users",
+      href: "/users",
+      icon: Users,
+      roles: ["admin"],
+    },
+    {
+      title: "Petugas",
+      href: "/petugas",
+      icon: Users,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Tugas",
+      href: "/tugas",
+      icon: AlignJustify,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Monitoring Ritase",
+      href: "/monitoring-ritase",
+      icon: Truck,
+      roles: ["admin", "leader", "stakeholder"],
+    },
   ];
 
-  // Get user's display information
-  const userEmail = user?.email || 'admin@example.com';
-  const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const renderNavItems = () => {
+    return navigationItems.map((item, index) => {
+      if (item.roles && !item.roles.includes(user?.role || "")) {
+        return null;
+      }
+
+      return (
+        <Button
+          key={index}
+          variant="ghost"
+          className={cn(
+            "justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50",
+            location.pathname === item.href
+              ? "bg-secondary/50 text-primary"
+              : "text-secondary-foreground"
+          )}
+          onClick={() => {
+            navigate(item.href);
+            setIsMenuOpen(false); // Close the menu after navigation
+          }}
+        >
+          <item.icon className="mr-2 h-4 w-4" />
+          <span>{item.title}</span>
+        </Button>
+      );
+    });
+  };
 
   return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-[80px]" : "w-[280px]"
-      )}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
-      {/* Logo area */}
-      <div
-        className={cn(
-          "flex h-16 items-center border-b px-6",
-          isCollapsed ? "justify-center" : "justify-start"
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-full bg-peduli-600 flex items-center justify-center">
-            <span className="text-white font-bold">PS</span>
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden border-r bg-sidebar-background w-60 flex-col py-3 md:flex">
+        <ScrollArea className="flex-1 space-y-2 px-3">
+          <div className="flex items-center justify-between rounded-md px-2 py-1.5">
+            <span className="font-bold">
+              {user?.full_name}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Akun</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  Profil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  Pengaturan
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>Keluar</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          {!isCollapsed && (
-            <span className="text-xl font-semibold">PeduliSampah</span>
-          )}
-        </div>
-      </div>
+          {renderNavItems()}
+        </ScrollArea>
+      </aside>
 
-      {/* Navigation items */}
-      <nav className="flex-1 overflow-y-auto py-6 px-3">
-        <div className="space-y-1">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive 
-                    ? "bg-peduli-600 text-white" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  isCollapsed && "justify-center"
-                )}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {(!isCollapsed || isHovering) && <span>{item.name}</span>}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* User profile section */}
-      <div
-        className={cn(
-          "border-t p-4",
-          isCollapsed ? "items-center" : "items-start"
-        )}
-      >
-        <div
-          className={cn(
-            "flex items-center gap-3",
-            isCollapsed && "justify-center"
-          )}
-        >
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt={userEmail} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-          
-          {!isCollapsed && (
-            <div className="space-y-1 overflow-hidden">
-              <p className="text-sm font-medium leading-none truncate">{userEmail}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.user_metadata?.role || 'User'}
-              </p>
+      {/* Mobile Bottom Sheet Menu */}
+      <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            className="absolute bottom-4 left-4 rounded-full md:hidden"
+          >
+            <AlignJustify className="h-6 w-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="flex h-screen flex-col">
+          <SheetHeader className="px-5 pt-5 pb-2.5">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="flex-1 space-y-2 px-3">
+            <div className="flex items-center justify-between rounded-md px-2 py-1.5">
+              <span className="font-bold">
+                {user?.full_name}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                      <AvatarFallback>CN</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Akun</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    Profil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    Pengaturan
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>Keluar</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          )}
-
-          {!isCollapsed && (
-            <button 
-              onClick={async () => await signOut()}
-              className="ml-auto text-muted-foreground hover:text-foreground"
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="sr-only">Sign out</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </aside>
+            {renderNavItems()}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 
