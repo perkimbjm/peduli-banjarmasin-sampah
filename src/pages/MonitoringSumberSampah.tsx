@@ -252,7 +252,7 @@ const MonitoringSumberSampah = () => {
                     <SelectValue placeholder="Pilih Kecamatan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kecamatan</SelectItem>
+                    <SelectItem value="semua-kecamatan">Semua Kecamatan</SelectItem>
                     {banjarmasinDistricts.map((district) => (
                       <SelectItem key={district.name} value={district.name}>
                         {district.name}
@@ -273,7 +273,7 @@ const MonitoringSumberSampah = () => {
                     <SelectValue placeholder="Pilih Kelurahan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kelurahan</SelectItem>
+                    <SelectItem value="semua-kelurahan">Semua Kelurahan</SelectItem>
                     {availableSubdistricts.map((subdistrict) => (
                       <SelectItem key={subdistrict} value={subdistrict}>
                         {subdistrict}
