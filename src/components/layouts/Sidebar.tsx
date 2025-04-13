@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +32,9 @@ import {
   ClipboardList,
   FileBarChart,
   Truck,
-  BarChart3
+  BarChart3,
+  MapPin,
+  CircleDollarSign
 } from "lucide-react";
 
 interface NavItem {
@@ -141,10 +142,22 @@ const Sidebar = () => {
       icon: BarChart3,
       roles: ["admin", "leader", "stakeholder"],
     },
+    {
+      title: "Monitoring Sumber Sampah",
+      href: "/monitoring-sumber-sampah",
+      icon: MapPin,
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Monitoring Ekonomi Sirkular",
+      href: "/monitoring-ekonomi-sirkular",
+      icon: CircleDollarSign,
+      roles: ["admin", "leader", "stakeholder"],
+    },
   ];
 
   const handleLogout = () => {
-    signOut(); // Changed from logout to signOut
+    signOut();
     navigate("/login");
   };
 
@@ -166,7 +179,7 @@ const Sidebar = () => {
           )}
           onClick={() => {
             navigate(item.href);
-            setIsMenuOpen(false); // Close the menu after navigation
+            setIsMenuOpen(false);
           }}
         >
           <item.icon className="mr-2 h-4 w-4" />
@@ -178,7 +191,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside className="hidden border-r bg-sidebar-background w-60 flex-col py-3 md:flex">
         <ScrollArea className="flex-1 space-y-2 px-3">
           <div className="flex items-center justify-between rounded-md px-2 py-1.5">
@@ -204,7 +216,7 @@ const Sidebar = () => {
                   Pengaturan
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>Keluar</DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -212,7 +224,6 @@ const Sidebar = () => {
         </ScrollArea>
       </aside>
 
-      {/* Mobile Bottom Sheet Menu */}
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetTrigger asChild>
           <Button
@@ -250,7 +261,7 @@ const Sidebar = () => {
                     Pengaturan
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>Keluar</DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

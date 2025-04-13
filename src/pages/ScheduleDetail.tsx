@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
@@ -21,7 +20,6 @@ interface Schedule {
   description: string;
 }
 
-
 interface Participant {
   id: string;
   user: {
@@ -34,6 +32,7 @@ interface Participant {
 // Create a type for our URL parameters
 interface ScheduleParams {
   id: string;
+  [key: string]: string; // Add index signature to satisfy Record<string, string>
 }
 
 const ScheduleDetail = () => {

@@ -43,7 +43,8 @@ import SettingsPage from "@/pages/SettingsPage";
 import PelaporanPage from "@/pages/PelaporanPage";
 import MonitoringRitase from "@/pages/MonitoringRitase";
 import MonitoringKinerja from "@/pages/MonitoringKinerja";
-import MonitoringSumberSampah from "@/pages/MonitoringSumberSampah"; // Import the new page
+import MonitoringSumberSampah from "@/pages/MonitoringSumberSampah";
+import MonitoringEkonomiSirkular from "@/pages/MonitoringEkonomiSirkular"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -144,12 +145,21 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* New Route for Monitoring Sumber Sampah */}
+              {/* Route for Monitoring Sumber Sampah */}
               <Route
                 path="/monitoring-sumber-sampah"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
                     <MonitoringSumberSampah />
+                  </ProtectedRoute>
+                }
+              />
+              {/* New Route for Monitoring Ekonomi Sirkular */}
+              <Route
+                path="/monitoring-ekonomi-sirkular"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <MonitoringEkonomiSirkular />
                   </ProtectedRoute>
                 }
               />

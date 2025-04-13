@@ -1,250 +1,201 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Truck, Calendar, FileBarChart, RefreshCw } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { useState } from "react";
+import { DateRange } from "react-day-picker";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { DateRangePicker } from "@/components/ritase/DateRangePicker";
-import { RitaseAreaChart } from "@/components/ritase/RitaseAreaChart";
-import { RitaseSummaryCard } from "@/components/ritase/RitaseSummaryCard";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const areas = [
-  {
-    id: 1,
-    name: "Kota Banjarmasin",
-    current: 44,
-    target: 145,
-    percentage: 30.0,
-    data: [
-      { date: "Apr 01", value: 108 },
-      { date: "Apr 02", value: 120 },
-      { date: "Apr 03", value: 130 },
-      { date: "Apr 04", value: 143 },
-      { date: "Apr 05", value: 155 },
-      { date: "Apr 06", value: 120 },
-    ]
-  },
-  {
-    id: 2,
-    name: "Kota Cimahi",
-    current: 17,
-    target: 20,
-    percentage: 85.0,
-    data: [
-      { date: "Apr 01", value: 15 },
-      { date: "Apr 02", value: 19 },
-      { date: "Apr 03", value: 19 },
-      { date: "Apr 04", value: 16 },
-      { date: "Apr 05", value: 17 },
-      { date: "Apr 06", value: 18 },
-    ]
-  },
-  {
-    id: 3,
-    name: "Kabupaten Bandung",
-    current: 35,
-    target: 40,
-    percentage: 86.25,
-    data: [
-      { date: "Apr 01", value: 28 },
-      { date: "Apr 02", value: 36 },
-      { date: "Apr 03", value: 42 },
-      { date: "Apr 04", value: 31 },
-      { date: "Apr 05", value: 45 },
-      { date: "Apr 06", value: 31 },
-      { date: "Apr 07", value: 35 },
-      { date: "Apr 08", value: 54 },
-      { date: "Apr 09", value: 72 },
-      { date: "Apr 10", value: 36 },
-      { date: "Apr 11", value: 34 },
-      { date: "Apr 12", value: 35 },
-      { date: "Apr 13", value: 30 },
-      { date: "Apr 14", value: 33 },
-    ]
-  },
-  {
-    id: 4,
-    name: "Kabupaten Bandung Barat",
-    current: 20,
-    target: 17,
-    percentage: 114.71,
-    data: [
-      { date: "Apr 01", value: 8 },
-      { date: "Apr 02", value: 7 },
-      { date: "Apr 03", value: 11 },
-      { date: "Apr 04", value: 18 },
-      { date: "Apr 05", value: 13 },
-      { date: "Apr 06", value: 18 },
-      { date: "Apr 07", value: 20 },
-      { date: "Apr 08", value: 21 },
-      { date: "Apr 09", value: 25 },
-      { date: "Apr 10", value: 20 },
-      { date: "Apr 11", value: 23 },
-      { date: "Apr 12", value: 20 },
-      { date: "Apr 13", value: 15 },
-      { date: "Apr 14", value: 12 },
-    ]
-  }
+const data = [
+  { name: "Jan", uv: 4000, pv: 2400, amt: 2400 },
+  { name: "Feb", uv: 3000, pv: 1398, amt: 2210 },
+  { name: "Mar", uv: 2000, pv: 9800, amt: 2290 },
+  { name: "Apr", uv: 2780, pv: 3908, amt: 2000 },
+  { name: "May", uv: 1890, pv: 4800, amt: 2181 },
+  { name: "Jun", uv: 2390, pv: 3800, amt: 2500 },
+  { name: "Jul", uv: 3490, pv: 4300, amt: 2100 },
+  { name: "Aug", uv: 4000, pv: 2400, amt: 2400 },
+  { name: "Sep", uv: 3000, pv: 1398, amt: 2210 },
+  { name: "Oct", uv: 2000, pv: 9800, amt: 2290 },
+  { name: "Nov", uv: 2780, pv: 3908, amt: 2000 },
+  { name: "Dec", uv: 1890, pv: 4800, amt: 2181 },
 ];
 
 const MonitoringRitase = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [includeToday, setIncludeToday] = useState(true);
-  const [period, setPeriod] = useState("14days");
-  
-  const today = new Date();
-  const defaultDateFrom = subDays(today, 14);
-  const defaultDateTo = today;
-  
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date(),
+  const [selectedRegion, setSelectedRegion] = useState("Banjarmasin");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(2024, 0, 1),
+    to: new Date(2024, 11, 31),
   });
 
-  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
-    if (range.from) {
-      setDateRange({
-        from: range.from,
-        to: range.to || new Date()
-      });
-    }
+  const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
+    setDateRange(newDateRange);
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (period) params.set("period", period);
-    if (dateRange.from) params.set("from", format(dateRange.from, "yyyy-MM-dd"));
-    if (dateRange.to) params.set("to", format(dateRange.to, "yyyy-MM-dd"));
-    params.set("includeToday", includeToday.toString());
-    setSearchParams(params);
-  }, [period, dateRange, includeToday, setSearchParams]);
-  
+  const RegionSelector = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <div className="grid gap-2">
+      <Label htmlFor="region">Wilayah</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id="region">
+          <SelectValue placeholder="Pilih wilayah" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Banjarmasin">Banjarmasin</SelectItem>
+          <SelectItem value="Banjarbaru">Banjarbaru</SelectItem>
+          <SelectItem value="Martapura">Martapura</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const DateRangePicker = ({ value, onValueChange, className }: { value: DateRange | undefined; onValueChange: (value: DateRange | undefined) => void; className?: string }) => (
+    <div className={className}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={"outline"}
+            className="w-full justify-start text-left font-normal"
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            {value?.from ? (
+              value.to ? (
+                `${value.from?.toLocaleDateString()} - ${value.to?.toLocaleDateString()}`
+              ) : (
+                value.from?.toLocaleDateString()
+              )
+            ) : (
+              <span>Pilih tanggal</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            defaultMonth={value?.from}
+            selected={value}
+            onSelect={onValueChange}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <div className="flex-1 container max-w-7xl mx-auto py-8 px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Monitoring Ritase</h1>
-            <p className="text-muted-foreground">
-              Analisis target dan capaian ritase transportasi sampah
-            </p>
-          </div>
+    <div className="container mx-auto p-6 space-y-8">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold">Monitoring Ritase</h1>
+        <p className="text-muted-foreground">
+          Pantau ritase kendaraan pengangkut sampah di Kota Banjarmasin
+        </p>
+      </header>
+
+      <div className="flex flex-col md:flex-row gap-6 justify-between">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <RegionSelector value={selectedRegion} onChange={setSelectedRegion} />
           
-          <div className="flex items-center space-x-2">
-            <Switch id="include-today" checked={includeToday} onCheckedChange={setIncludeToday} />
-            <Label htmlFor="include-today">Include today</Label>
+          {/* Correct the props for DateRangePicker */}
+          <DateRangePicker 
+            value={dateRange} 
+            onValueChange={handleDateRangeChange}
+            className="w-full sm:w-auto" 
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="grid gap-2">
+            <Label htmlFor="truck-id">ID Kendaraan</Label>
+            <Input id="truck-id" placeholder="Masukkan ID Kendaraan" />
           </div>
-        </div>
-        
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-normal text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <FileBarChart size={18} />
-                    <span>Sumber Data: UPTD PSTR. Last Update: {format(today, "yyyy-MM-dd")}</span>
-                  </div>
-                </CardTitle>
-                <DateRangePicker
-                  dateRange={dateRange} 
-                  onChange={handleDateRangeChange}
-                  className="border p-3 rounded-md"
-                />
-              </div>
-            </CardHeader>
-          </Card>
-          
-          <Tabs defaultValue="chart">
-            <div className="flex justify-between items-center mb-4">
-              <TabsList>
-                <TabsTrigger value="chart">Chart</TabsTrigger>
-                <TabsTrigger value="summary">Summary</TabsTrigger>
-              </TabsList>
-              <Button variant="outline" size="sm" className="gap-1">
-                <RefreshCw size={14} /> Refresh Data
-              </Button>
-            </div>
-            
-            <TabsContent value="chart" className="space-y-6">
-              {areas.map((area) => (
-                <Card key={area.id} className="overflow-hidden">
-                  <CardHeader className="bg-muted/50 pb-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-2 items-center">
-                        <div className="bg-primary p-2 rounded-md">
-                          <Truck className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl">{area.name}</h3>
-                          <p className="text-muted-foreground text-sm">Capaian Ritase vs Target</p>
-                        </div>
-                      </div>
-                      <Badge 
-                        variant={area.percentage >= 100 ? "default" : area.percentage >= 70 ? "secondary" : "destructive"}
-                        className="ml-auto text-lg h-7 px-3"
-                      >
-                        {area.current}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    <div className="p-6 pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className={area.percentage >= 100 ? "text-green-600" : area.percentage >= 70 ? "text-amber-600" : "text-red-600"}>
-                            {area.percentage.toFixed(2)}% dari target ritase
-                          </p>
-                        </div>
-                        <p className="text-muted-foreground text-sm">Target: {area.target}</p>
-                      </div>
-                      
-                      {/* Progress bar */}
-                      <div className="w-full bg-muted h-4 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${area.percentage >= 100 ? "bg-green-500" : area.percentage >= 70 ? "bg-amber-500" : "bg-red-500"}`}
-                          style={{ width: `${Math.min(area.percentage, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    
-                    <div className="h-64">
-                      <RitaseAreaChart data={area.data} target={area.target} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="summary">
-              <div className="grid gap-4 md:grid-cols-2">
-                {areas.map((area) => (
-                  <RitaseSummaryCard key={area.id} area={area} />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="mt-8 p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            Ritase adalah istilah yang digunakan dalam industri logistik dan pengangkutan barang di Indonesia untuk menggambarkan proses penjadwalan dan pengkoordinasian rute transportasi serta pengiriman barang
-          </p>
+          <Button>Cari</Button>
         </div>
       </div>
-      
-      <Footer />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Ritase</CardTitle>
+            <CardDescription>Jumlah total ritase yang tercatat</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">125</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Jarak Tempuh Total</CardTitle>
+            <CardDescription>Total jarak yang ditempuh kendaraan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">3,500 KM</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Waktu Operasional</CardTitle>
+            <CardDescription>Total waktu operasional kendaraan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">240 Jam</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Grafik Ritase Harian</CardTitle>
+          <CardDescription>Visualisasi ritase harian</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart
+              data={data}
+              margin={{
+                top: 10,
+                right: 30,
+                left: 0,
+                bottom: 0,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Area type="monotone" dataKey="pv" stroke="#8884d8" fill="#8884d8" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };

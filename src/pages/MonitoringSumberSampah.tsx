@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,11 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { mapWasteSourcesData } from "@/lib/mock-data";
 import MapView from "@/components/webgis/MapView";
+import { LayerType } from "@/components/webgis/FilterPanel";
 
-// Define waste sources types for filtering
 type WasteSourceType = 'all' | 'sumber-sampah' | 'bank-sampah' | 'tpst' | 'tps-3r' | 'pengolahan-sampah' | 'lainnya';
 
-// Define the structure of our waste source data
 interface WasteSource {
   id: string;
   name: string;
@@ -25,7 +23,6 @@ interface WasteSource {
   coordinates: [number, number]; // [latitude, longitude]
 }
 
-// Mock data for demonstration
 const mockWasteSources: WasteSource[] = [
   { 
     id: "1", 
@@ -74,7 +71,6 @@ const mockWasteSources: WasteSource[] = [
   }
 ];
 
-// Banjarmasin districts and subdistricts data
 const banjarmasinDistricts = [
   { name: "Banjarmasin Barat", subdistricts: ["Pelambuan", "Belitung Selatan", "Belitung Utara", "Teluk Dalam", "Telawang", "Kuin Cerucuk", "Kuin Selatan", "Basirih", "Basirih Selatan"] },
   { name: "Banjarmasin Selatan", subdistricts: ["Kelayan Barat", "Kelayan Dalam", "Kelayan Timur", "Kelayan Tengah", "Kelayan Selatan", "Murung Raya", "Pekauman", "Pemurus Dalam", "Pemurus Baru", "Tanjung Pagar", "Mantuil", "Basirih Selatan"] },
@@ -83,7 +79,6 @@ const banjarmasinDistricts = [
   { name: "Banjarmasin Utara", subdistricts: ["Alalak Utara", "Alalak Tengah", "Alalak Selatan", "Kuin Utara", "Pangeran", "Sungai Miai", "Antasan Kecil Timur", "Sungai Jingah", "Sungai Andai", "Sungai Mufti"] }
 ];
 
-// Waste source types for dropdown
 const wasteSourceTypes = [
   { value: "all", label: "Semua Jenis" },
   { value: "sumber-sampah", label: "Sumber Sampah" },
@@ -106,11 +101,15 @@ const MonitoringSumberSampah = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
   const [availableSubdistricts, setAvailableSubdistricts] = useState<string[]>([]);
-  
+  const [activeLayers, setActiveLayers] = useState<LayerType[]>([
+    LayerType.TPS,
+    LayerType.BankSampah,
+    LayerType.TPS3R
+  ]);
+
   const { toast } = useToast();
   const itemsPerPage = 10;
 
-  // Update available subdistricts when district changes
   useEffect(() => {
     if (selectedDistrict) {
       const district = banjarmasinDistricts.find(d => d.name === selectedDistrict);
@@ -125,7 +124,6 @@ const MonitoringSumberSampah = () => {
     setSelectedSubdistrict("");
   }, [selectedDistrict]);
 
-  // Filter waste sources based on selected filters
   useEffect(() => {
     let filtered = mockWasteSources;
 
@@ -153,13 +151,11 @@ const MonitoringSumberSampah = () => {
     setCurrentPage(1);
   }, [selectedDistrict, selectedSubdistrict, selectedType, selectedGroup, searchInput]);
 
-  // Get current page items
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredSources.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredSources.length / itemsPerPage);
 
-  // Pagination handlers
   const goToNextPage = () => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
@@ -168,11 +164,9 @@ const MonitoringSumberSampah = () => {
     setCurrentPage(prev => Math.max(prev - 1, 1));
   };
 
-  // Refresh data handler
   const handleRefresh = () => {
     setIsRefreshing(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsRefreshing(false);
       toast({
@@ -182,14 +176,12 @@ const MonitoringSumberSampah = () => {
     }, 1000);
   };
 
-  // Export data handler
   const handleExport = () => {
     toast({
       title: "Ekspor Data",
       description: "Mengekspor data ke Excel...",
     });
     
-    // Simulate export process
     setTimeout(() => {
       toast({
         title: "Berhasil",
@@ -198,16 +190,13 @@ const MonitoringSumberSampah = () => {
     }, 1500);
   };
 
-  // Map layers configuration for ActiveLayers prop to be passed to MapView
   const getActiveLayers = () => {
-    // Return all layers by default
-    return ['tps', 'tps-liar', 'bank-sampah', 'tps3r', 'rute', 'kecamatan', 'kelurahan'];
+    return activeLayers;
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Monitoring Sumber Sampah dan Fasilitas</h1>
@@ -236,7 +225,6 @@ const MonitoringSumberSampah = () => {
           </div>
         </div>
 
-        {/* Filters */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium flex items-center">
@@ -246,7 +234,6 @@ const MonitoringSumberSampah = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-              {/* Kota/Kabupaten */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Kota/Kabupaten</label>
                 <Select value={selectedCity} onValueChange={setSelectedCity} disabled>
@@ -259,7 +246,6 @@ const MonitoringSumberSampah = () => {
                 </Select>
               </div>
               
-              {/* Kecamatan */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Kecamatan</label>
                 <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
@@ -277,7 +263,6 @@ const MonitoringSumberSampah = () => {
                 </Select>
               </div>
               
-              {/* Kelurahan */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Kelurahan</label>
                 <Select 
@@ -299,7 +284,6 @@ const MonitoringSumberSampah = () => {
                 </Select>
               </div>
               
-              {/* Jenis */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Jenis</label>
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -316,7 +300,6 @@ const MonitoringSumberSampah = () => {
                 </Select>
               </div>
               
-              {/* Kelompok */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Kelompok</label>
                 <Select value={selectedGroup} onValueChange={setSelectedGroup}>
@@ -333,7 +316,6 @@ const MonitoringSumberSampah = () => {
                 </Select>
               </div>
               
-              {/* Lokasi */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Lokasi</label>
                 <div className="relative">
@@ -351,7 +333,6 @@ const MonitoringSumberSampah = () => {
           </CardContent>
         </Card>
 
-        {/* Toggle View */}
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === 'map' ? "default" : "outline"}
@@ -371,7 +352,6 @@ const MonitoringSumberSampah = () => {
           </Button>
         </div>
 
-        {/* Map View or Table View based on selection */}
         {viewMode === 'map' ? (
           <Card className="border rounded-lg overflow-hidden">
             <CardContent className="p-0">
@@ -416,7 +396,6 @@ const MonitoringSumberSampah = () => {
                     </tbody>
                   </table>
 
-                  {/* Pagination */}
                   {totalPages > 0 ? (
                     <div className="flex items-center justify-between px-4 py-4 border-t">
                       <div className="text-sm text-muted-foreground">
@@ -457,7 +436,6 @@ const MonitoringSumberSampah = () => {
           </Card>
         )}
 
-        {/* Last Updated Info */}
         <div className="text-xs text-muted-foreground flex items-center justify-between border-t pt-2">
           <div>
             Data Last Updated: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
