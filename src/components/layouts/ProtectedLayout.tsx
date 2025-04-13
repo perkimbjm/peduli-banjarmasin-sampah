@@ -1,3 +1,4 @@
+
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -21,7 +22,8 @@ import {
   ClipboardList,
   Menu,
   X,
-  Flag
+  Flag,
+  BarChart2
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -77,6 +79,9 @@ const ProtectedLayout = () => {
   const navigationItems = [
     { name: "Beranda", href: "/dashboard", icon: Home, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
     { name: "WebGIS", href: "/webgis-admin", icon: Map, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Monitoring Sumber", href: "/monitoring-sumber-sampah", icon: Trash2, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Monitoring Ritase", href: "/monitoring-ritase", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
+    { name: "Monitoring Kinerja", href: "/monitoring-kinerja", icon: BarChart2, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Analitik", href: "/dashboard-admin", icon: FileBarChart2, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Edukasi", href: "/edukasi-admin", icon: BookOpen, roles: ['admin', 'leader', 'stakeholder'] },
     { name: "Portal Kolaborasi", href: "/kolaborasi", icon: MessagesSquare, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Truck, Calendar, FileBarChart, RefreshCw } from "lucide-react";
@@ -17,7 +16,6 @@ import { DateRangePicker } from "@/components/ritase/DateRangePicker";
 import { RitaseAreaChart } from "@/components/ritase/RitaseAreaChart";
 import { RitaseSummaryCard } from "@/components/ritase/RitaseSummaryCard";
 
-// Mock data - this would come from an API in a real implementation
 const areas = [
   {
     id: 1,
@@ -106,12 +104,20 @@ const MonitoringRitase = () => {
   const defaultDateFrom = subDays(today, 14);
   const defaultDateTo = today;
   
-  const [dateRange, setDateRange] = useState({
-    from: defaultDateFrom,
-    to: defaultDateTo
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date(),
   });
-  
-  // Update URL when filters change
+
+  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+    if (range.from) {
+      setDateRange({
+        from: range.from,
+        to: range.to || new Date()
+      });
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams();
     if (period) params.set("period", period);
@@ -150,7 +156,11 @@ const MonitoringRitase = () => {
                     <span>Sumber Data: UPTD PSTR. Last Update: {format(today, "yyyy-MM-dd")}</span>
                   </div>
                 </CardTitle>
-                <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                <DateRangePicker
+                  dateRange={dateRange} 
+                  onChange={handleDateRangeChange}
+                  className="border p-3 rounded-md"
+                />
               </div>
             </CardHeader>
           </Card>

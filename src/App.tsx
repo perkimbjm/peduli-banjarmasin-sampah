@@ -42,7 +42,8 @@ import ManajemenTugas from "@/pages/ManajemenTugas";
 import SettingsPage from "@/pages/SettingsPage";
 import PelaporanPage from "@/pages/PelaporanPage";
 import MonitoringRitase from "@/pages/MonitoringRitase";
-import MonitoringKinerja from "@/pages/MonitoringKinerja"; // Import the new page
+import MonitoringKinerja from "@/pages/MonitoringKinerja";
+import MonitoringSumberSampah from "@/pages/MonitoringSumberSampah"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -134,12 +135,21 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* New Route for Monitoring Kinerja */}
+              {/* Route for Monitoring Kinerja */}
               <Route
                 path="/monitoring-kinerja"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
                     <MonitoringKinerja />
+                  </ProtectedRoute>
+                }
+              />
+              {/* New Route for Monitoring Sumber Sampah */}
+              <Route
+                path="/monitoring-sumber-sampah"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <MonitoringSumberSampah />
                   </ProtectedRoute>
                 }
               />
@@ -210,30 +220,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/edukasi-admin"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Edukasi />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/kolaborasi"
-                element={
-                  <ProtectedRoute>
-                    <Kolaborasi />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/bank-sampah"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                    <BankSampah />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/pelaporan"
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
@@ -242,47 +228,7 @@ const App = () => (
                 }
               />
               <Route
-                path="/pengaduan"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Pengaduan />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/logistik"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Logistik />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/petugas"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ManajemenPetugas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/tugas"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <ManajemenTugas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="users"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <UsersAdmin />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="settings"
+                path="/settings"
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <SettingsPage />
