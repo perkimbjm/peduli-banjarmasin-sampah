@@ -11,9 +11,15 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { api } from "@/lib/api";
 
-interface ScheduleDetailParams {
+interface Schedule {
   id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
 }
+
 
 interface Participant {
   id: string;
@@ -25,9 +31,10 @@ interface Participant {
 }
 
 const ScheduleDetail = () => {
-  const { id } = useParams<ScheduleDetailParams>();
-  const [schedule, setSchedule] = useState<any>(null);
+  const { id } = useParams<Record<string, string>>();
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [participantsList, setParticipantsList] = useState<Participant[]>([]);
+
 
   useEffect(() => {
     const fetchSchedule = async () => {

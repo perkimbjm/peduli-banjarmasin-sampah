@@ -105,8 +105,8 @@ const WebGisAdmin = () => {
             <div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-blue-400" />
-                <h1 className="text-2xl font-bold tracking-tight">Command Center</h1>
-                <span className="bg-green-600/20 text-green-500 text-xs px-2 py-0.5 rounded-full font-medium border border-green-500/20">LIVE</span>
+                <h1 className="text-2xl font-bold tracking-tight">Monitoring Dashboard</h1>
+               
               </div>
               <p className="text-slate-400 text-sm mt-1">
                 Sistem Informasi Geografis Pengelolaan Sampah Kota Banjarmasin
@@ -136,9 +136,7 @@ const WebGisAdmin = () => {
           
           {/* Live alerts ticker */}
           <div className="bg-slate-800 border-t border-slate-700 py-1 px-4 flex items-center overflow-hidden">
-            <div className="flex-shrink-0 mr-3 bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs font-semibold">
-              ALERTS
-            </div>
+            
             <div className="overflow-hidden whitespace-nowrap animate-marquee">
               {mockAlerts.map((alert) => (
                 <span key={alert.id} className="mx-4 text-sm">

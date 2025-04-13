@@ -416,10 +416,6 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       {/* Command Center Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-slate-900/90 backdrop-blur-sm text-white p-2 text-xs border-b border-slate-700 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="font-medium">LIVE</span>
-          </div>
           <div className="font-medium text-slate-300">
             {mapStatus.activePoints} titik aktif
           </div>
