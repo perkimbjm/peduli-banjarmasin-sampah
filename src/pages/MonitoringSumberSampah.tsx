@@ -8,8 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { mapWasteSourcesData } from "@/lib/mock-data";
-import MapView from "@/components/webgis/MapView";
-import { LayerType } from "@/components/webgis/FilterPanel";
+import MapView, { LayerType } from "@/components/webgis/MapView";
 
 type WasteSourceType = 'all' | 'sumber-sampah' | 'bank-sampah' | 'tpst' | 'tps-3r' | 'pengolahan-sampah' | 'lainnya';
 
@@ -102,9 +101,9 @@ const MonitoringSumberSampah = () => {
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
   const [availableSubdistricts, setAvailableSubdistricts] = useState<string[]>([]);
   const [activeLayers, setActiveLayers] = useState<LayerType[]>([
-    LayerType.TPS,
-    LayerType.BankSampah,
-    LayerType.TPS3R
+    'tps',
+    'bank-sampah',
+    'tps3r'
   ]);
 
   const { toast } = useToast();
