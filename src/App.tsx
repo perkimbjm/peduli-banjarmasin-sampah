@@ -41,7 +41,8 @@ import ManajemenPetugas from "@/pages/ManajemenPetugas";
 import ManajemenTugas from "@/pages/ManajemenTugas";
 import SettingsPage from "@/pages/SettingsPage";
 import PelaporanPage from "@/pages/PelaporanPage";
-import MonitoringRitase from "@/pages/MonitoringRitase"; // Import the new page
+import MonitoringRitase from "@/pages/MonitoringRitase";
+import MonitoringKinerja from "@/pages/MonitoringKinerja"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -124,12 +125,21 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* New Route for Monitoring Ritase */}
+              {/* Route for Monitoring Ritase */}
               <Route
                 path="/monitoring-ritase"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
                     <MonitoringRitase />
+                  </ProtectedRoute>
+                }
+              />
+              {/* New Route for Monitoring Kinerja */}
+              <Route
+                path="/monitoring-kinerja"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
+                    <MonitoringKinerja />
                   </ProtectedRoute>
                 }
               />

@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/popover";
 
 interface DateRangePickerProps {
-  dateRange: DateRange;
-  setDateRange: (range: DateRange) => void;
+  dateRange: DateRange | undefined;
+  setDateRange: (range: DateRange | undefined) => void; // Changed type signature
   className?: string;
 }
 

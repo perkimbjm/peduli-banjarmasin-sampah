@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,7 +32,8 @@ import {
   Building,
   ClipboardList,
   FileBarChart,
-  Truck
+  Truck,
+  BarChart3
 } from "lucide-react";
 
 interface NavItem {
@@ -44,7 +46,7 @@ interface NavItem {
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigationItems: NavItem[] = [
@@ -133,10 +135,16 @@ const Sidebar = () => {
       icon: Truck,
       roles: ["admin", "leader", "stakeholder"],
     },
+    {
+      title: "Monitoring Kinerja",
+      href: "/monitoring-kinerja",
+      icon: BarChart3,
+      roles: ["admin", "leader", "stakeholder"],
+    },
   ];
 
   const handleLogout = () => {
-    logout();
+    signOut(); // Changed from logout to signOut
     navigate("/login");
   };
 
@@ -175,7 +183,7 @@ const Sidebar = () => {
         <ScrollArea className="flex-1 space-y-2 px-3">
           <div className="flex items-center justify-between rounded-md px-2 py-1.5">
             <span className="font-bold">
-              {user?.full_name}
+              {user?.email}
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -221,7 +229,7 @@ const Sidebar = () => {
           <ScrollArea className="flex-1 space-y-2 px-3">
             <div className="flex items-center justify-between rounded-md px-2 py-1.5">
               <span className="font-bold">
-                {user?.full_name}
+                {user?.email}
               </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
