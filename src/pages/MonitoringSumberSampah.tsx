@@ -1,133 +1,57 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { LayerType } from "@/components/webgis/MapView";
-import useWasteSourceData from "@/hooks/useWasteSourceData";
-
-// Import the new components
-import PageHeader from "@/components/monitoring-sumber/PageHeader";
-import FilterCard from "@/components/monitoring-sumber/FilterCard";
-import ViewToggle from "@/components/monitoring-sumber/ViewToggle";
-import MapDisplay from "@/components/monitoring-sumber/MapDisplay";
-import DataTable from "@/components/monitoring-sumber/DataTable";
+import { useState } from 'react';
+import { PageHeader } from "@/components/monitoring-sumber/PageHeader";
+import { FilterCard } from "@/components/monitoring-sumber/FilterCard";
+import { ViewToggle } from "@/components/monitoring-sumber/ViewToggle";
+import MapView from "@/components/webgis/MapView";
+import { LayerType } from "@/components/webgis/data/mock-map-data";
+import { DataTable } from "@/components/monitoring-sumber/DataTable";
+import { useWasteSourceData } from '@/hooks/useWasteSourceData';
 
 const MonitoringSumberSampah = () => {
-  const [selectedCity, setSelectedCity] = useState<string>("Banjarmasin");
-  const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [activeLayers, setActiveLayers] = useState<LayerType[]>([
-    'tps',
-    'bank-sampah',
-    'tps3r'
-  ]);
+  const [activeLayers, setActiveLayers] = useState<LayerType[]>(['tps', 'tps-liar']);
+  const [view, setView] = useState<'map' | 'table'>('map');
+  const { data, isLoading, filters, setFilters } = useWasteSourceData();
 
-  const {
-    selectedDistrict,
-    setSelectedDistrict,
-    selectedSubdistrict,
-    setSelectedSubdistrict,
-    selectedType,
-    setSelectedType,
-    selectedGroup,
-    setSelectedGroup,
-    searchInput,
-    setSearchInput,
-    availableSubdistricts,
-    filteredSources,
-    currentPage,
-    currentItems,
-    totalPages,
-    indexOfFirstItem,
-    indexOfLastItem,
-    goToNextPage,
-    goToPrevPage,
-  } = useWasteSourceData();
-
-  const { toast } = useToast();
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    
-    setTimeout(() => {
-      setIsRefreshing(false);
-      toast({
-        title: "Data diperbarui",
-        description: "Data sumber sampah dan fasilitas telah diperbarui",
-      });
-    }, 1000);
-  };
-
-  const handleExport = () => {
-    toast({
-      title: "Ekspor Data",
-      description: "Mengekspor data ke Excel...",
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Berhasil",
-        description: "Data berhasil diekspor ke Excel",
-      });
-    }, 1500);
+  const handleLayerToggle = (layer: LayerType) => {
+    if (activeLayers.includes(layer)) {
+      setActiveLayers(activeLayers.filter(l => l !== layer));
+    } else {
+      setActiveLayers([...activeLayers, layer]);
+    }
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4">
-        {/* Page Header Component */}
-        <PageHeader 
-          handleRefresh={handleRefresh}
-          handleExport={handleExport}
-          isRefreshing={isRefreshing}
-        />
-
-        {/* Filter Card Component */}
-        <FilterCard
-          selectedCity={selectedCity}
-          setSelectedCity={setSelectedCity}
-          selectedDistrict={selectedDistrict}
-          setSelectedDistrict={setSelectedDistrict}
-          selectedSubdistrict={selectedSubdistrict}
-          setSelectedSubdistrict={setSelectedSubdistrict}
-          selectedType={selectedType}
-          setSelectedType={setSelectedType}
-          selectedGroup={selectedGroup}
-          setSelectedGroup={setSelectedGroup}
-          searchInput={searchInput}
-          setSearchInput={setSearchInput}
-          availableSubdistricts={availableSubdistricts}
-        />
-
-        {/* View Toggle Component */}
-        <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-
-        {/* Map or Table Display */}
-        {viewMode === 'map' ? (
-          <MapDisplay activeLayers={activeLayers} />
-        ) : (
-          <DataTable
-            currentItems={currentItems}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            indexOfFirstItem={indexOfFirstItem}
-            indexOfLastItem={indexOfLastItem}
-            filteredSources={filteredSources}
-            goToNextPage={goToNextPage}
-            goToPrevPage={goToPrevPage}
+    <div className="container mx-auto p-4 max-w-7xl space-y-6">
+      <PageHeader />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <FilterCard 
+            filters={filters}
+            setFilters={setFilters}
+            isLoading={isLoading}
           />
-        )}
-
-        <div className="text-xs text-muted-foreground flex items-center justify-between border-t pt-2">
-          <div>
-            Data Last Updated: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+        </div>
+        
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold">Data Sumber Sampah</h3>
+            <ViewToggle currentView={view} onViewChange={setView} />
           </div>
-          <div>
-            Sumber Data: Dinas Lingkungan Hidup Kota Banjarmasin
-          </div>
+          
+          {view === 'map' ? (
+            <MapView 
+              activeLayers={activeLayers}
+              fullscreenMode={false}
+              splitViewEnabled={false}
+            />
+          ) : (
+            <DataTable data={data} isLoading={isLoading} />
+          )}
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

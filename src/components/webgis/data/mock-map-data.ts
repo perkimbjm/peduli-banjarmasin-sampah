@@ -1,23 +1,34 @@
 
 export type LayerType = 'tps' | 'tps-liar' | 'bank-sampah' | 'tps3r' | 'rute' | 'kecamatan' | 'kelurahan';
 
-// Define mock data for our map layers
-export const mockData = {
-  tps: [
-    { name: 'TPS Pasar Lama', lat: -3.3193, lng: 114.5921, capacity: '500 kg', usage: '350 kg' },
-    { name: 'TPS Jalan Ahmad Yani', lat: -3.3280, lng: 114.5891, capacity: '650 kg', usage: '480 kg' },
-    { name: 'TPS Teluk Dalam', lat: -3.3350, lng: 114.5950, capacity: '450 kg', usage: '390 kg' },
+export interface MapPoint {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string;
+  [key: string]: any;
+}
+
+// Mock data for different map layers
+export const mockData: Record<string, MapPoint[]> = {
+  'tps': [
+    { id: 'tps1', lat: -3.319, lng: 114.5921, name: 'TPS Teluk Dalam', capacity: '10 ton', usage: '6 ton' },
+    { id: 'tps2', lat: -3.324, lng: 114.587, name: 'TPS Jalan Sultan Adam', capacity: '5 ton', usage: '4 ton' },
+    { id: 'tps3', lat: -3.313, lng: 114.595, name: 'TPS Pasar Lama', capacity: '8 ton', usage: '7 ton' },
+    { id: 'tps4', lat: -3.331, lng: 114.601, name: 'TPS Pelambuan', capacity: '12 ton', usage: '5 ton' }
   ],
   'tps-liar': [
-    { name: 'TPS Liar Pinggir Sungai', lat: -3.3245, lng: 114.6010, status: 'Perlu Dibersihkan' },
-    { name: 'TPS Liar Pasar Malam', lat: -3.3198, lng: 114.5950, status: 'Sudah Dibersihkan' },
+    { id: 'tpsliar1', lat: -3.316, lng: 114.582, name: 'TPS Liar Jalan Belitung', status: 'Dilaporkan' },
+    { id: 'tpsliar2', lat: -3.327, lng: 114.588, name: 'TPS Liar Simpang Ulin', status: 'Belum diproses' },
+    { id: 'tpsliar3', lat: -3.322, lng: 114.610, name: 'TPS Liar Veteran', status: 'Dalam penanganan' }
   ],
   'bank-sampah': [
-    { name: 'Bank Sampah Sejahtera', lat: -3.3170, lng: 114.5980, collection: '120 kg/minggu' },
-    { name: 'Bank Sampah Mandiri', lat: -3.3290, lng: 114.5840, collection: '90 kg/minggu' },
+    { id: 'bank1', lat: -3.317, lng: 114.598, name: 'Bank Sampah Sejahtera', collection: '1.2 ton/bulan' },
+    { id: 'bank2', lat: -3.329, lng: 114.593, name: 'Bank Sampah Mandiri', collection: '0.8 ton/bulan' },
+    { id: 'bank3', lat: -3.310, lng: 114.589, name: 'Bank Sampah Bersih', collection: '1.5 ton/bulan' }
   ],
   'tps3r': [
-    { name: 'TPS 3R Banjarmasin Utara', lat: -3.3130, lng: 114.5901, processing: '250 kg/hari' },
-    { name: 'TPS 3R Banjarmasin Selatan', lat: -3.3320, lng: 114.5930, processing: '180 kg/hari' },
-  ],
+    { id: 'tps3r1', lat: -3.325, lng: 114.597, name: 'TPS3R Banua Anyar', processing: '3 ton/hari' },
+    { id: 'tps3r2', lat: -3.315, lng: 114.604, name: 'TPS3R Sungai Jingah', processing: '2 ton/hari' }
+  ]
 };
