@@ -1,6 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import MapView, { LayerType } from "@/components/webgis/MapView";
+import MapView from "@/components/webgis/MapView";
+import { LayerType } from "@/components/webgis/data/mock-map-data";
 
 interface MapDisplayProps {
   activeLayers: LayerType[];
