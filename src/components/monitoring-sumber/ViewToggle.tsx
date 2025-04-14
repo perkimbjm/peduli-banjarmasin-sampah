@@ -7,6 +7,7 @@ interface ViewToggleProps {
   setViewMode: (mode: 'map' | 'table') => void;
 }
 
+
 const ViewToggle = ({ viewMode, setViewMode }: ViewToggleProps) => {
   return (
     <div className="flex items-center gap-2">

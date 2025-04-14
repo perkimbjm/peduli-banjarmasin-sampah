@@ -1,13 +1,9 @@
-
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Filter, Search } from "lucide-react";
 
 interface FilterCardProps {
-  selectedCity: string;
-  setSelectedCity: (value: string) => void;
   selectedDistrict: string;
   setSelectedDistrict: (value: string) => void;
   selectedSubdistrict: string;
@@ -16,9 +12,10 @@ interface FilterCardProps {
   setSelectedType: (value: string) => void;
   selectedGroup: string;
   setSelectedGroup: (value: string) => void;
-  searchInput: string;
-  setSearchInput: (value: string) => void;
+  selectedSearch: string;
+  setSelectedSearch: (value: string) => void;
   availableSubdistricts: string[];
+  banjarmasinDistricts: { name: string, subdistricts: string[] }[];
 }
 
 const banjarmasinDistricts = [
@@ -40,8 +37,6 @@ const wasteSourceTypes = [
 ];
 
 const FilterCard = ({
-  selectedCity,
-  setSelectedCity,
   selectedDistrict,
   setSelectedDistrict,
   selectedSubdistrict,
@@ -50,9 +45,10 @@ const FilterCard = ({
   setSelectedType,
   selectedGroup,
   setSelectedGroup,
-  searchInput,
-  setSearchInput,
-  availableSubdistricts
+  selectedSearch,
+  setSelectedSearch,
+  availableSubdistricts,
+  banjarmasinDistricts,
 }: FilterCardProps) => {
   return (
     <Card>
@@ -64,18 +60,6 @@ const FilterCard = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Kota/Kabupaten</label>
-            <Select value={selectedCity} onValueChange={setSelectedCity} disabled>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih Kota/Kabupaten" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Banjarmasin">Banjarmasin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
           <div className="space-y-2">
             <label className="text-sm font-medium">Kecamatan</label>
             <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
@@ -92,11 +76,11 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Kelurahan</label>
-            <Select 
-              value={selectedSubdistrict} 
+            <Select
+              value={selectedSubdistrict}
               onValueChange={setSelectedSubdistrict}
               disabled={!selectedDistrict}
             >
@@ -113,7 +97,7 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Jenis</label>
             <Select value={selectedType} onValueChange={setSelectedType}>
@@ -129,7 +113,7 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Kelompok</label>
             <Select value={selectedGroup} onValueChange={setSelectedGroup}>
@@ -145,7 +129,7 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Lokasi</label>
             <div className="relative">
@@ -154,8 +138,8 @@ const FilterCard = ({
                 type="text"
                 placeholder="Cari lokasi..."
                 className="pl-8"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                value={selectedSearch}
+                onChange={(e) => setSelectedSearch(e.target.value)}
               />
             </div>
           </div>
