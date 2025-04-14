@@ -123,7 +123,7 @@ const ActionSection = () => {
                 <div className="relative group">
                   <div className="aspect-square relative mb-4 overflow-hidden rounded-xl">
                     <img 
-                      src="/assets/komposter.jpg" 
+                      src="/assets/komposter.webp" 
                       alt="Komposter"
                       loading="lazy" 
                       className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-110"
@@ -137,7 +137,7 @@ const ActionSection = () => {
                 <div className="relative group">
                   <div className="aspect-square relative mb-4 overflow-hidden rounded-xl">
                     <img 
-                      src="/assets/bank-sampah.jpg" 
+                      src="/assets/bank-sampah.webp" 
                       alt="Bank Sampah"
                       loading="lazy" 
                       className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-110"
@@ -151,7 +151,7 @@ const ActionSection = () => {
                 <div className="relative group">
                   <div className="aspect-square relative mb-4 overflow-hidden rounded-xl">
                     <img 
-                      src="/assets/tps.jpg" 
+                      src="/assets/to-tps.webp" 
                       alt="TPS"
                       loading="lazy" 
                       className="object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-110"
