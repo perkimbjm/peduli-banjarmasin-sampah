@@ -33,6 +33,18 @@ const MonitoringEkonomiSirkular = () => {
 
       {/* Filter Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-green-500 text-white p-4 rounded-md">
+          <label className="block text-sm font-medium mb-1">Kota/Kabupaten</label>
+          <Select defaultValue="Banjarmasin" disabled>
+            <SelectTrigger className="bg-white/20 border-white/20 text-white">
+              <SelectValue placeholder="Pilih Kota/Kabupaten" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Banjarmasin">Banjarmasin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="bg-blue-400 text-white p-4 rounded-md">
           <label className="block text-sm font-medium mb-1">Kecamatan</label>
           <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
