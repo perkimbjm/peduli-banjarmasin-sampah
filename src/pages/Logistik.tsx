@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -240,17 +239,25 @@ const Logistik = () => {
   });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date";
+    }
   };
 
   const getStatusBadge = (status: string) => {
+    if (!status) return <Badge className="bg-gray-500 hover:bg-gray-600">Unknown</Badge>;
+    
     switch (status) {
       case "operational":
         return <Badge className="bg-green-500 hover:bg-green-600">Operasional</Badge>;
@@ -272,6 +279,8 @@ const Logistik = () => {
   };
   
   const getIncidentTypeBadge = (type: string) => {
+    if (!type) return <Badge className="bg-gray-500 hover:bg-gray-600">Unknown</Badge>;
+    
     switch (type) {
       case "breakdown":
         return <Badge className="bg-red-500 hover:bg-red-600">Kerusakan</Badge>;
@@ -283,6 +292,10 @@ const Logistik = () => {
   };
   
   const getFillLevelBadge = (percentage: number) => {
+    if (percentage === undefined || percentage === null) {
+      return <Badge className="bg-gray-500 hover:bg-gray-600">Unknown</Badge>;
+    }
+    
     if (percentage >= 80) {
       return <Badge className="bg-red-500 hover:bg-red-600">{percentage}% Penuh</Badge>;
     } else if (percentage >= 50) {
@@ -293,13 +306,14 @@ const Logistik = () => {
   };
   
   const getProgressColor = (progress: number) => {
+    if (progress === undefined || progress === null) return "bg-gray-600";
+    
     if (progress >= 80) return "bg-green-600";
     if (progress >= 40) return "bg-yellow-600";
     return "bg-red-600";
   };
 
   const handleAddRoute = () => {
-    // Simulate adding a new route
     const id = (routes.length + 1).toString();
     const vehicle = vehicles.find(v => v.id === newRoute.vehicleId);
     
@@ -318,7 +332,6 @@ const Logistik = () => {
       progress: 0
     };
     
-    // In a real app, you would save this to your backend
     console.log("Adding new route:", newRouteItem);
     
     toast({
@@ -337,29 +350,29 @@ const Logistik = () => {
     });
   };
 
-  const filteredVehicles = vehicles.filter((vehicle) =>
+  const filteredVehicles = vehicles ? vehicles.filter((vehicle) =>
     vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     vehicle.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
     vehicle.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehicle.driver.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    (vehicle.driver && vehicle.driver.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
   
-  const filteredRoutes = routes.filter((route) =>
+  const filteredRoutes = routes ? routes.filter((route) =>
     route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     route.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    route.driver.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    (route.driver && route.driver.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
   
-  const filteredIncidents = incidents.filter((incident) =>
-    incident.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    incident.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    incident.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIncidents = incidents ? incidents.filter((incident) =>
+    (incident.location && incident.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (incident.driver && incident.driver.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (incident.description && incident.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
   
-  const filteredDisposalPoints = wasteDisposalPoints.filter((point) =>
-    point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    point.type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDisposalPoints = wasteDisposalPoints ? wasteDisposalPoints.filter((point) =>
+    (point.name && point.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (point.type && point.type.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
 
   return (
     <div className="container mx-auto py-6">
@@ -465,7 +478,7 @@ const Logistik = () => {
             <CardTitle className="text-sm font-medium">Total Kendaraan</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{vehicles.length}</div>
+            <div className="text-2xl font-bold">{vehicles ? vehicles.length : 0}</div>
             <p className="text-xs text-muted-foreground">Unit tersedia</p>
           </CardContent>
         </Card>
@@ -474,7 +487,7 @@ const Logistik = () => {
             <CardTitle className="text-sm font-medium">Kendaraan Operasional</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{vehicles.filter(v => v.status === "operational").length}</div>
+            <div className="text-2xl font-bold">{vehicles ? vehicles.filter(v => v.status === "operational").length : 0}</div>
             <p className="text-xs text-muted-foreground">Siap digunakan</p>
           </CardContent>
         </Card>
@@ -483,7 +496,7 @@ const Logistik = () => {
             <CardTitle className="text-sm font-medium">Rute Aktif</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{routes.filter(r => r.status === "in-progress").length}</div>
+            <div className="text-2xl font-bold">{routes ? routes.filter(r => r.status === "in-progress").length : 0}</div>
             <p className="text-xs text-muted-foreground">Sedang berjalan</p>
           </CardContent>
         </Card>
@@ -492,7 +505,7 @@ const Logistik = () => {
             <CardTitle className="text-sm font-medium">Insiden Terbuka</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{incidents.length}</div>
+            <div className="text-2xl font-bold">{incidents ? incidents.length : 0}</div>
             <p className="text-xs text-muted-foreground">Memerlukan penanganan</p>
           </CardContent>
         </Card>
@@ -517,7 +530,6 @@ const Logistik = () => {
             <TabsTrigger value="disposal">Titik Pembuangan</TabsTrigger>
           </TabsList>
 
-          {/* Vehicles Tab */}
           <TabsContent value="vehicles" className="mt-4">
             <Card>
               <CardHeader>
@@ -539,7 +551,7 @@ const Logistik = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredVehicles.length > 0 ? (
+                    {filteredVehicles && filteredVehicles.length > 0 ? (
                       filteredVehicles.map((vehicle) => (
                         <TableRow key={vehicle.id}>
                           <TableCell className="font-medium">
@@ -581,7 +593,6 @@ const Logistik = () => {
             </Card>
           </TabsContent>
 
-          {/* Routes Tab */}
           <TabsContent value="routes" className="mt-4">
             <Card>
               <CardHeader>
@@ -603,7 +614,7 @@ const Logistik = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRoutes.length > 0 ? (
+                    {filteredRoutes && filteredRoutes.length > 0 ? (
                       filteredRoutes.map((route) => (
                         <TableRow key={route.id}>
                           <TableCell className="font-medium">
@@ -656,7 +667,6 @@ const Logistik = () => {
             </Card>
           </TabsContent>
 
-          {/* Incidents Tab */}
           <TabsContent value="incidents" className="mt-4">
             <Card>
               <CardHeader>
@@ -678,7 +688,7 @@ const Logistik = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredIncidents.length > 0 ? (
+                    {filteredIncidents && filteredIncidents.length > 0 ? (
                       filteredIncidents.map((incident) => (
                         <TableRow key={incident.id}>
                           <TableCell>
@@ -723,7 +733,6 @@ const Logistik = () => {
             </Card>
           </TabsContent>
 
-          {/* Disposal Points Tab */}
           <TabsContent value="disposal" className="mt-4">
             <Card>
               <CardHeader>
@@ -745,7 +754,7 @@ const Logistik = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDisposalPoints.length > 0 ? (
+                    {filteredDisposalPoints && filteredDisposalPoints.length > 0 ? (
                       filteredDisposalPoints.map((point) => (
                         <TableRow key={point.id}>
                           <TableCell className="font-medium">
@@ -756,7 +765,7 @@ const Logistik = () => {
                           <TableCell className="hidden md:table-cell">
                             <div className="flex flex-col gap-1">
                               <div>{point.currentFill}</div>
-                              <Progress value={point.fillPercentage} className={`h-2 ${
+                              <Progress value={point.fillPercentage || 0} className={`h-2 ${
                                 point.fillPercentage > 80 ? "bg-red-600" : 
                                 point.fillPercentage > 50 ? "bg-yellow-600" : 
                                 "bg-green-600"
