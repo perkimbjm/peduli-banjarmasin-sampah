@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LayerType } from './MapView';
+import { LayerType } from './data/mock-map-data';
 
 interface LayersPanelProps {
   activeLayers: LayerType[];
