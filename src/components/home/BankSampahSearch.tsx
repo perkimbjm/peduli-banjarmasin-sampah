@@ -193,7 +193,7 @@ const BankSampahSearch = () => {
                     </CardContent>
                   </div>
                   <CardFooter className="bg-gray-50 dark:bg-gray-800 py-2 px-4 flex justify-end">
-                    <Link to="/bank-sampah">
+                    <Link to={`/bank-sampah/${bank.id}`}>
                       <Button variant="link" className="text-green-600 hover:text-green-700 p-0 h-auto flex items-center">
                         Detail <ArrowRight className="h-4 w-4 ml-1" />
                       </Button>

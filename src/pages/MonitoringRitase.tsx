@@ -1,6 +1,6 @@
+
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
-
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -33,6 +33,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { DateRangePicker } from "@/components/ritase/DateRangePicker";
 
 const data = [
   { name: "Jan", uv: 4000, pv: 2400, amt: 2400 },
@@ -76,40 +77,6 @@ const MonitoringRitase = () => {
     </div>
   );
 
-  const DateRangePicker = ({ value, onValueChange, className }: { value: DateRange | undefined; onValueChange: (value: DateRange | undefined) => void; className?: string }) => (
-    <div className={className}>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={"outline"}
-            className="w-full justify-start text-left font-normal"
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            {value?.from ? (
-              value.to ? (
-                `${value.from?.toLocaleDateString()} - ${value.to?.toLocaleDateString()}`
-              ) : (
-                value.from?.toLocaleDateString()
-              )
-            ) : (
-              <span>Pilih tanggal</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            defaultMonth={value?.from}
-            selected={value}
-            onSelect={onValueChange}
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-
   return (
     <div className="container mx-auto p-6 space-y-8">
       <header className="space-y-2">
@@ -123,10 +90,9 @@ const MonitoringRitase = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <RegionSelector value={selectedRegion} onChange={setSelectedRegion} />
           
-          {/* Correct the props for DateRangePicker */}
           <DateRangePicker 
-            value={dateRange} 
-            onValueChange={handleDateRangeChange}
+            dateRange={dateRange} 
+            setDateRange={handleDateRangeChange}
             className="w-full sm:w-auto" 
           />
         </div>

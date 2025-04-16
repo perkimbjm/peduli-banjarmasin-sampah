@@ -15,7 +15,7 @@ import {
 
 interface DateRangePickerProps {
   dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void; // Changed type signature
+  setDateRange: (range: DateRange | undefined) => void;
   className?: string;
 }
 
@@ -59,6 +59,7 @@ export function DateRangePicker({
             selected={dateRange}
             onSelect={setDateRange}
             numberOfMonths={2}
+            className="pointer-events-auto"
           />
           <div className="flex items-center justify-between p-3 border-t">
             <Button

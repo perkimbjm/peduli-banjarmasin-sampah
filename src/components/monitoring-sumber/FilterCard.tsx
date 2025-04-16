@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -17,15 +18,6 @@ interface FilterCardProps {
   availableSubdistricts: string[];
   banjarmasinDistricts: { name: string, subdistricts: string[] }[];
 }
-
-const banjarmasinDistricts = [
-  { name: "Banjarmasin Barat", subdistricts: ["Pelambuan", "Belitung Selatan", "Belitung Utara", "Teluk Dalam", "Telawang", "Kuin Cerucuk", "Kuin Selatan", "Basirih", "Basirih Selatan"] },
-  { name: "Banjarmasin Selatan", subdistricts: ["Kelayan Barat", "Kelayan Dalam", "Kelayan Timur", "Kelayan Tengah", "Kelayan Selatan", "Murung Raya", "Pekauman", "Pemurus Dalam", "Pemurus Baru", "Tanjung Pagar", "Mantuil", "Basirih Selatan"] },
-  { name: "Banjarmasin Tengah", subdistricts: ["Teluk Dalam", "Seberang Mesjid", "Melayu", "Pasar Lama", "Kertak Baru Ilir", "Kertak Baru Ulu", "Gadang", "Kelayan Luar", "Pekapuran Laut", "Sungai Baru", "Antasan Besar", "Kelayan Dalam"] },
-  { name: "Banjarmasin Timur", subdistricts: ["Kuripan", "Pengambangan", "Sungai Bilu", "Sungai Lulut", "Kebun Bunga", "Benua Anyar", "Pemurus Luar", "Pekapuran Raya", "Karang Mekar"] },
-  { name: "Banjarmasin Utara", subdistricts: ["Alalak Utara", "Alalak Tengah", "Alalak Selatan", "Kuin Utara", "Pangeran", "Sungai Miai", "Antasan Kecil Timur", "Sungai Jingah", "Sungai Andai", "Sungai Mufti"] },
-  { name: "Semua Kecamatan", subdistricts: [] }
-];
 
 const wasteSourceTypes = [
   { value: "all", label: "Semua Jenis" },
@@ -60,7 +52,7 @@ const FilterCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Kecamatan</label>
             <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
@@ -68,12 +60,15 @@ const FilterCard = ({
                 <SelectValue placeholder="Pilih Kecamatan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua-kecamatan">Semua Kecamatan</SelectItem>
-                {banjarmasinDistricts.map((district) => (
-                  <SelectItem key={district.name} value={district.name}>
-                    {district.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="Semua Kecamatan">Semua Kecamatan</SelectItem>
+                {banjarmasinDistricts
+                  .filter(district => district.name !== "Semua Kecamatan")
+                  .map((district) => (
+                    <SelectItem key={district.name} value={district.name}>
+                      {district.name}
+                    </SelectItem>
+                  ))
+                }
               </SelectContent>
             </Select>
           </div>
@@ -83,13 +78,13 @@ const FilterCard = ({
             <Select
               value={selectedSubdistrict}
               onValueChange={setSelectedSubdistrict}
-              disabled={!selectedDistrict}
+              disabled={!selectedDistrict || selectedDistrict === "Semua Kecamatan"}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih Kelurahan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua-kelurahan">Semua Kelurahan</SelectItem>
+                <SelectItem value="Semua Kelurahan">Semua Kelurahan</SelectItem>
                 {availableSubdistricts.map((subdistrict) => (
                   <SelectItem key={subdistrict} value={subdistrict}>
                     {subdistrict}

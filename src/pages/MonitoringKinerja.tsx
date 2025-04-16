@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Building, 
   Building2, 
@@ -25,15 +25,45 @@ const kecamatanOptions = [
   { value: "kec-5", label: "Banjarmasin Barat" },
 ];
 
-const kelurahanOptions = [
-  { value: "all", label: "Semua Kelurahan" },
-  { value: "kel-1", label: "Sungai Jingah" },
-  { value: "kel-2", label: "Surgi Mufti" },
-  { value: "kel-3", label: "Antasan Kecil Timur" },
-  { value: "kel-4", label: "Kuin Utara" },
-  { value: "kel-5", label: "Pangeran" },
-  { value: "kel-6", label: "Sungai Miai" },
-];
+const kelurahanMapping = {
+  "all": [
+    { value: "all", label: "Semua Kelurahan" },
+  ],
+  "kec-1": [
+    { value: "all", label: "Semua Kelurahan" },
+    { value: "kel-1", label: "Sungai Jingah" },
+    { value: "kel-2", label: "Surgi Mufti" },
+    { value: "kel-3", label: "Antasan Kecil Timur" },
+    { value: "kel-4", label: "Kuin Utara" },
+    { value: "kel-5", label: "Pangeran" },
+    { value: "kel-6", label: "Sungai Miai" },
+  ],
+  "kec-2": [
+    { value: "all", label: "Semua Kelurahan" },
+    { value: "kel-7", label: "Kelayan Barat" },
+    { value: "kel-8", label: "Kelayan Dalam" },
+    { value: "kel-9", label: "Kelayan Timur" },
+    { value: "kel-10", label: "Kelayan Tengah" },
+  ],
+  "kec-3": [
+    { value: "all", label: "Semua Kelurahan" },
+    { value: "kel-11", label: "Teluk Dalam" },
+    { value: "kel-12", label: "Seberang Mesjid" },
+    { value: "kel-13", label: "Melayu" },
+  ],
+  "kec-4": [
+    { value: "all", label: "Semua Kelurahan" },
+    { value: "kel-14", label: "Kuripan" },
+    { value: "kel-15", label: "Pengambangan" },
+    { value: "kel-16", label: "Sungai Bilu" },
+  ],
+  "kec-5": [
+    { value: "all", label: "Semua Kelurahan" },
+    { value: "kel-17", label: "Pelambuan" },
+    { value: "kel-18", label: "Belitung Selatan" },
+    { value: "kel-19", label: "Belitung Utara" },
+  ],
+};
 
 // Mock data for the regions
 const regionData = [
@@ -120,6 +150,17 @@ export default function MonitoringKinerja() {
   const [viewMode, setViewMode] = useState("overview");
   const [selectedKecamatan, setSelectedKecamatan] = useState("all");
   const [selectedKelurahan, setSelectedKelurahan] = useState("all");
+  const [availableKelurahan, setAvailableKelurahan] = useState(kelurahanMapping["all"]);
+
+  // Update kelurahan options when kecamatan changes
+  useEffect(() => {
+    if (selectedKecamatan && kelurahanMapping[selectedKecamatan as keyof typeof kelurahanMapping]) {
+      setAvailableKelurahan(kelurahanMapping[selectedKecamatan as keyof typeof kelurahanMapping]);
+      setSelectedKelurahan("all"); // Reset kelurahan selection when kecamatan changes
+    } else {
+      setAvailableKelurahan(kelurahanMapping["all"]);
+    }
+  }, [selectedKecamatan]);
 
   return (
     <div className="space-y-6">
@@ -145,7 +186,7 @@ export default function MonitoringKinerja() {
           <RegionSelector
             value={selectedKelurahan}
             onChange={setSelectedKelurahan}
-            options={kelurahanOptions}
+            options={availableKelurahan}
             placeholder="Kelurahan"
             className="w-full md:w-auto"
           />

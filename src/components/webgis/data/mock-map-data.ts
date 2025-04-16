@@ -1,4 +1,3 @@
-
 export type LayerType = 'tps' | 'tps-liar' | 'bank-sampah' | 'tps3r' | 'rute' | 'kecamatan' | 'kelurahan';
 
 export interface MapPoint {
@@ -10,7 +9,7 @@ export interface MapPoint {
 }
 
 // Mock data for different map layers
-export const mockData: Record<string, MapPoint[]> = {
+export const mockData = {
   'tps': [
     { id: 'tps1', lat: -3.319, lng: 114.5921, name: 'TPS Teluk Dalam', capacity: '10 ton', usage: '6 ton' },
     { id: 'tps2', lat: -3.324, lng: 114.587, name: 'TPS Jalan Sultan Adam', capacity: '5 ton', usage: '4 ton' },
@@ -23,9 +22,41 @@ export const mockData: Record<string, MapPoint[]> = {
     { id: 'tpsliar3', lat: -3.322, lng: 114.610, name: 'TPS Liar Veteran', status: 'Dalam penanganan' }
   ],
   'bank-sampah': [
-    { id: 'bank1', lat: -3.317, lng: 114.598, name: 'Bank Sampah Sejahtera', collection: '1.2 ton/bulan' },
-    { id: 'bank2', lat: -3.329, lng: 114.593, name: 'Bank Sampah Mandiri', collection: '0.8 ton/bulan' },
-    { id: 'bank3', lat: -3.310, lng: 114.589, name: 'Bank Sampah Bersih', collection: '1.5 ton/bulan' }
+    {
+      id: 'bs-001',
+      name: 'Bank Sampah Mekar Sari',
+      lat: -3.2893,
+      lng: 114.5932,
+      collection: '12.5 ton',
+    },
+    {
+      id: 'bs-002',
+      name: 'Bank Sampah Bersih Banjarmasin',
+      lat: -3.3105,
+      lng: 114.5810,
+      collection: '9.87 ton',
+    },
+    {
+      id: 'bs-003',
+      name: 'Bank Sampah Sejahtera',
+      lat: -3.3089,
+      lng: 114.6032,
+      collection: '7.2 ton',
+    },
+    {
+      id: 'bs-004',
+      name: 'Bank Sampah Maju Jaya',
+      lat: -3.3187,
+      lng: 114.5991,
+      collection: '5.8 ton',
+    },
+    {
+      id: 'bs-005',
+      name: 'Bank Sampah Cahaya Bersih',
+      lat: -3.3045,
+      lng: 114.5917,
+      collection: '4.2 ton',
+    },
   ],
   'tps3r': [
     { id: 'tps3r1', lat: -3.325, lng: 114.597, name: 'TPS3R Banua Anyar', processing: '3 ton/hari' },
