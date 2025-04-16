@@ -1,10 +1,12 @@
-
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { BarChart, LineChart, PieChart, Download, Clock, Filter, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import WasteSourceChart from "@/components/analytics/WasteSourceChart";
+import WasteCompositionAnalytics from "@/components/analytics/WasteCompositionAnalytics";
+import WasteCharacteristicsCard from "@/components/analytics/WasteCharacteristicsCard";
 
 const DashboardPublic = () => {
   return (
@@ -166,6 +168,15 @@ const DashboardPublic = () => {
             </TabsContent>
             
             <TabsContent value="komposisi">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <WasteSourceChart />
+                <WasteCompositionAnalytics />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6">
+                <WasteCharacteristicsCard />
+              </div>
+              
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div>
                   <Card>

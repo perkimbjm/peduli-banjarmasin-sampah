@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PageHeader from "@/components/monitoring-sumber/PageHeader";
 import FilterCard from "@/components/monitoring-sumber/FilterCard";
 import ViewToggle from "@/components/monitoring-sumber/ViewToggle";
