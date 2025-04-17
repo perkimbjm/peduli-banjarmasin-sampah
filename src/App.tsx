@@ -18,6 +18,7 @@ import AuthCallback from './pages/AuthCallback';
 import BankSampah from './pages/BankSampah';
 import BankSampahDetail from './pages/BankSampahDetail';
 import Edukasi from './pages/Edukasi';
+import EdukasiDetail from './pages/EdukasiDetail';
 import DashboardPublic from './pages/DashboardPublic';
 import Kolaborasi from './pages/Kolaborasi';
 import PelaporanPage from './pages/PelaporanPage';
@@ -56,6 +57,7 @@ function App() {
           <Route path="/bank-sampah" element={<BankSampah />} />
           <Route path="/bank-sampah/:id" element={<BankSampahDetail />} />
           <Route path="/edukasi" element={<Edukasi />} />
+          <Route path="/edukasi/:id" element={<EdukasiDetail />} />
           <Route path="/data" element={<DashboardPublic />} />
           <Route path="/kolaborasi" element={<Kolaborasi />} />
           <Route path="/pelaporan" element={<PelaporanPage />} />
@@ -64,25 +66,23 @@ function App() {
 
         {/* Protected Routes / Dashboard */}
         <Route element={<ProtectedRoute><ProtectedLayout /></ProtectedRoute>}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/webgis" element={<WebGIS />} />
-            <Route path="/webgis-admin" element={<WebGisAdmin />} />
-            <Route path="/pengaduan" element={<Pengaduan />} />
-            <Route path="/jadwal" element={<WasteManagementSchedule />} />
-            <Route path="/jadwal/:id" element={<ScheduleDetail />} />
-            <Route path="/manajemen-petugas" element={<ManajemenPetugas />} />
-            <Route path="/manajemen-tugas" element={<ManajemenTugas />} />
-            <Route path="/edukasi-admin" element={<EdukasiAdmin />} />
-            <Route path="/users-admin" element={<UsersAdmin />} />
-            <Route path="/monitoring-sumber-sampah" element={<MonitoringSumberSampah />} />
-            <Route path="/monitoring-ritase" element={<MonitoringRitase />} />
-            <Route path="/monitoring-kinerja" element={<MonitoringKinerja />} />
-            <Route path="/monitoring-ekonomi-sirkular" element={<MonitoringEkonomiSirkular />} />
-            <Route path="/logistik" element={<Logistik />} />
-          </Route>
+          <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+          <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
+          <Route path="/settings" element={<DashboardLayout><SettingsPage /></DashboardLayout>} />
+          <Route path="/webgis" element={<DashboardLayout><WebGIS /></DashboardLayout>} />
+          <Route path="/webgis-admin" element={<DashboardLayout><WebGisAdmin /></DashboardLayout>} />
+          <Route path="/pengaduan" element={<DashboardLayout><Pengaduan /></DashboardLayout>} />
+          <Route path="/jadwal" element={<DashboardLayout><WasteManagementSchedule /></DashboardLayout>} />
+          <Route path="/jadwal/:id" element={<DashboardLayout><ScheduleDetail /></DashboardLayout>} />
+          <Route path="/manajemen-petugas" element={<DashboardLayout><ManajemenPetugas /></DashboardLayout>} />
+          <Route path="/manajemen-tugas" element={<DashboardLayout><ManajemenTugas /></DashboardLayout>} />
+          <Route path="/edukasi-admin" element={<DashboardLayout><EdukasiAdmin /></DashboardLayout>} />
+          <Route path="/users-admin" element={<DashboardLayout><UsersAdmin /></DashboardLayout>} />
+          <Route path="/monitoring-sumber-sampah" element={<DashboardLayout><MonitoringSumberSampah /></DashboardLayout>} />
+          <Route path="/monitoring-ritase" element={<DashboardLayout><MonitoringRitase /></DashboardLayout>} />
+          <Route path="/monitoring-kinerja" element={<DashboardLayout><MonitoringKinerja /></DashboardLayout>} />
+          <Route path="/monitoring-ekonomi-sirkular" element={<DashboardLayout><MonitoringEkonomiSirkular /></DashboardLayout>} />
+          <Route path="/logistik" element={<DashboardLayout><Logistik /></DashboardLayout>} />
         </Route>
 
         {/* Not Found */}

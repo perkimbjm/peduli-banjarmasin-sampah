@@ -32,7 +32,7 @@ export function DateRangePicker({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[240px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal",
               !dateRange && "text-muted-foreground"
             )}
           >
@@ -51,7 +51,7 @@ export function DateRangePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             initialFocus
             mode="range"
@@ -59,7 +59,6 @@ export function DateRangePicker({
             selected={dateRange}
             onSelect={setDateRange}
             numberOfMonths={2}
-            className="pointer-events-auto"
           />
           <div className="flex items-center justify-between p-3 border-t">
             <Button

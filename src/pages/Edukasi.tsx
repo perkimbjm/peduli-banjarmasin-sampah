@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ const Edukasi = () => {
   
   const educationContent = [
     {
-      id: 1,
+      id: "1",
       title: "Panduan Pemilahan Sampah Rumah Tangga",
       description: "Cara praktis melakukan pemilahan sampah di rumah dengan metode 3R - Reduce, Reuse, Recycle.",
       image: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -40,7 +41,7 @@ const Edukasi = () => {
       date: "2 Mei 2025"
     },
     {
-      id: 2,
+      id: "2",
       title: "Membuat Kompos dari Sampah Dapur",
       description: "Tutorial lengkap cara membuat kompos dari sisa makanan dan sampah organik rumah tangga.",
       image: "https://images.unsplash.com/photo-1500044863276-9805de0d9a3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -49,7 +50,7 @@ const Edukasi = () => {
       date: "17 April 2025"
     },
     {
-      id: 3,
+      id: "3",
       title: "Inovasi Produk Daur Ulang",
       description: "Mengenal berbagai produk kreatif yang bisa dibuat dari sampah plastik dan bahan daur ulang.",
       image: "https://images.unsplash.com/photo-1536939459926-301728717817?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -58,7 +59,7 @@ const Edukasi = () => {
       date: "5 April 2025"
     },
     {
-      id: 4,
+      id: "4",
       title: "Mengurangi Sampah Plastik Sekali Pakai",
       description: "Tips praktis untuk mengurangi penggunaan plastik sekali pakai dalam kehidupan sehari-hari.",
       image: "https://images.unsplash.com/photo-1582408921715-18e7806365c1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -67,7 +68,7 @@ const Edukasi = () => {
       date: "28 Maret 2025"
     },
     {
-      id: 5,
+      id: "5",
       title: "Bank Sampah: Mengubah Sampah Jadi Rupiah",
       description: "Panduan lengkap tentang cara kerja bank sampah dan bagaimana masyarakat bisa memanfaatkannya.",
       image: "https://images.unsplash.com/photo-1562684600-71d5e47c5321?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -76,7 +77,7 @@ const Edukasi = () => {
       date: "15 Maret 2025"
     },
     {
-      id: 6,
+      id: "6",
       title: "Workshop Daur Ulang Kertas",
       description: "Video tutorial cara mendaur ulang kertas bekas menjadi kertas baru yang ramah lingkungan.",
       image: "https://images.unsplash.com/photo-1553531370-36204bda640c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
@@ -183,10 +184,12 @@ const Edukasi = () => {
                     <p className="text-gray-600 dark:text-gray-300">{content.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button className="bg-peduli-600 hover:bg-peduli-700 text-white w-full">
-                      {content.type === 'video' ? 'Tonton Video' : 'Baca Selengkapnya'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link to={`/edukasi/${content.id}`} className="w-full">
+                      <Button className="bg-peduli-600 hover:bg-peduli-700 text-white w-full">
+                        {content.type === 'video' ? 'Tonton Video' : 'Baca Selengkapnya'}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}
@@ -255,7 +258,7 @@ const Edukasi = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden relative">
+              <Link to="/edukasi/2" className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden relative">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Video className="h-16 w-16 text-gray-400" />
                 </div>
@@ -263,11 +266,11 @@ const Edukasi = () => {
                   <h3 className="text-lg font-semibold">Tutorial Komposting di Rumah</h3>
                   <p className="text-sm text-gray-300">Durasi: 12:34 • 1.2K views</p>
                 </div>
-              </div>
+              </Link>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="bg-white dark:bg-gray-700 rounded-lg shadow overflow-hidden flex">
+                  <Link to={`/edukasi/${item}`} key={item} className="bg-white dark:bg-gray-700 rounded-lg shadow overflow-hidden flex">
                     <div className="bg-gray-200 dark:bg-gray-600 w-1/3 relative">
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Video className="h-6 w-6 text-gray-400" />
@@ -281,7 +284,7 @@ const Edukasi = () => {
                         8:12 • 845 views
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
