@@ -15,7 +15,7 @@ import {
 
 interface DateRangePickerProps {
   dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
+  setDateRange: (range: DateRange | undefined) => void; // Changed type signature
   className?: string;
 }
 
@@ -32,7 +32,7 @@ export function DateRangePicker({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-full justify-start text-left font-normal",
+              "w-[240px] justify-start text-left font-normal",
               !dateRange && "text-muted-foreground"
             )}
           >
@@ -51,7 +51,7 @@ export function DateRangePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0" align="end">
           <Calendar
             initialFocus
             mode="range"

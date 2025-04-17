@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import PageHeader from "@/components/monitoring-sumber/PageHeader";
 import FilterCard from "@/components/monitoring-sumber/FilterCard";
@@ -19,16 +18,6 @@ const MonitoringSumberSampah = () => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const banjarmasinDistricts = [
-    { name: "Banjarmasin Barat", subdistricts: ["Pelambuan", "Belitung Selatan", "Belitung Utara", "Teluk Dalam", "Telawang", "Kuin Cerucuk", "Kuin Selatan", "Basirih", "Basirih Selatan"] },
-    { name: "Banjarmasin Selatan", subdistricts: ["Kelayan Barat", "Kelayan Dalam", "Kelayan Timur", "Kelayan Tengah", "Kelayan Selatan", "Murung Raya", "Pekauman", "Pemurus Dalam", "Pemurus Baru", "Tanjung Pagar", "Mantuil", "Basirih Selatan"] },
-    { name: "Banjarmasin Tengah", subdistricts: ["Teluk Dalam", "Seberang Mesjid", "Melayu", "Pasar Lama", "Kertak Baru Ilir", "Kertak Baru Ulu", "Gadang", "Kelayan Luar", "Pekapuran Laut", "Sungai Baru", "Antasan Besar", "Kelayan Dalam"] },
-    { name: "Banjarmasin Timur", subdistricts: ["Kuripan", "Pengambangan", "Sungai Bilu", "Sungai Lulut", "Kebun Bunga", "Benua Anyar", "Pemurus Luar", "Pekapuran Raya", "Karang Mekar"] },
-    { name: "Banjarmasin Utara", subdistricts: ["Alalak Utara", "Alalak Tengah", "Alalak Selatan", "Kuin Utara", "Pangeran", "Sungai Miai", "Antasan Kecil Timur", "Sungai Jingah", "Sungai Andai", "Sungai Mufti"] },
-    { name: "Semua Kecamatan", subdistricts: [] }
-  ];
-
-  // Handle refresh action
   const handleRefresh = () => {
     setIsRefreshing(true);
     // Simulasikan proses refresh
@@ -38,12 +27,10 @@ const MonitoringSumberSampah = () => {
     }, 1000);
   };
 
-  // Handle export action
   const handleExport = () => {
     console.log("Data exported!");
   };
 
-  // Handle layer toggle
   const handleLayerToggle = (layer: LayerType) => {
     if (activeLayers.includes(layer)) {
       setActiveLayers(activeLayers.filter(l => l !== layer));
@@ -51,24 +38,6 @@ const MonitoringSumberSampah = () => {
       setActiveLayers([...activeLayers, layer]);
     }
   };
-
-  // Calculate available subdistricts based on selected district
-  const [availableSubdistricts, setAvailableSubdistricts] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Find the selected district and get its subdistricts
-    const selectedDistrictData = banjarmasinDistricts.find(
-      district => district.name === filters.district
-    );
-    
-    // If found and it has subdistricts, set them as available
-    if (selectedDistrictData) {
-      setAvailableSubdistricts(selectedDistrictData.subdistricts);
-    } else {
-      // Default: empty array or all subdistricts
-      setAvailableSubdistricts([]);
-    }
-  }, [filters.district]);
 
   // Calculate pagination values
   const filteredSources = data || [];
@@ -89,6 +58,9 @@ const MonitoringSumberSampah = () => {
       setCurrentPage(currentPage - 1);
     }
   };
+
+  // Calculate available subdistricts
+  const availableSubdistricts = [];
 
   return (
     <div className="container mx-auto p-4 max-w-7xl space-y-6">
@@ -112,7 +84,7 @@ const MonitoringSumberSampah = () => {
             selectedSearch={filters.search}
             setSelectedSearch={(val) => setFilters({ ...filters, search: val })}
             availableSubdistricts={availableSubdistricts}
-            banjarmasinDistricts={banjarmasinDistricts}
+            banjarmasinDistricts={[]} // This will be replaced by the internal array in FilterCard
           />
         </div>
         
