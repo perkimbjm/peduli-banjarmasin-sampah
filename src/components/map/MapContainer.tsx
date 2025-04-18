@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { MapContainer as LeafletMapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -340,9 +341,8 @@ const MapContainer = () => {
   };
 
   const handleRemoveUploadedLayer = (layerId: string) => {
-    const mapLayers = window.mapLayers;
-    if (mapLayers && mapLayers[layerId]) {
-      const layer = mapLayers[layerId];
+    if (window.mapLayers && window.mapLayers[layerId]) {
+      const layer = window.mapLayers[layerId];
       if (layer) {
         layer.remove();
       }

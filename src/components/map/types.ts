@@ -1,3 +1,4 @@
+
 export interface LayerConfig {
   id: string;
   name: string;
@@ -34,3 +35,15 @@ export interface MapControlProps {
   onLayerOpacityChange: (layerId: string, opacity: number) => void;
   onFileUpload: (file: File) => void;
 } 
+
+// Add the LayerInstances interface
+export interface LayerInstances {
+  [key: string]: L.Layer;
+}
+
+// Extend the Window interface to include mapLayers property
+declare global {
+  interface Window {
+    mapLayers?: LayerInstances;
+  }
+}
