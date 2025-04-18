@@ -34,6 +34,7 @@ import EdukasiAdmin from "@/pages/EdukasiAdmin";
 // New Pages
 import Kolaborasi from "@/pages/Kolaborasi";
 import BankSampah from "@/pages/BankSampah";
+import BankSampahDetail from "./pages/BankSampahDetail";
 import Pengaduan from "@/pages/Pengaduan";
 import Logistik from "@/pages/Logistik";
 import UsersAdmin from "@/pages/UsersAdmin";
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/register" element={<Register />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/bank/:id" element={<BankSampahDetail />} />
             </Route>
 
             {/* Protected Layout */}

@@ -1,5 +1,4 @@
-
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +27,23 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
     lastUpdate: new Date().toLocaleTimeString(),
     zoomLevel: 14,
   });
+
+  const handlePointsChange = useCallback((count: number) => {
+    setMapStatus(prev => ({
+      ...prev,
+      activePoints: count,
+      lastUpdate: new Date().toLocaleTimeString()
+    }));
+  }, []);
+
+  const handleZoomChange = useCallback(() => {
+    if (mapRef.current) {
+      setMapStatus(prev => ({
+        ...prev,
+        zoomLevel: mapRef.current!.getZoom()
+      }));
+    }
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -64,14 +80,7 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       layerGroupRef.current.addTo(mapRef.current);
 
       // Event listener for zoom changes
-      mapRef.current.on('zoomend', () => {
-        if (mapRef.current) {
-          setMapStatus(prev => ({
-            ...prev,
-            zoomLevel: mapRef.current!.getZoom()
-          }));
-        }
-      });
+      mapRef.current.on('zoomend', handleZoomChange);
     }
 
     // Adjust map when fullscreen or split view changes
@@ -82,65 +91,28 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       }, 100);
     }
 
-    // Cleanup function
     return () => {
-      // We don't remove the map on cleanup to preserve the instance
+      if (mapRef.current) {
+        mapRef.current.off('zoomend', handleZoomChange);
+      }
     };
-  }, [fullscreenMode, splitViewEnabled]);
+  }, [fullscreenMode, splitViewEnabled, handleZoomChange]);
 
-  // Function to fetch real data from Supabase
-  const fetchMapData = async () => {
-    try {
-      // Example of how to fetch data from Supabase
-      // const { data, error } = await supabase
-      //  .from('waste_collection_points')
-      //  .select('*');
-      
-      // if (error) throw error;
-      
-      toast({
-        title: "Data diperbarui",
-        description: "Data peta berhasil diperbarui",
-      });
-      
-      setMapStatus(prev => ({
-        ...prev,
-        lastUpdate: new Date().toLocaleTimeString()
-      }));
-      
-    } catch (error) {
-      console.error("Error fetching map data:", error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat data peta terbaru",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Take screenshot function
-  const takeScreenshot = () => {
-    toast({
-      title: "Screenshot Peta",
-      description: "Screenshot berhasil disimpan",
-    });
-  };
-
-  // Reset view to initial center and zoom
-  const resetMapView = () => {
+  const resetMapView = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.setView([-3.3194, 114.5921], 14);
     }
-  };
+  }, []);
 
-  // Handle points count change from layers component
-  const handlePointsChange = (count: number) => {
-    setMapStatus(prev => ({
-      ...prev,
-      activePoints: count,
-      lastUpdate: new Date().toLocaleTimeString()
-    }));
-  };
+  const takeScreenshot = useCallback(() => {
+    if (mapRef.current) {
+      // Implementation for taking screenshot
+      toast({
+        title: "Screenshot",
+        description: "Fitur screenshot belum diimplementasikan.",
+      });
+    }
+  }, [toast]);
 
   return (
     <div className={`relative ${fullscreenMode ? 'h-[calc(100vh-4rem)]' : 'h-[600px]'} ${splitViewEnabled ? 'w-1/2' : 'w-full'} border border-border rounded-lg bg-muted/10 shadow-md overflow-hidden`}>
@@ -148,7 +120,7 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       <MapHeader
         activePoints={mapStatus.activePoints}
         lastUpdate={mapStatus.lastUpdate}
-        onRefresh={fetchMapData}
+        onRefresh={() => {}}
       />
       
       {/* Map Container */}

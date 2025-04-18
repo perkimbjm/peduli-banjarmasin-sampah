@@ -1,5 +1,4 @@
-
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { mockData } from './data/mock-map-data';
 import { createColoredIcon } from './utils/leaflet-config';
@@ -20,6 +19,10 @@ const MapLayers: React.FC<MapLayersProps> = ({
   onPointsChange 
 }) => {
   const { toast } = useToast();
+
+  const handlePointsChange = useCallback((count: number) => {
+    onPointsChange(count);
+  }, [onPointsChange]);
 
   useEffect(() => {
     if (!map) return;
@@ -165,12 +168,10 @@ const MapLayers: React.FC<MapLayersProps> = ({
     
     // Add administrative boundaries
     if (activeLayers.includes('kecamatan')) {
-      // This would normally load actual GeoJSON data
       toast({
         title: "Informasi",
         description: "Data batas kecamatan dimuat.",
       });
-      // In a real app, we'd add a GeoJSON layer here
     }
     
     if (activeLayers.includes('kelurahan')) {
@@ -178,15 +179,14 @@ const MapLayers: React.FC<MapLayersProps> = ({
         title: "Informasi",
         description: "Data batas kelurahan dimuat.",
       });
-      // In a real app, we'd add a GeoJSON layer here
     }
     
     // Update counts
-    onPointsChange(activePointCount);
+    handlePointsChange(activePointCount);
     
-  }, [activeLayers, map, layerGroup, onPointsChange, toast]);
+  }, [activeLayers, map, layerGroup, handlePointsChange, toast]);
 
-  return null; // This is a logic component, it doesn't render anything
+  return null;
 };
 
 export default MapLayers;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -56,6 +56,81 @@ const MapPelaporan = ({ location, onLocationChange }: MapPelaporanProps) => {
   // Inisialisasi peta
   useEffect(() => {
     if (!mapContainerRef.current) return;
+
+    // Fungsi untuk mendapatkan lokasi pengguna saat ini
+    const locateUser = (map: L.Map) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude: lat, longitude: lng } = position.coords;
+            
+            // Tampilkan posisi saat ini dengan marker khusus
+            if (currentLocationMarkerRef.current) {
+              currentLocationMarkerRef.current.setLatLng([lat, lng]);
+            } else {
+              currentLocationMarkerRef.current = L.marker([lat, lng], {
+                icon: currentLocationIcon
+              }).addTo(map)
+                .bindPopup("Lokasi Anda saat ini")
+                .openPopup();
+            }
+            
+            // Zoom ke lokasi saat ini
+            map.setView([lat, lng], 16);
+            
+            // Tanya apakah pengguna ingin menggunakan lokasi ini
+            const useLocationButton = L.DomUtil.create("button", "");
+            useLocationButton.innerHTML = "Gunakan lokasi ini";
+            useLocationButton.style.cssText = "margin-top: 10px; padding: 5px 10px; background-color: #3085d6; color: white; border: none; border-radius: 4px; cursor: pointer;";
+            
+            // Tambahkan tombol ke popup
+            const popupContent = document.createElement("div");
+            popupContent.appendChild(document.createTextNode("Lokasi Anda saat ini"));
+            popupContent.appendChild(document.createElement("br"));
+            popupContent.appendChild(useLocationButton);
+            
+            currentLocationMarkerRef.current.getPopup().setContent(popupContent);
+            
+            // Tambahkan event listener pada tombol
+            useLocationButton.addEventListener("click", () => {
+              onLocationChange({ lat, lng });
+              currentLocationMarkerRef.current?.closePopup();
+            });
+            
+            setIsLocating(false);
+          },
+          (error) => {
+            console.error("Error mendapatkan lokasi:", error);
+            let errorMessage: string;
+            
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "Akses lokasi ditolak oleh pengguna.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Informasi lokasi tidak tersedia.";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "Waktu permintaan lokasi habis.";
+                break;
+              default:
+                errorMessage = "Terjadi kesalahan saat mendapatkan lokasi.";
+            }
+            
+            alert(errorMessage);
+            setIsLocating(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        alert("Geolokasi tidak didukung oleh browser Anda.");
+        setIsLocating(false);
+      }
+    };
 
     // Buat instance peta jika belum ada
     if (!mapInstanceRef.current) {
@@ -297,86 +372,12 @@ const MapPelaporan = ({ location, onLocationChange }: MapPelaporanProps) => {
         currentLocationMarkerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, onLocationChange, isFullscreen]);
 
-  // Fungsi untuk mendapatkan lokasi pengguna saat ini
-  const locateUser = (map: L.Map) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude: lat, longitude: lng } = position.coords;
-          
-          // Tampilkan posisi saat ini dengan marker khusus
-          if (currentLocationMarkerRef.current) {
-            currentLocationMarkerRef.current.setLatLng([lat, lng]);
-          } else {
-            currentLocationMarkerRef.current = L.marker([lat, lng], {
-              icon: currentLocationIcon
-            }).addTo(map)
-              .bindPopup("Lokasi Anda saat ini")
-              .openPopup();
-          }
-          
-          // Zoom ke lokasi saat ini
-          map.setView([lat, lng], 16);
-          
-          // Tanya apakah pengguna ingin menggunakan lokasi ini
-          const useLocationButton = L.DomUtil.create("button", "");
-          useLocationButton.innerHTML = "Gunakan lokasi ini";
-          useLocationButton.style.cssText = "margin-top: 10px; padding: 5px 10px; background-color: #3085d6; color: white; border: none; border-radius: 4px; cursor: pointer;";
-          
-          // Tambahkan tombol ke popup
-          const popupContent = document.createElement("div");
-          popupContent.appendChild(document.createTextNode("Lokasi Anda saat ini"));
-          popupContent.appendChild(document.createElement("br"));
-          popupContent.appendChild(useLocationButton);
-          
-          currentLocationMarkerRef.current.getPopup().setContent(popupContent);
-          
-          // Tambahkan event listener pada tombol
-          useLocationButton.addEventListener("click", () => {
-            onLocationChange({ lat, lng });
-            currentLocationMarkerRef.current?.closePopup();
-          });
-          
-          setIsLocating(false);
-        },
-        (error) => {
-          console.error("Error mendapatkan lokasi:", error);
-          let errorMessage: string;
-          
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = "Akses lokasi ditolak oleh pengguna.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = "Informasi lokasi tidak tersedia.";
-              break;
-            case error.TIMEOUT:
-              errorMessage = "Waktu permintaan lokasi habis.";
-              break;
-            default:
-              errorMessage = "Terjadi kesalahan saat mendapatkan lokasi.";
-          }
-          
-          alert(errorMessage);
-          setIsLocating(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      alert("Geolokasi tidak didukung oleh browser Anda.");
-      setIsLocating(false);
-    }
-  };
-
   // Toggle fullscreen function
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prevState) => !prevState);
     
     if (!isFullscreen) {
       // Entering fullscreen
@@ -422,7 +423,7 @@ const MapPelaporan = ({ location, onLocationChange }: MapPelaporanProps) => {
         mapInstanceRef.current.invalidateSize();
       }
     }, 100);
-  };
+  }, [isFullscreen]);
 
   return (
     <div className="relative h-full w-full">

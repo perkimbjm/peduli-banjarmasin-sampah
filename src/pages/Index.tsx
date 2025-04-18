@@ -9,6 +9,7 @@ import ProhibitedActionsSection from "@/components/home/ProhibitedActionsSection
 import ReportingContactsSection from "@/components/home/ReportingContactsSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import ContactSection from "@/components/home/ContactSection";
+import BankSampahSearch from "@/components/home/BankSampahSearch";
 
 const Index = () => {
   return (
@@ -21,6 +22,7 @@ const Index = () => {
       <ProhibitedActionsSection />
       <ReportingContactsSection />
       <FeaturesSection />
+      <BankSampahSearch />
       <ContactSection />
       
       <Footer />
