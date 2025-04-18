@@ -1,17 +1,16 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
-} from "recharts";
-import { Download, Search, Filter, Building, Trash, Building2, ShoppingCart } from "lucide-react";
+import { Building2, Trash, Building, ShoppingCart } from "lucide-react";
+import { BankSampahStats } from "@/components/bank-sampah/BankSampahStats";
+import { WasteDistribution } from "@/components/bank-sampah/WasteDistribution";
+import { MonthlyPerformance } from "@/components/bank-sampah/MonthlyPerformance";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, Search, Filter } from "lucide-react";
 
 // Mock data for bank sampah performance
 const bankSampahData = [
@@ -209,93 +208,12 @@ const BankSampah = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Bank Sampah Tab */}
           <TabsContent value="bank-sampah" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Performance Card */}
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Performa Bank Sampah</CardTitle>
-                  <CardDescription>Data volume dan pendapatan dari semua bank sampah</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={bankSampahData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                      <Tooltip />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="volume" name="Volume (kg)" fill="#8884d8" />
-                      <Bar yAxisId="right" dataKey="members" name="Anggota" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Distribution Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribusi Jenis Sampah</CardTitle>
-                  <CardDescription>Persentase berbagai jenis sampah</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={wasteTypeData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {wasteTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Monthly Performance Card */}
-              <Card className="md:col-span-3">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Performa Bulanan</CardTitle>
-                    <CardDescription>Tren volume sampah yang dikelola per bulan</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" /> Ekspor Data
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart
-                      data={monthlyPerformanceData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="organik" name="Sampah Organik (kg)" stroke="#8884d8" activeDot={{ r: 8 }} />
-                      <Line type="monotone" dataKey="anorganik" name="Sampah Anorganik (kg)" stroke="#82ca9d" />
-                      <Line type="monotone" dataKey="b3" name="Sampah B3 (kg)" stroke="#ff7300" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
+              <BankSampahStats bankSampahData={bankSampahData} />
+              <WasteDistribution wasteTypeData={wasteTypeData} />
+              <MonthlyPerformance monthlyData={monthlyPerformanceData} />
+              
               {/* Facility Recommendations Card */}
               <Card className="md:col-span-2">
                 <CardHeader>

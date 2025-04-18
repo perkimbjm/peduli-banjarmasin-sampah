@@ -1,32 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
-import { 
-  Building, 
-  MapPin, 
-  Phone, 
-  Clock, 
-  Users, 
-  Recycle, 
-  ChevronLeft, 
-  Instagram, 
-  Mail,
-  User,
-  Calendar,
-  Scale,
-  CheckCircle,
-  Award,
-  Navigation
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { LayerType } from "@/components/webgis/data/mock-map-data";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { DetailHeader } from "@/components/bank-sampah/DetailHeader";
+import { ContactInfo } from "@/components/bank-sampah/ContactInfo";
 
-// Mock data - in a real app this would come from an API
 interface BankSampah {
   id: string;
   name: string;
@@ -145,12 +125,9 @@ const BankSampahDetail = () => {
   const [bankSampah, setBankSampah] = useState<BankSampah | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  
-  // Memoisasi activeLayers untuk menghindari re-render yang tidak perlu
   const activeLayers = useMemo<LayerType[]>(() => ['bank-sampah'], []);
 
   useEffect(() => {
-    // In a real app, this would fetch data from an API
     if (id && bankSampahData?.[id]) {
       setBankSampah(bankSampahData[id]);
     }
@@ -159,7 +136,6 @@ const BankSampahDetail = () => {
   useEffect(() => {
     if (!bankSampah) return;
 
-    // Initialize map if it doesn't exist
     if (!mapRef.current) {
       mapRef.current = L.map('map').setView(bankSampah.coordinates, 15);
       
@@ -168,12 +144,10 @@ const BankSampahDetail = () => {
       }).addTo(mapRef.current);
     }
 
-    // Remove existing marker if any
     if (markerRef.current) {
       markerRef.current.remove();
     }
 
-    // Create marker with custom icon
     const customIcon = L.divIcon({
       className: 'custom-div-icon',
       html: `<div style="background-color: #22c55e; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.2);"></div>`,
@@ -181,7 +155,6 @@ const BankSampahDetail = () => {
       iconAnchor: [10, 10]
     });
 
-    // Add marker
     markerRef.current = L.marker(bankSampah.coordinates, { icon: customIcon })
       .addTo(mapRef.current)
       .bindPopup(`
@@ -202,10 +175,8 @@ const BankSampahDetail = () => {
         </div>
       `);
 
-    // Set view to marker
     mapRef.current.setView(bankSampah.coordinates, 15);
 
-    // Cleanup
     return () => {
       if (markerRef.current) {
         markerRef.current.remove();
@@ -228,7 +199,6 @@ const BankSampahDetail = () => {
     );
   }
 
-  // Format date from ISO string to readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -242,34 +212,15 @@ const BankSampahDetail = () => {
         <ChevronLeft className="h-4 w-4 mr-1" /> Kembali ke Beranda
       </Link>
       
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-green-600 to-blue-600 text-white">
-        <div className="absolute inset-0 opacity-20 bg-[url('/assets/bank-sampah.webp')] bg-cover bg-center" />
-        <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row gap-6 items-center">
-          <Avatar className="h-24 w-24 md:h-32 md:w-32 rounded-xl bg-white p-1">
-            <AvatarImage src={bankSampah.logo} alt={bankSampah.name} />
-            <AvatarFallback className="bg-white text-green-700 text-xs font-bold p-2 rounded">
-              {bankSampah.kelurahan}
-            </AvatarFallback>
-          </Avatar>
-          <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-bold">{bankSampah.name}</h1>
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              {bankSampah.wasteTypes.map((type, index) => (
-                <Badge key={index} variant="secondary" className="bg-white/20 hover:bg-white/30">
-                  {type}
-                </Badge>
-              ))}
-            </div>
-            <p className="flex items-center justify-center md:justify-start gap-1 text-sm md:text-base">
-              <MapPin className="h-4 w-4" />
-              {bankSampah.address}, Kel. {bankSampah.kelurahan}, Kec. {bankSampah.kecamatan}
-            </p>
-          </div>
-        </div>
-      </div>
+      <DetailHeader
+        name={bankSampah.name}
+        logo={bankSampah.logo}
+        address={bankSampah.address}
+        kelurahan={bankSampah.kelurahan}
+        kecamatan={bankSampah.kecamatan}
+        wasteTypes={bankSampah.wasteTypes}
+      />
       
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <Tabs defaultValue="info" className="w-full">
@@ -402,69 +353,15 @@ const BankSampahDetail = () => {
           </Tabs>
         </div>
         
-        {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building className="h-5 w-5 mr-2" />
-                Kontak & Informasi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center">
-                <User className="h-5 w-5 mr-3 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Pengelola</p>
-                  <p className="font-semibold">{bankSampah.manager}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Phone className="h-5 w-5 mr-3 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Telepon</p>
-                  <p className="font-semibold">{bankSampah.phoneNumber}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Mail className="h-5 w-5 mr-3 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-semibold">{bankSampah.email}</p>
-                </div>
-              </div>
-              {bankSampah.instagram && (
-                <a 
-                  href={`https://instagram.com/${bankSampah.instagram.replace("@", "")}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-blue-600 hover:underline"
-                >
-                  <Instagram className="h-4 w-4" /> {bankSampah.instagram}
-                </a>
-              )}
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 mr-3 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Jam Operasional</p>
-                  <p className="font-semibold">{bankSampah.operationalHours}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Recycle className="h-5 w-5 mr-3 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Jenis Sampah</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {bankSampah.wasteTypes.map((type, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ContactInfo
+            manager={bankSampah.manager}
+            phoneNumber={bankSampah.phoneNumber}
+            email={bankSampah.email}
+            instagram={bankSampah.instagram}
+            operationalHours={bankSampah.operationalHours}
+            wasteTypes={bankSampah.wasteTypes}
+          />
           
           <Card>
             <CardHeader>
