@@ -58,7 +58,6 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
       
       // Add base tile layers
       const baseMaps = getBaseMaps();
-      baseMaps["Street"].addTo(mapRef.current);
       
       // Add layer control
       L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(mapRef.current);

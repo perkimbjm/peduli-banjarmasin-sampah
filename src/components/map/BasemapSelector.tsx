@@ -49,7 +49,6 @@ const BasemapSelector = () => {
     const newLayer = L.tileLayer(basemap.url, {
       attribution: basemap.attribution,
     });
-    newLayer.addTo(map);
     
     // Simpan referensi layer baru
     currentLayerRef.current = newLayer;

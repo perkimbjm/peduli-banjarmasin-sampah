@@ -19,7 +19,7 @@ const WebGIS = () => {
             </div>
           </div>
           
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div id="data-board" className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Total TPS</h3>
               <p className="text-3xl font-bold text-peduli-600 dark:text-peduli-400">24</p>

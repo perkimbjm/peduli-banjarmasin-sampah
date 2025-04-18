@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MapContainer as LeafletMapContainer,
   TileLayer,
@@ -11,7 +11,6 @@ import { LayerConfig, LayerGroup, MapState } from "./types";
 import L from "leaflet";
 import "leaflet-omnivore";
 import { useToast } from "@/hooks/use-toast";
-import { ToastProvider } from "@/components/ui/toast";
 
 // Memperluas interface Window untuk menyimpan layers
 declare global {
@@ -23,7 +22,8 @@ declare global {
 const DEFAULT_CENTER: [number, number] = [-3.3147, 114.5905]; // Banjarmasin
 const DEFAULT_ZOOM = 12;
 
-const initialLayerGroups: LayerGroup[] = [
+// Definisi layer default yang akan ditampilkan saat pertama kali
+const getInitialLayerGroups = (): LayerGroup[] => [
   {
     id: "basemap",
     name: "Basemap",
@@ -33,7 +33,7 @@ const initialLayerGroups: LayerGroup[] = [
         name: "OpenStreetMap",
         type: "tile",
         url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        visible: false,
+        visible: true,
         opacity: 1,
         group: "basemap",
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -85,7 +85,7 @@ const initialLayerGroups: LayerGroup[] = [
         name: "Batas Kelurahan",
         type: "geojson",
         url: "/data-map/kelurahan.geojson",
-        visible: false,
+        visible: true, // Layer batas kelurahan akan ditampilkan secara default
         opacity: 0.7,
         group: "batas-wilayah",
         style: {
@@ -121,7 +121,7 @@ const initialLayerGroups: LayerGroup[] = [
         name: "TPS",
         type: "geojson",
         url: "/data-map/persampahan.geojson",
-        visible: false,
+        visible: true, // Layer TPS akan ditampilkan secara default
         opacity: 1,
         group: "infrastruktur",
         style: {
@@ -137,16 +137,17 @@ const initialLayerGroups: LayerGroup[] = [
   // Grup "Layer Diupload" akan ditambahkan dinamis saat ada file yang diupload
 ];
 
+// Styling untuk z-index toast
+const toastStyles = `
+  .toast-container {
+    z-index: 10000 !important;
+  }
+  [role="status"].toast {
+    z-index: 10001 !important;
+  }
+`;
 
-const MapContent = ({ 
-  onFileUpload, 
-  layerGroups,
-  onLayerToggle,
-  onLayerOpacityChange,
-  isLayerPanelOpen,
-  onLayerPanelToggle,
-  onRemoveUploadedLayer
-}: { 
+interface MapContentProps {
   onFileUpload: (file: File) => void;
   layerGroups: LayerGroup[];
   onLayerToggle: (layerId: string) => void;
@@ -154,141 +155,200 @@ const MapContent = ({
   isLayerPanelOpen: boolean;
   onLayerPanelToggle: () => void;
   onRemoveUploadedLayer: (layerId: string) => void;
+}
+
+interface LayerInstances {
+  [key: string]: L.Layer;
+}
+
+const MapContent: React.FC<MapContentProps> = ({
+  onFileUpload,
+  layerGroups,
+  onLayerToggle,
+  onLayerOpacityChange,
+  isLayerPanelOpen,
+  onLayerPanelToggle,
+  onRemoveUploadedLayer
 }) => {
   const map = useMap();
-  const [layers, setLayers] = useState<{ [key: string]: L.Layer }>({});
+  const [layerInstances, setLayerInstances] = useState<LayerInstances>({});
+  const [initialized, setInitialized] = useState(false);
+  const layerInstancesRef = useRef<LayerInstances>({});
 
-  // Provide a way for parent components to access layer references
+  // Update ref ketika layerInstances berubah
   useEffect(() => {
-    // Make the uploaded layers accessible to parent components via a global window property
-    window.mapLayers = layers;
-  }, [layers]);
+    layerInstancesRef.current = layerInstances;
+    window.mapLayers = layerInstances;
+  }, [layerInstances]);
 
-  useEffect(() => {
-    // Update layer visibility and opacity
-    layerGroups.forEach(group => {
-      group.layers.forEach(layer => {
-        const existingLayer = layers[layer.id];
-        if (existingLayer) {
-          if (layer.type === 'tile') {
-            // Memastikan opacity berfungsi untuk semua basemap termasuk OpenStreetMap
-            (existingLayer as L.TileLayer).setOpacity(layer.opacity);
-            if (layer.visible) {
-              existingLayer.addTo(map);
-            } else {
-              existingLayer.remove();
-            }
-          } else {
-            const geoJSONLayer = existingLayer as L.GeoJSON;
-            geoJSONLayer.setStyle({
-              ...layer.style,
-              opacity: layer.opacity,
-              fillOpacity: layer.opacity,
-            });
-            if (layer.visible) {
-              geoJSONLayer.addTo(map);
-            } else {
-              geoJSONLayer.remove();
-            }
-          }
+  // PERBAIKAN: Fungsi untuk mengelola visibilitas layer
+  const updateLayerVisibility = useCallback((layerId: string, visible: boolean) => {
+    const layer = layerInstancesRef.current[layerId];
+    
+    if (layer) {
+      if (visible) {
+        if (!map.hasLayer(layer)) {
+          map.addLayer(layer);
         }
-      });
-    });
-  }, [map, layerGroups, layers]);
+      } else {
+        if (map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+      }
+    }
+  }, [map]);
 
+  // PERBAIKAN: Fungsi untuk mengelola opacity layer
+  const updateLayerOpacity = useCallback((layerId: string, opacity: number) => {
+    const layer = layerInstancesRef.current[layerId];
+    
+    if (layer) {
+      if ('setOpacity' in layer) {
+        (layer as L.TileLayer).setOpacity(opacity);
+      } else if ('setStyle' in layer) {
+        (layer as L.GeoJSON).setStyle({
+          opacity: opacity,
+          fillOpacity: opacity * 0.2
+        });
+      }
+    }
+  }, []);
+
+  // PERBAIKAN: Inisialisasi awal layer
   useEffect(() => {
-    // Load initial layers
+    if (initialized) return;
+    
     const loadLayers = async () => {
-      const newLayers: { [key: string]: L.Layer } = {};
+      const newInstances: LayerInstances = {};
       
       for (const group of layerGroups) {
         for (const layer of group.layers) {
-          if (layer.url) {
-            try {
-              if (layer.type === "tile") {
-                const tileLayer = L.tileLayer(layer.url, {
-                  attribution: layer.attribution,
-                  opacity: layer.opacity,
-                });
-                if (layer.visible) {
-                  tileLayer.addTo(map);
-                }
-                newLayers[layer.id] = tileLayer;
-              } else if (layer.type === "geojson") {
-                const response = await fetch(layer.url);
-                const data = await response.json();
-                const geoJSONLayer = L.geoJSON(data, {
-                  style: layer.style,
-                  onEachFeature: (feature, layer) => {
-                    if (feature.properties) {
-                      layer.bindPopup(
-                        Object.entries(feature.properties)
-                          .map(([key, value]) => `${key}: ${value}`)
-                          .join("<br>")
-                      );
-                    }
-                  },
-                });
-                if (layer.visible) {
-                  geoJSONLayer.addTo(map);
-                }
-                newLayers[layer.id] = geoJSONLayer;
+          try {
+            if (layer.type === "tile") {
+              // Buat tile layer
+              const tileLayer = L.tileLayer(layer.url, {
+                attribution: layer.attribution,
+                opacity: layer.opacity,
+              });
+              
+              // Tambahkan ke instances
+              newInstances[layer.id] = tileLayer;
+              
+            } else if (layer.type === "geojson" && layer.url) {
+              // Load dan parse GeoJSON data
+              const response = await fetch(layer.url);
+              if (!response.ok) {
+                throw new Error(`Failed to fetch ${layer.url}: ${response.statusText}`);
               }
-            } catch (error) {
-              console.error(`Error loading layer ${layer.id}:`, error);
+              
+              const data = await response.json();
+              
+              // Buat GeoJSON layer
+              const geoJSONLayer = L.geoJSON(data, {
+                style: () => ({
+                  color: layer.style?.color || "#3388ff",
+                  weight: layer.style?.weight || 3,
+                  opacity: layer.opacity,
+                  fillColor: layer.style?.fillColor || "#3388ff",
+                  fillOpacity: layer.opacity * 0.2,
+                }),
+                onEachFeature: (feature, layer) => {
+                  if (feature.properties) {
+                    layer.bindPopup(
+                      Object.entries(feature.properties)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join("<br>")
+                    );
+                  }
+                },
+              });
+              
+              // Tambahkan ke instances
+              newInstances[layer.id] = geoJSONLayer;
             }
+          } catch (error) {
+            console.error(`Error loading layer ${layer.id}:`, error);
           }
         }
       }
       
-      setLayers(newLayers);
+      // Update state dengan semua layer yang baru dibuat
+      setLayerInstances(newInstances);
+      setInitialized(true);
     };
-
+    
     loadLayers();
-  }, [map]);
+  }, [layerGroups]);
 
+  // PERBAIKAN: Effect untuk menerapkan visibilitas dan opacity
+  useEffect(() => {
+    if (!initialized) return;
+    
+    // Buat timeout untuk memastikan map sudah siap
+    setTimeout(() => {
+      layerGroups.forEach(group => {
+        group.layers.forEach(layer => {
+          updateLayerVisibility(layer.id, layer.visible);
+          updateLayerOpacity(layer.id, layer.opacity);
+        });
+      });
+    }, 100);
+  }, [layerGroups, initialized, updateLayerVisibility, updateLayerOpacity]);
+
+  // Upload file handling
   const handleFileUpload = async (file: File) => {
+    if (!initialized) return;
+    
     try {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const content = e.target?.result as string;
         try {
           const data = JSON.parse(content);
-          const layer = L.geoJSON(data, {
+          
+          // Buat layer baru
+          const geoJSONLayer = L.geoJSON(data, {
             style: {
               color: "#ff7800",
               weight: 2,
               opacity: 0.65,
+              fillOpacity: 0.2,
             },
+            onEachFeature: (feature, layer) => {
+              if (feature.properties) {
+                layer.bindPopup(
+                  Object.entries(feature.properties)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join("<br>")
+                );
+              }
+            }
           });
-          layer.addTo(map);
           
-          // Store the layer reference
-          setLayers(prev => ({
-            ...prev,
-            [file.name]: layer
-          }));
           
-          // Pass to parent
+          // Tambahkan ke state dan ref
+          setLayerInstances(prev => {
+            const updated = {
+              ...prev,
+              [file.name]: geoJSONLayer
+            };
+            
+            // Tambahkan ke peta
+            geoJSONLayer.addTo(map);
+            
+            return updated;
+          });
+          
+          // Notify parent component
           onFileUpload(file);
         } catch (error) {
-          console.error("Error processing GeoJSON data:", error);
-          onFileUploadError(file.name, "Error processing data");
+          console.error("Error parsing GeoJSON:", error);
         }
-      };
-      reader.onerror = () => {
-        onFileUploadError(file.name, "Error reading file");
       };
       reader.readAsText(file);
     } catch (error) {
-      console.error("Error uploading file:", error);
-      onFileUploadError(file.name, "Error uploading file");
+      console.error("Error reading file:", error);
     }
-  };
-
-  const onFileUploadError = (fileName: string, errorMsg: string) => {
-    // Notify parent component about error
-    console.error(`Failed to upload ${fileName}: ${errorMsg}`);
   };
 
   return (
@@ -303,19 +363,37 @@ const MapContent = ({
 };
 
 const MapContainer = () => {
-  const [mapState, setMapState] = useState<MapState>({
-    center: DEFAULT_CENTER,
-    zoom: DEFAULT_ZOOM,
-    layerGroups: initialLayerGroups,
-    activeLayers: initialLayerGroups
-      .flatMap((group) => group.layers)
-      .filter((layer) => layer.visible)
-      .map((layer) => layer.id),
+  const [mapState, setMapState] = useState<MapState>(() => {
+    const initialGroups = getInitialLayerGroups();
+    return {
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+      layerGroups: initialGroups,
+      activeLayers: initialGroups
+        .flatMap((group) => group.layers)
+        .filter((layer) => layer.visible)
+        .map((layer) => layer.id),
+    };
   });
+  
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const layerPanelRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Meningkatkan z-index toast
+  useEffect(() => {
+    // Tambahkan style untuk toast ke head dokumen
+    const styleElement = document.createElement('style');
+    styleElement.textContent = toastStyles;
+    document.head.appendChild(styleElement);
+    
+    // Clean up style saat komponen unmount
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
+  // Handle click outside untuk layer panel
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -332,6 +410,7 @@ const MapContainer = () => {
     };
   }, []);
 
+  // PERBAIKAN: Toggle visibilitas layer
   const handleLayerToggle = (layerId: string) => {
     setMapState((prev) => {
       // Cari layer dan group dari layerId
@@ -347,72 +426,89 @@ const MapContainer = () => {
         }
       }
       
-      // Jika tidak menemukan layer, kembalikan state tanpa perubahan
       if (!targetGroup || !targetLayer) return prev;
       
-      const updatedGroups = prev.layerGroups.map((group) => {
-        // Jika ini adalah grup basemap dan layer yang diklik sedang tidak visible,
-        // kita perlu mengaktifkannya dan menonaktifkan semua basemap lainnya
-        if (group.id === "basemap" && targetGroup.id === "basemap" && !targetLayer.visible) {
-          return {
-            ...group,
-            layers: group.layers.map((layer) => {
-              // Aktifkan layer yang dipilih
-              if (layer.id === layerId) {
-                return { ...layer, visible: true };
-              }
-              // Nonaktifkan semua layer basemap lainnya
-              return { ...layer, visible: false };
-            }),
-          };
-        } else if (group.id === targetGroup.id) {
-          // Untuk layer non-basemap atau basemap yang akan dinonaktifkan,
-          // cukup toggle visibilitas layer yang dipilih
-          return {
-            ...group,
-            layers: group.layers.map((layer) => {
-              if (layer.id === layerId) {
-                return { ...layer, visible: !layer.visible };
-              }
-              return layer;
-            }),
-          };
-        }
-        return group;
-      });
-
+      // Toggle nilai visibilitas
+      const newVisible = !targetLayer.visible;
+      
+      let updatedGroups: LayerGroup[];
+      
+      // Handle differently for basemap layers vs other layers
+      if (targetGroup.id === "basemap" && newVisible) {
+        // Jika mengaktifkan basemap, pastikan hanya satu yang aktif
+        updatedGroups = prev.layerGroups.map(group => {
+          if (group.id === "basemap") {
+            return {
+              ...group,
+              layers: group.layers.map(layer => ({
+                ...layer,
+                visible: layer.id === layerId // aktifkan yang dipilih, nonaktifkan yang lain
+              }))
+            };
+          }
+          return group;
+        });
+      } else {
+        // Untuk layer lain atau menonaktifkan basemap, cukup toggle saja
+        updatedGroups = prev.layerGroups.map(group => {
+          if (group.id === targetGroup!.id) {
+            return {
+              ...group,
+              layers: group.layers.map(layer => 
+                layer.id === layerId
+                  ? { ...layer, visible: newVisible }
+                  : layer
+              )
+            };
+          }
+          return group;
+        });
+      }
+      
+      // Update active layers
+      const activeLayers = updatedGroups
+        .flatMap(group => group.layers)
+        .filter(layer => layer.visible)
+        .map(layer => layer.id);
+      
       return {
         ...prev,
         layerGroups: updatedGroups,
-        activeLayers: updatedGroups
-          .flatMap((group) => group.layers)
-          .filter((layer) => layer.visible)
-          .map((layer) => layer.id),
+        activeLayers
       };
     });
   };
 
+  // PERBAIKAN: Ubah opacity layer
   const handleLayerOpacityChange = (layerId: string, opacity: number) => {
-    setMapState((prev) => ({
-      ...prev,
-      layerGroups: prev.layerGroups.map((group) => ({
+    setMapState((prev) => {
+      // Update layer opacity in all groups
+      const updatedGroups = prev.layerGroups.map(group => ({
         ...group,
-        layers: group.layers.map((layer) =>
-          layer.id === layerId ? { ...layer, opacity } : layer
-        ),
-      })),
-    }));
+        layers: group.layers.map(layer => 
+          layer.id === layerId
+            ? { ...layer, opacity }
+            : layer
+        )
+      }));
+      
+      return {
+        ...prev,
+        layerGroups: updatedGroups
+      };
+    });
   };
 
+  // Handle file upload
   const handleFileUpload = (file: File) => {
     try {
       const layerName = file.name.split('.').slice(0, -1).join('.');
       
       setMapState(prev => {
-        // Cek apakah grup 'uploaded' sudah ada
+        // Check if 'uploaded' group exists
         const uploadedGroupExists = prev.layerGroups.some(group => group.id === 'uploaded');
         
-        // Jika grup 'uploaded' belum ada, buat grup baru
+        // If not, create a new group
         if (!uploadedGroupExists) {
           const newLayer: LayerConfig = {
             id: file.name,
@@ -436,11 +532,12 @@ const MapContainer = () => {
           
           return {
             ...prev,
-            layerGroups: [...prev.layerGroups, newGroup]
+            layerGroups: [...prev.layerGroups, newGroup],
+            activeLayers: [...prev.activeLayers, file.name]
           };
         }
         
-        // Jika grup 'uploaded' sudah ada, tambahkan layer baru ke grup tersebut
+        // Otherwise add to existing group
         const newLayer: LayerConfig = {
           id: file.name,
           name: layerName,
@@ -465,7 +562,8 @@ const MapContainer = () => {
               };
             }
             return group;
-          })
+          }),
+          activeLayers: [...prev.activeLayers, file.name]
         };
       });
       
@@ -490,37 +588,40 @@ const MapContainer = () => {
     }
   };
 
+  // Handle remove uploaded layer
   const handleRemoveUploadedLayer = (layerId: string) => {
-    // Hapus layer dari peta
+    // Remove from map directly
     const mapLayers = window.mapLayers;
     if (mapLayers && mapLayers[layerId]) {
       const layer = mapLayers[layerId];
       if (layer) {
-        // Pastikan layer sudah dihapus dari map
         layer.remove();
       }
     }
     
-    // Hapus dari state dan periksa apakah grup 'uploaded' masih memiliki layer
+    // Remove from state
     setMapState(prev => {
-      // Cari grup 'uploaded'
+      // Find 'uploaded' group
       const uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
       
-      // Jika tidak ada grup 'uploaded', tidak ada yang perlu dilakukan
       if (!uploadedGroup) return prev;
       
-      // Filter layer yang akan dihapus
+      // Remove layer from group
       const remainingLayers = uploadedGroup.layers.filter(layer => layer.id !== layerId);
       
-      // Jika tidak ada layer tersisa, hapus seluruh grup 'uploaded'
+      // Update activeLayers
+      const updatedActiveLayers = prev.activeLayers.filter(id => id !== layerId);
+      
+      // If no layers left, remove the whole group
       if (remainingLayers.length === 0) {
         return {
           ...prev,
-          layerGroups: prev.layerGroups.filter(group => group.id !== 'uploaded')
+          layerGroups: prev.layerGroups.filter(group => group.id !== 'uploaded'),
+          activeLayers: updatedActiveLayers
         };
       }
       
-      // Jika masih ada layer tersisa, update grup 'uploaded'
+      // Otherwise update the group
       return {
         ...prev,
         layerGroups: prev.layerGroups.map(group => {
@@ -531,11 +632,12 @@ const MapContainer = () => {
             };
           }
           return group;
-        })
+        }),
+        activeLayers: updatedActiveLayers
       };
     });
     
-    // Show toast when layer is removed
+    // Show confirmation toast
     toast({
       title: "Layer Dihapus",
       description: `Layer ${layerId} berhasil dihapus`,
@@ -549,6 +651,7 @@ const MapContainer = () => {
         center={mapState.center}
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}
+        className="z-10" // Atur z-index untuk MapContainer
       >
         <MapContent 
           onFileUpload={handleFileUpload} 
@@ -574,4 +677,4 @@ const MapContainer = () => {
   );
 };
 
-export default MapContainer; 
+export default MapContainer;
