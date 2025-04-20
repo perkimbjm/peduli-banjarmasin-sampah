@@ -1,11 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { CheckCircle, ChevronLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DetailHeader } from "@/components/bank-sampah/DetailHeader";
 import { ContactInfo } from "@/components/bank-sampah/ContactInfo";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Scale, Users, Calendar, Award, MapPin } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { LayerType } from "@/components/webgis/data/mock-map-data";
 
 interface BankSampah {
   id: string;

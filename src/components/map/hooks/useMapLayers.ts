@@ -1,3 +1,4 @@
+// useMapLayers.ts - Perbaikan lengkap
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import L from 'leaflet';
@@ -9,6 +10,11 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
   const [initialized, setInitialized] = useState(false);
   const layerInstancesRef = useRef<LayerInstances>({});
   const { toast } = useToast();
+  
+  // Track which layers are currently loading
+  const loadingLayersRef = useRef(new Set<string>());
+  // Track initialization state
+  const initializingRef = useRef(false);
 
   // Update ref when layerInstances changes
   useEffect(() => {
@@ -47,55 +53,174 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (initialized || !map) return;
+  // Add method to handle uploaded layers - PERBAIKAN
+  const addUploadedLayer = useCallback((uploadedLayer: LayerConfig, geojsonData: GeoJSON.GeoJsonObject): boolean => {
+    if (!map) return false;
     
-    const loadLayers = async () => {
+    try {
+      const geoJSONLayer = L.geoJSON(geojsonData, {
+        style: () => ({
+          color: uploadedLayer.style?.color || "#ff7800",
+          weight: uploadedLayer.style?.weight || 3,
+          opacity: uploadedLayer.opacity,
+          fillColor: uploadedLayer.style?.fillColor || "#ff7800",
+          fillOpacity: uploadedLayer.opacity * 0.2,
+        }),
+        onEachFeature: (feature, layer) => {
+          if (feature.properties) {
+            layer.bindPopup(
+              Object.entries(feature.properties)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join("<br>")
+            );
+          }
+        },
+      });
+      
+      setLayerInstances(prev => ({
+        ...prev,
+        [uploadedLayer.id]: geoJSONLayer
+      }));
+      
+      layerInstancesRef.current[uploadedLayer.id] = geoJSONLayer;
+      
+      if (uploadedLayer.visible) {
+        map.addLayer(geoJSONLayer);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error adding uploaded layer ${uploadedLayer.id}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to add uploaded layer ${uploadedLayer.name}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [map, toast]);
+  
+  const removeUploadedLayer = useCallback((layerId: string): boolean => {
+    const layer = layerInstancesRef.current[layerId];
+    
+    if (!layer) {
+      console.warn(`Layer ${layerId} not found for removal`);
+      return false;
+    }
+    
+    if (map) {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+      
+      setLayerInstances(prev => {
+        const updated = { ...prev };
+        delete updated[layerId];
+        return updated;
+      });
+      
+      delete layerInstancesRef.current[layerId];
+      
+      return true;
+    }
+    
+    return false;
+  }, [map]);
+
+  // Load a specific layer with loading state tracking
+  const loadLayer = useCallback(async (layer: LayerConfig): Promise<L.Layer | null> => {
+    // Mark this layer as loading
+    loadingLayersRef.current.add(layer.id);
+    try {
+      if (layer.type === "tile") {
+        const tileLayer = L.tileLayer(layer.url!, {
+          attribution: layer.attribution,
+          opacity: layer.opacity,
+        });
+        return tileLayer;
+      } else if (layer.type === "geojson") {
+        let data: any = null;
+        if (layer.url) {
+          // load from url
+          const response = await fetch(layer.url, {
+            headers: {
+              'Expires': '0'
+            }
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch ${layer.url}: ${response.statusText}`);
+          }
+          data = await response.json();
+        } else if (layer.data) {
+          // load from inline data (uploaded)
+          try {
+            data = JSON.parse(layer.data);
+          } catch (e) {
+            console.error('Invalid GeoJSON data in layerConfig.data', e);
+            toast({
+              title: 'Error',
+              description: `Layer ${layer.id} has invalid GeoJSON data`,
+              variant: 'destructive',
+            });
+            return null;
+          }
+        } else {
+          return null;
+        }
+        const geoJSONLayer = L.geoJSON(data, {
+          style: () => ({
+            color: layer.style?.color || "#3388ff",
+            weight: layer.style?.weight || 3,
+            opacity: layer.opacity,
+            fillColor: layer.style?.fillColor || "#3388ff",
+            fillOpacity: layer.opacity * 0.2,
+          }),
+          onEachFeature: (feature, layer) => {
+            if (feature.properties) {
+              layer.bindPopup(
+                Object.entries(feature.properties)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join("<br>")
+              );
+            }
+          },
+        });
+        return geoJSONLayer;
+      }
+    } catch (error) {
+      console.error(`Error loading layer ${layer.id}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to load layer ${layer.id}`,
+        variant: "destructive",
+      });
+    } finally {
+      // Always remove from loading set when done
+      loadingLayersRef.current.delete(layer.id);
+    }
+    return null;
+  }, [toast]);
+
+  // Initial setup when map is ready
+  useEffect(() => {
+    if (!map || initialized || initializingRef.current) return;
+    
+    const initialSetup = async () => {
+      initializingRef.current = true;
+      
+      // Only load visible layers initially
+      const visibleLayers = layerGroups.filter(layer => layer.visible);
       const newInstances: LayerInstances = {};
       
-      for (const layer of layerGroups) {
-        try {
-          if (layer.type === "tile") {
-            const tileLayer = L.tileLayer(layer.url!, {
-              attribution: layer.attribution,
-              opacity: layer.opacity,
-            });
-            newInstances[layer.id] = tileLayer;
-          } else if (layer.type === "geojson" && layer.url) {
-            const response = await fetch(layer.url);
-            if (!response.ok) {
-              throw new Error(`Failed to fetch ${layer.url}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            const geoJSONLayer = L.geoJSON(data, {
-              style: () => ({
-                color: layer.style?.color || "#3388ff",
-                weight: layer.style?.weight || 3,
-                opacity: layer.opacity,
-                fillColor: layer.style?.fillColor || "#3388ff",
-                fillOpacity: layer.opacity * 0.2,
-              }),
-              onEachFeature: (feature, layer) => {
-                if (feature.properties) {
-                  layer.bindPopup(
-                    Object.entries(feature.properties)
-                      .map(([key, value]) => `${key}: ${value}`)
-                      .join("<br>")
-                  );
-                }
-              },
-            });
-            
-            newInstances[layer.id] = geoJSONLayer;
+      for (const layer of visibleLayers) {
+        const loadedLayer = await loadLayer(layer);
+        if (loadedLayer) {
+          newInstances[layer.id] = loadedLayer;
+          
+          // Add to map if visible
+          if (layer.visible) {
+            map.addLayer(loadedLayer);
           }
-        } catch (error) {
-          console.error(`Error loading layer ${layer.id}:`, error);
-          toast({
-            title: "Error",
-            description: `Failed to load layer ${layer.id}`,
-            variant: "destructive",
-          });
         }
       }
       
@@ -103,13 +228,49 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
       setInitialized(true);
     };
     
-    loadLayers();
-  }, [map, layerGroups, initialized, toast]);
+    initialSetup();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, loadLayer, layerGroups]);
+
+  // Handle layer visibility and lazy loading
+  useEffect(() => {
+    if (!initialized || !map) return;
+
+    const handleLayerChanges = async () => {
+      const updatedLayers = { ...layerInstancesRef.current };
+      let hasUpdates = false;
+      
+      for (const layerConfig of layerGroups) {
+        // First check if we need to load this layer
+        if (layerConfig.visible && !updatedLayers[layerConfig.id]) {
+          const layer = await loadLayer(layerConfig);
+          if (layer) {
+            updatedLayers[layerConfig.id] = layer;
+            hasUpdates = true;
+          }
+        }
+        
+        // Then update visibility if the layer exists
+        if (updatedLayers[layerConfig.id]) {
+          updateLayerVisibility(layerConfig.id, layerConfig.visible);
+          updateLayerOpacity(layerConfig.id, layerConfig.opacity);
+        }
+      }
+      
+      // Only update state if new layers were loaded
+      if (hasUpdates) {
+        setLayerInstances(updatedLayers);
+      }
+    };
+    
+    handleLayerChanges();
+  }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity]);
 
   return {
-    layerInstances,
     initialized,
     updateLayerVisibility,
-    updateLayerOpacity
+    updateLayerOpacity,
+    addUploadedLayer,
+    removeUploadedLayer
   };
 };

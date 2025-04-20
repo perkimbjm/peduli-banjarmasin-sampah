@@ -7,13 +7,14 @@ import "leaflet-easybutton";
 import "leaflet-omnivore";
 import "leaflet.locatecontrol/dist/L.Control.Locate.min.css";
 import "leaflet.locatecontrol";
+import { LayerConfig } from './types';
 
 const DEFAULT_CENTER: [number, number] = [-3.3147, 114.5905]; // Banjarmasin
 const DEFAULT_ZOOM = 12;
 
 interface MapControlsProps {
   onLayerPanelToggle: () => void;
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File, layerConfig: LayerConfig) => void;
   isLayerPanelOpen: boolean;
 }
 
@@ -27,8 +28,8 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
     if (file) {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       const allowedExtensions = ['geojson', 'json', 'shp', 'zip', 'csv', 'kml', 'gpx'];
-      
       if (fileExtension && allowedExtensions.includes(fileExtension)) {
+        console.log('MapControls: handleFileUpload memanggil props.onFileUpload', file);
         onFileUpload(file);
       } else {
         alert('Format file tidak didukung. Silakan gunakan format: ' + allowedExtensions.join(', '));
@@ -164,11 +165,11 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
             tooltip="Upload Layer"
           />
           <input
-            type="file"
             ref={fileInputRef}
-            onChange={handleFileUpload}
+            type="file"
             accept=".geojson,.json,.shp,.zip,.csv,.kml,.gpx"
-            className="hidden"
+            style={{ display: 'none' }}
+            onChange={handleFileUpload}
           />
         </div>
       </div>
@@ -191,4 +192,4 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
   );
 };
 
-export default MapControls; 
+export default MapControls;

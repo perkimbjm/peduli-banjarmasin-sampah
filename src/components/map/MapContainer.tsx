@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MapContainer as LeafletMapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -7,12 +6,14 @@ import MapContent from "./MapContent";
 import { LayerConfig, LayerGroup, MapState } from "./types";
 import "leaflet-omnivore";
 import { useToast } from "@/hooks/use-toast";
+import L from "leaflet";
 
 // Define initial layer groups
 const getInitialLayerGroups = (): LayerGroup[] => [
   {
     id: "basemap",
     name: "Basemap",
+    data: '',
     layers: [
       {
         id: "openstreetmap",
@@ -49,6 +50,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
   {
     id: "batas-wilayah",
     name: "Batas Wilayah",
+    data: '',
     layers: [
       {
         id: "batas-rt",
@@ -87,6 +89,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
   {
     id: "infrastruktur",
     name: "Infrastruktur",
+    data: '',
     layers: [
       {
         id: "sungai",
@@ -260,82 +263,72 @@ const MapContainer = () => {
     });
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = (file: File, layerConfig: LayerConfig) => {
     try {
-      const layerName = file.name.split('.').slice(0, -1).join('.');
-      
       setMapState(prev => {
-        const uploadedGroupExists = prev.layerGroups.some(group => group.id === 'uploaded');
-        
-        if (!uploadedGroupExists) {
-          const newLayer: LayerConfig = {
-            id: file.name,
-            name: layerName,
-            type: 'geojson',
-            visible: true,
-            opacity: 0.65,
-            group: 'uploaded',
-            style: {
-              color: "#ff7800",
-              weight: 2,
-              opacity: 0.65,
-            }
-          };
-          
-          const newGroup: LayerGroup = {
-            id: 'uploaded',
-            name: 'Layer Diupload',
-            layers: [newLayer]
-          };
-          
+        // Cari grup uploaded
+        let uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
+        if (!uploadedGroup) {
+          // Buat grup baru jika belum ada
           return {
             ...prev,
-            layerGroups: [...prev.layerGroups, newGroup],
-            activeLayers: [...prev.activeLayers, file.name]
+            layerGroups: [
+              ...prev.layerGroups,
+              {
+                id: 'uploaded',
+                name: 'Layer yang diupload',
+                data: '',
+                layers: [{ ...layerConfig }],
+              }
+            ],
+            activeLayers: [...prev.activeLayers, layerConfig.id]
           };
         }
-        
-        const newLayer: LayerConfig = {
-          id: file.name,
-          name: layerName,
-          type: 'geojson',
-          visible: true,
-          opacity: 0.65,
-          group: 'uploaded',
-          style: {
-            color: "#ff7800",
-            weight: 2,
-            opacity: 0.65,
-          }
-        };
-        
+        // Grup sudah ada
+        // Cek jika layer dengan id sama sudah ada, hindari duplikasi
+        const exists = uploadedGroup.layers.some(l => l.id === layerConfig.id);
+        if (exists) {
+          // Update layer jika sudah ada (replace)
+          return {
+            ...prev,
+            layerGroups: prev.layerGroups.map(group => {
+              if (group.id === 'uploaded') {
+                return {
+                  ...group,
+                  layers: group.layers.map(l => l.id === layerConfig.id ? { ...layerConfig } : l)
+                };
+              }
+              return group;
+            }),
+            activeLayers: [...new Set([...prev.activeLayers, layerConfig.id])]
+          };
+        }
+        // Tambahkan layer baru
         return {
           ...prev,
           layerGroups: prev.layerGroups.map(group => {
             if (group.id === 'uploaded') {
               return {
                 ...group,
-                layers: [...group.layers, newLayer]
+                layers: [...group.layers, { ...layerConfig }]
               };
             }
             return group;
           }),
-          activeLayers: [...prev.activeLayers, file.name]
+          activeLayers: [...prev.activeLayers, layerConfig.id]
         };
       });
-      
       setIsLayerPanelOpen(true);
-      
       toast({
-        title: "Upload Berhasil",
-        description: `File ${layerName} berhasil diupload dan ditampilkan sebagai layer`,
+        title: 'Upload Berhasil',
+        description: `File ${layerConfig.name} berhasil diupload dan ditampilkan sebagai layer`,
       });
     } catch (error) {
-      console.error("Error adding uploaded layer:", error);
+      console.error('Error adding uploaded layer:', error);
       toast({
-        title: "Upload Gagal",
+        title: 'Upload Gagal',
         description: `Terjadi kesalahan saat mengupload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -385,9 +378,25 @@ const MapContainer = () => {
     });
   };
 
+  function resetLeafletContainer(id: string) {
+    const container = document.getElementById(id);
+    if (container) {
+      // Menggunakan type assertion untuk mengakses properti Leaflet
+      const leafletContainer = container as HTMLElement & { _leaflet_id?: string };
+      if (leafletContainer._leaflet_id) {
+        leafletContainer._leaflet_id = null;
+      }
+    }
+  }
+
+  useEffect(() => {
+    resetLeafletContainer("leaflet-map");
+  }, []);
+
   return (
     <div className="relative h-full w-full">
       <LeafletMapContainer
+        id="leaflet-map"
         center={mapState.center}
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}

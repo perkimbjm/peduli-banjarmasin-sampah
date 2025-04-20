@@ -37,6 +37,7 @@ const WebGIS = () => {
             </div>
           </div>
 
+         
           <div className="my-8 relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden h-[600px]">
             <MapContainer />
           </div>

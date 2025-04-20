@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayerConfig, LayerGroup } from "./types";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,9 +17,12 @@ const LayerManager = ({
   onLayerOpacityChange,
   onRemoveUploadedLayer,
 }: LayerManagerProps) => {
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(
-    layerGroups.map((group) => group.id)
-  );
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]); // default collapsed
+
+  // Expand all groups when LayerManager appears (mounts or layerGroups change)
+  useEffect(() => {
+    setExpandedGroups(layerGroups.map(g => g.id));
+  }, [layerGroups]);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) =>

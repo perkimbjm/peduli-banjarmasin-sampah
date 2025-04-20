@@ -1,13 +1,13 @@
-
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import { useMapLayers } from './hooks/useMapLayers';
 import { useFileUpload } from './hooks/useFileUpload';
 import MapControls from './MapControls';
-import { LayerGroup } from './types';
+import LayerManager from './LayerManager';
+import { LayerGroup, LayerConfig } from './types';
 
 interface MapContentProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File, layerConfig: LayerConfig) => void;
   layerGroups: LayerGroup[];
   onLayerToggle: (layerId: string) => void;
   onLayerOpacityChange: (layerId: string, opacity: number) => void;
@@ -30,21 +30,26 @@ const MapContent = ({
     map,
     layerGroups.flatMap(group => group.layers)
   );
+  // handleFileUpload siap dipass ke MapControls (file: File) => void
   const handleFileUpload = useFileUpload(map, onFileUpload);
 
-  // Effect for applying visibility and opacity
+  useEffect(() => {
+    console.log('MapContent: onFileUpload type', typeof onFileUpload);
+  }, [onFileUpload]);
+
   useEffect(() => {
     if (!initialized) return;
-    
-    setTimeout(() => {
-      layerGroups.forEach(group => {
-        group.layers.forEach(layer => {
-          updateLayerVisibility(layer.id, layer.visible);
-          updateLayerOpacity(layer.id, layer.opacity);
-        });
-      });
-    }, 100);
+
+    const layers = layerGroups.flatMap(group => group.layers);
+    layers.forEach(layer => {
+      updateLayerVisibility(layer.id, layer.visible);
+      updateLayerOpacity(layer.id, layer.opacity);
+    });
   }, [layerGroups, initialized, updateLayerVisibility, updateLayerOpacity]);
+
+  useEffect(() => {
+    console.log('LayerGroups di MapContent:', layerGroups);
+  }, [layerGroups]);
 
   return (
     <div className="h-full w-full">
@@ -53,6 +58,16 @@ const MapContent = ({
         onFileUpload={handleFileUpload}
         isLayerPanelOpen={isLayerPanelOpen}
       />
+      {isLayerPanelOpen && (
+        <div className="absolute top-4 right-4 z-[1000]">
+          <LayerManager
+            layerGroups={layerGroups}
+            onLayerToggle={onLayerToggle}
+            onLayerOpacityChange={onLayerOpacityChange}
+            onRemoveUploadedLayer={onRemoveUploadedLayer}
+          />
+        </div>
+      )}
     </div>
   );
 };

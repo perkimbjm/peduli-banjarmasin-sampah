@@ -5,6 +5,7 @@ export interface LayerConfig {
   type: 'geojson' | 'marker' | 'shapefile' | 'tile';
   url?: string;
   visible: boolean;
+  data?: string; // <-- make optional and for GeoJSON string
   opacity: number;
   group: string;
   style?: {
@@ -20,6 +21,7 @@ export interface LayerConfig {
 export interface LayerGroup {
   id: string;
   name: string;
+  data: string;
   layers: LayerConfig[];
 }
 
