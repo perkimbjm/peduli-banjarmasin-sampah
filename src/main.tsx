@@ -1,3 +1,8 @@
+import './polyfills/global';
+if (typeof global === "undefined") {
+  // @ts-ignore
+  window.global = window;
+}
 
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
