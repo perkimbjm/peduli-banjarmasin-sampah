@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { useMapLayers } from './hooks/useMapLayers';
 import { useFileUpload } from './hooks/useFileUpload';
 import MapControls from './MapControls';
 import LayerManager from './LayerManager';
+import LocateControlCleanup from './LocateControlCleanup';
 import { LayerGroup, LayerConfig } from './types';
 
 interface MapContentProps {
@@ -26,6 +27,7 @@ const MapContent = ({
   onRemoveUploadedLayer
 }: MapContentProps) => {
   const map = useMap();
+  const mapRef = useRef(map);
   const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
     map,
     layerGroups.flatMap(group => group.layers)
@@ -35,6 +37,7 @@ const MapContent = ({
 
   useEffect(() => {
     console.log('MapContent: onFileUpload type', typeof onFileUpload);
+    console.log('MapContent: MapControls mounted');
   }, [onFileUpload]);
 
   useEffect(() => {
@@ -51,13 +54,25 @@ const MapContent = ({
     console.log('LayerGroups di MapContent:', layerGroups);
   }, [layerGroups]);
 
+  useEffect(() => {
+    const currentMap = map;
+    return () => {
+      if (currentMap && typeof currentMap.off === 'function') {
+        // Remove any event listeners added in MapContent
+        // Example: currentMap.off('some-event', handler)
+      }
+    };
+  }, [map]);
+
   return (
     <div className="h-full w-full">
       <MapControls 
         onLayerPanelToggle={onLayerPanelToggle} 
-        onFileUpload={handleFileUpload}
+        onFileUpload={(file) => handleFileUpload(file)} 
         isLayerPanelOpen={isLayerPanelOpen}
       />
+      {/* Cleanup component to ensure LocateControl is always removed safely */}
+      <LocateControlCleanup map={map} />
       {isLayerPanelOpen && (
         <div className="absolute top-4 right-4 z-[1000]">
           <LayerManager

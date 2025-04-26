@@ -144,13 +144,12 @@ const MapLayers: React.FC<MapLayersProps> = ({
       layerGroup.addLayer(route);
       
       // Use the polylinedecorator plugin carefully with proper type handling
-      // @ts-ignore - Using the plugin with TypeScript requires ignoring type checking
+    
       const arrowHead = L.polylineDecorator(route, {
         patterns: [
           {
             offset: '10%', 
             repeat: '25%', 
-            // @ts-ignore - Using the plugin with TypeScript requires ignoring type checking
             symbol: L.Symbol.arrowHead({
               pixelSize: 15,
               pathOptions: {

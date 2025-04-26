@@ -14,7 +14,7 @@ const DEFAULT_ZOOM = 12;
 
 interface MapControlsProps {
   onLayerPanelToggle: () => void;
-  onFileUpload: (file: File, layerConfig: LayerConfig) => void;
+  onFileUpload: (file: File) => void;
   isLayerPanelOpen: boolean;
 }
 
@@ -26,14 +26,7 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const allowedExtensions = ['geojson', 'json', 'shp', 'zip', 'csv', 'kml', 'gpx'];
-      if (fileExtension && allowedExtensions.includes(fileExtension)) {
-        console.log('MapControls: handleFileUpload memanggil props.onFileUpload', file);
-        onFileUpload(file);
-      } else {
-        alert('Format file tidak didukung. Silakan gunakan format: ' + allowedExtensions.join(', '));
-      }
+      onFileUpload(file);
     }
   };
 
@@ -109,43 +102,82 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
     if (isFullscreen) {
       // Jika mode fullscreen aktif, tambahkan event listener
       document.addEventListener('keydown', handleEscapeKey);
-      console.log('Added Escape key event listener');
     } else {
       // Jika keluar dari mode fullscreen, hapus event listener
       document.removeEventListener('keydown', handleEscapeKey);
-      console.log('Removed Escape key event listener');
     }
     
     // Clean up saat unmount
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
-      console.log('Cleaned up Escape key event listener');
     };
   }, [isFullscreen, handleEscapeKey]);
 
   useEffect(() => {
-    // Initialize controls
-    const controls: L.Control[] = [];
+    const currentMap = map;
+  
+    // 1. Remove ALL LocateControl DOM elements
+    // (Kadang control tetap nempel di DOM walau sudah remove dari map)
+    document.querySelectorAll('.leaflet-control-locate').forEach(el => {
+      el.parentNode?.removeChild(el);
+    });
+  
+    // 2. Remove ALL LocateControl from Leaflet controls array (defensive)
+    if (currentMap && Array.isArray((currentMap as unknown as { _controls?: unknown[] })._controls)) {
+      (currentMap as unknown as { _controls?: unknown[] })._controls = (currentMap as unknown as { _controls?: unknown[] })._controls!.filter((ctrl) => {
+        if (ctrl && typeof ctrl === 'object' && ctrl.constructor && ctrl.constructor.name === 'Locate') {
+          try { (ctrl as { remove: () => void }).remove(); } catch (e) {
+            console.warn('Error removing LocateControl:', e);
+          }
+          return false;
+        }
+        return true;
+      });
+    }
 
-    // Locate control dengan ikon untuk mode fullscreen dan bukan fullscreen
+    // 3. Remove ALL controls from map that are instance of Locate
+    if (currentMap && (currentMap as unknown as { _controlContainer?: unknown })._controlContainer) {
+      currentMap.eachLayer(() => {}); // Force Leaflet to update controls
+      const controls = (currentMap as unknown as { _controls?: unknown[] })._controls;
+      if (controls) {
+        for (const ctrl of [...controls]) {
+          if (ctrl && typeof ctrl === 'object' && ctrl.constructor && ctrl.constructor.name === 'Locate') {
+            try { (currentMap as L.Map & { removeControl: (ctrl: unknown) => void }).removeControl(ctrl); } catch (e) {
+              console.warn('Error removing LocateControl:', e);
+            }
+          }
+        }
+      }
+    }
+  
+    // 4. Add new LocateControl
     const locateOptions = {
       position: "topleft" as L.ControlPosition,
-      strings: {
-        title: "Tampilkan lokasi saya",
-      },
-      locateOptions: {
-        maxZoom: 18,
-        enableHighAccuracy: true,
-      },
+      strings: { title: "Tampilkan lokasi saya" },
+      locateOptions: { maxZoom: 18, enableHighAccuracy: true },
     };
-    
     const locateControl = new L.Control.Locate(locateOptions);
-    locateControl.addTo(map);
-    controls.push(locateControl);
-
-    // Cleanup function
+    locateControl.addTo(currentMap);
+  
+    // Cleanup
     return () => {
-      controls.forEach((control) => control.remove());
+      try {
+        // Hapus LocateControl jika masih ada dan _map masih ada
+        if (locateControl && typeof locateControl.remove === 'function') {
+          // Defensive: patch _map to null before remove (workaround bug in leaflet.locatecontrol)
+          const lc = locateControl as unknown as { _map?: L.Map | null, remove: () => void };
+          if (lc._map) {
+            lc._map = null;
+          }
+          lc.remove();
+        }
+      } catch (e) {
+        // ignore
+      }
+      // Bersihkan DOM sisa
+      document.querySelectorAll('.leaflet-control-locate').forEach(el => {
+        el.parentNode?.removeChild(el);
+      });
     };
   }, [map]);
 

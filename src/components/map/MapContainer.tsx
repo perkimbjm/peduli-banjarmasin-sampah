@@ -184,6 +184,35 @@ const MapContainer = () => {
     };
   }, []);
 
+  // Defensive: Remove all controls before map is destroyed (unmount)
+  useEffect(() => {
+    return () => {
+      // Only use global map instance array (do NOT try to re-instantiate map)
+      const mapInstances = (window as unknown as { L?: { Map?: { _instances?: unknown[] } } }).L?.Map?._instances;
+      let map: unknown = null;
+      if (Array.isArray(mapInstances) && mapInstances.length > 0) {
+        map = mapInstances[0];
+      }
+      if (
+        map &&
+        typeof map === 'object' &&
+        '_controls' in map &&
+        Array.isArray((map as { _controls: unknown[] })._controls)
+      ) {
+        const controls = (map as { _controls: unknown[] })._controls;
+        controls.forEach((control) => {
+          if (control && typeof control === 'object' && 'remove' in control && typeof (control as { remove: unknown }).remove === 'function') {
+            try {
+              (control as { remove: () => void }).remove();
+            } catch (e) {
+              // ignore or log
+            }
+          }
+        });
+      }
+    };
+  }, []);
+
   const handleLayerToggle = (layerId: string) => {
     setMapState((prev) => {
       let targetGroup: LayerGroup | undefined;
@@ -267,7 +296,7 @@ const MapContainer = () => {
     try {
       setMapState(prev => {
         // Cari grup uploaded
-        let uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
+        const uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
         if (!uploadedGroup) {
           // Buat grup baru jika belum ada
           return {
@@ -336,8 +365,13 @@ const MapContainer = () => {
   const handleRemoveUploadedLayer = (layerId: string) => {
     if (window.mapLayers && window.mapLayers[layerId]) {
       const layer = window.mapLayers[layerId];
-      if (layer) {
-        layer.remove();
+      if (layer && layer.remove && typeof layer.remove === 'function') {
+        try {
+          layer.remove();
+        } catch (e) {
+          // layer might already be removed
+          console.warn('Layer removal error:', e);
+        }
       }
     }
     
@@ -377,21 +411,6 @@ const MapContainer = () => {
       description: `Layer ${layerId} berhasil dihapus`,
     });
   };
-
-  function resetLeafletContainer(id: string) {
-    const container = document.getElementById(id);
-    if (container) {
-      // Menggunakan type assertion untuk mengakses properti Leaflet
-      const leafletContainer = container as HTMLElement & { _leaflet_id?: string };
-      if (leafletContainer._leaflet_id) {
-        leafletContainer._leaflet_id = null;
-      }
-    }
-  }
-
-  useEffect(() => {
-    resetLeafletContainer("leaflet-map");
-  }, []);
 
   return (
     <div className="relative h-full w-full">

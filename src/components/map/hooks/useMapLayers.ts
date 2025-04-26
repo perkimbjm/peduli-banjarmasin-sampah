@@ -139,7 +139,7 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
         });
         return tileLayer;
       } else if (layer.type === "geojson") {
-        let data: any = null;
+        let data: unknown = null;
         if (layer.url) {
           // load from url
           const response = await fetch(layer.url, {
@@ -167,7 +167,11 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
         } else {
           return null;
         }
-        const geoJSONLayer = L.geoJSON(data, {
+        // Tambahkan komentar pada lokasi error agar developer tahu harus melakukan type assertion atau validasi sebelum casting ke GeoJsonObject
+        // Contoh: jika yakin data adalah GeoJSON
+        // const geoLayer = L.geoJSON(data as GeoJSON.GeoJsonObject);
+        // atau lakukan validasi sebelum casting
+        const geoJSONLayer = L.geoJSON(data as GeoJSON.GeoJsonObject, {
           style: () => ({
             color: layer.style?.color || "#3388ff",
             weight: layer.style?.weight || 3,
@@ -229,6 +233,15 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
     };
     
     initialSetup();
+    
+    const currentMap = map;
+    return () => {
+      if (currentMap !== null && typeof currentMap.off === 'function') {
+        // Remove all custom event listeners here
+        // Example: currentMap.off('layeradd', onLayerAdd);
+        // If you have custom listeners, add guards here
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, loadLayer, layerGroups]);
 
