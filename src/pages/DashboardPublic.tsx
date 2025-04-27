@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { BarChart, LineChart, PieChart, Download, Clock, Filter, Trash2 } from "lucide-react";
+import { BarChart, LineChart, PieChart, Download, Clock, Filter, Trash2, Building } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import KinerjaPengelolaanSampahTab from "@/components/dashboard/KinerjaPengelolaanSampahTab";
@@ -94,17 +94,17 @@ const DashboardPublic = () => {
                 <PieChart className="h-4 w-4 mr-2" />
                 Komposisi Sampah
               </TabsTrigger>
+              <TabsTrigger value="sumber" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Sumber Sampah
+              </TabsTrigger>
               <TabsTrigger value="tren" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
                 <LineChart className="h-4 w-4 mr-2" />
                 Tren & Analisis
               </TabsTrigger>
               <TabsTrigger value="kinerja" className="flex items-center min-w-[180px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
-                <BarChart className="h-4 w-4 mr-2" />
+                <Building className="h-4 w-4 mr-2" />
                 Kinerja Pengelolaan Sampah
-              </TabsTrigger>
-              <TabsTrigger value="sumber" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
-                <BarChart className="h-4 w-4 mr-2" />
-                Sumber Sampah
               </TabsTrigger>
             </TabsList>
             
@@ -176,6 +176,10 @@ const DashboardPublic = () => {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="sumber">
+              <SumberSampahTab />
             </TabsContent>
             
             <TabsContent value="komposisi">
@@ -400,9 +404,6 @@ const DashboardPublic = () => {
               <KinerjaPengelolaanSampahTab />
             </TabsContent>
             
-            <TabsContent value="sumber">
-              <SumberSampahTab />
-            </TabsContent>
           </Tabs>
         </div>
       </div>

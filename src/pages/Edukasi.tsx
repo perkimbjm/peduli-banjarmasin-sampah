@@ -377,7 +377,11 @@ const PostModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 relative">
+      <DialogContent className="max-w-4xl p-0">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Detail Konten Edukasi</DialogTitle>
+          <DialogDescription className="sr-only">Popup detail konten edukasi, berisi gambar/video, caption, dan aksi interaksi konten.</DialogDescription>
+        </DialogHeader>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 rounded-full bg-white/90 hover:bg-red-100 text-gray-700 hover:text-red-500 shadow-md p-2 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-400"
@@ -713,10 +717,8 @@ const Edukasi = () => {
                   key={post.id} 
                   className="overflow-hidden cursor-pointer"
                   onClick={() => {
-                    if (window.innerWidth >= 1024) {
-                      setSelectedPost(post);
-                      setIsModalOpen(true);
-                    }
+                    setSelectedPost(post);
+                    setIsModalOpen(true);
                   }}
                 >
                   <CardHeader className="p-4">
@@ -812,7 +814,7 @@ const Edukasi = () => {
             />
 
             {/* Post Modal */}
-            {selectedPost && (
+            {selectedPost && isModalOpen && (
               <PostModal
                 post={selectedPost}
                 isOpen={isModalOpen}
