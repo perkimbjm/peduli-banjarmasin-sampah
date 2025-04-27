@@ -293,73 +293,63 @@ const MapContainer = () => {
   };
 
   const handleFileUpload = (file: File, layerConfig: LayerConfig) => {
-    try {
-      setMapState(prev => {
-        // Cari grup uploaded
-        const uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
-        if (!uploadedGroup) {
-          // Buat grup baru jika belum ada
-          return {
-            ...prev,
-            layerGroups: [
-              ...prev.layerGroups,
-              {
-                id: 'uploaded',
-                name: 'Layer yang diupload',
-                data: '',
-                layers: [{ ...layerConfig }],
-              }
-            ],
-            activeLayers: [...prev.activeLayers, layerConfig.id]
-          };
-        }
-        // Grup sudah ada
-        // Cek jika layer dengan id sama sudah ada, hindari duplikasi
-        const exists = uploadedGroup.layers.some(l => l.id === layerConfig.id);
-        if (exists) {
-          // Update layer jika sudah ada (replace)
-          return {
-            ...prev,
-            layerGroups: prev.layerGroups.map(group => {
-              if (group.id === 'uploaded') {
-                return {
-                  ...group,
-                  layers: group.layers.map(l => l.id === layerConfig.id ? { ...layerConfig } : l)
-                };
-              }
-              return group;
-            }),
-            activeLayers: [...new Set([...prev.activeLayers, layerConfig.id])]
-          };
-        }
-        // Tambahkan layer baru
+    setMapState(prev => {
+      // Cari grup uploaded
+      const uploadedGroup = prev.layerGroups.find(group => group.id === 'uploaded');
+      if (!uploadedGroup) {
+        // Buat grup baru jika belum ada
+        return {
+          ...prev,
+          layerGroups: [
+            ...prev.layerGroups,
+            {
+              id: 'uploaded',
+              name: 'Layer yang diupload',
+              data: '',
+              layers: [{ ...layerConfig }],
+            }
+          ],
+          activeLayers: [...prev.activeLayers, layerConfig.id]
+        };
+      }
+      // Cek jika layer sudah ada
+      const exists = uploadedGroup.layers.some(l => l.id === layerConfig.id);
+      if (exists) {
+        // Update layer jika sudah ada (replace)
         return {
           ...prev,
           layerGroups: prev.layerGroups.map(group => {
             if (group.id === 'uploaded') {
               return {
                 ...group,
-                layers: [...group.layers, { ...layerConfig }]
+                layers: group.layers.map(l => l.id === layerConfig.id ? { ...layerConfig } : l)
               };
             }
             return group;
           }),
-          activeLayers: [...prev.activeLayers, layerConfig.id]
+          activeLayers: [...new Set([...prev.activeLayers, layerConfig.id])]
         };
-      });
-      setIsLayerPanelOpen(true);
-      toast({
-        title: 'Upload Berhasil',
-        description: `File ${layerConfig.name} berhasil diupload dan ditampilkan sebagai layer`,
-      });
-    } catch (error) {
-      console.error('Error adding uploaded layer:', error);
-      toast({
-        title: 'Upload Gagal',
-        description: `Terjadi kesalahan saat mengupload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    }
+      }
+      // Tambahkan layer baru
+      return {
+        ...prev,
+        layerGroups: prev.layerGroups.map(group => {
+          if (group.id === 'uploaded') {
+            return {
+              ...group,
+              layers: [...group.layers, { ...layerConfig }]
+            };
+          }
+          return group;
+        }),
+        activeLayers: [...prev.activeLayers, layerConfig.id]
+      };
+    });
+    setIsLayerPanelOpen(true);
+    toast({
+      title: 'Upload Berhasil',
+      description: `File ${layerConfig.name} berhasil diupload dan ditampilkan sebagai layer`,
+    });
   };
 
   const handleRemoveUploadedLayer = (layerId: string) => {
@@ -415,6 +405,7 @@ const MapContainer = () => {
   return (
     <div className="relative h-full w-full">
       <LeafletMapContainer
+
         id="leaflet-map"
         center={mapState.center}
         zoom={mapState.zoom}
