@@ -1,10 +1,10 @@
-
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { BarChart, LineChart, PieChart, Download, Clock, Filter, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import KinerjaPengelolaanSampahTab from "@/components/dashboard/KinerjaPengelolaanSampahTab";
+import SumberSampahTab from "@/components/dashboard/SumberSampahTab";
 
 const DashboardPublic = () => {
   return (
@@ -82,20 +82,33 @@ const DashboardPublic = () => {
           </div>
           
           <Tabs defaultValue="volume">
-            <TabsList className="mb-6">
-              <TabsTrigger value="volume" className="flex items-center">
+            <TabsList
+              className="mb-6 flex overflow-x-auto whitespace-nowrap flex-nowrap gap-2 px-1 py-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              <TabsTrigger value="volume" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
                 <BarChart className="h-4 w-4 mr-2" />
                 Volume Sampah
               </TabsTrigger>
-              <TabsTrigger value="komposisi" className="flex items-center">
+              <TabsTrigger value="komposisi" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
                 <PieChart className="h-4 w-4 mr-2" />
                 Komposisi Sampah
               </TabsTrigger>
-              <TabsTrigger value="tren" className="flex items-center">
+              <TabsTrigger value="tren" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
                 <LineChart className="h-4 w-4 mr-2" />
                 Tren & Analisis
               </TabsTrigger>
+              <TabsTrigger value="kinerja" className="flex items-center min-w-[180px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
+                <BarChart className="h-4 w-4 mr-2" />
+                Kinerja Pengelolaan Sampah
+              </TabsTrigger>
+              <TabsTrigger value="sumber" className="flex items-center min-w-[140px] justify-center px-3 py-2 rounded-full text-xs md:text-sm font-medium transition-colors focus:outline-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800">
+                <BarChart className="h-4 w-4 mr-2" />
+                Sumber Sampah
+              </TabsTrigger>
             </TabsList>
+            
+
             
             <TabsContent value="volume">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -382,11 +395,18 @@ const DashboardPublic = () => {
                 </div>
               </div>
             </TabsContent>
+            
+            <TabsContent value="kinerja">
+              <KinerjaPengelolaanSampahTab />
+            </TabsContent>
+            
+            <TabsContent value="sumber">
+              <SumberSampahTab />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
       
-      <Footer />
     </div>
   );
 };

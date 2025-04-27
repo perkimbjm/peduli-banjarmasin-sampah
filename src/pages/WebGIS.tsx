@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import MapContainer from "@/components/map/MapContainer";
 
 const WebGIS = () => {
@@ -45,8 +44,7 @@ const WebGIS = () => {
         </div>
       </div>
       
-      <Footer />
-    </div>
+     </div>
   );
 };
 

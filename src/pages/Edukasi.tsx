@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Search, Heart, Bookmark, Share2, Volume2, VolumeX, MessageCircle, ChevronLeft, ChevronRight, Filter, Clock, TrendingUp, Star, ArrowUp, X } from "lucide-react";
+import PaperPlaneIcon from "@/icons/PaperPlane";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -163,7 +163,10 @@ const MediaCarousel = ({
             variant="ghost"
             size="icon"
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={prevSlide}
+            onClick={e => {
+              e.stopPropagation();
+              prevSlide();
+            }}
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -171,10 +174,25 @@ const MediaCarousel = ({
             variant="ghost"
             size="icon"
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={nextSlide}
+            onClick={e => {
+              e.stopPropagation();
+              nextSlide();
+            }}
           >
             <ChevronRight className="h-6 w-6" />
           </Button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {media.map((_, idx) => (
+              <span
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  idx === currentIndex
+                    ? 'bg-white shadow-lg scale-125'
+                    : 'bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>
@@ -359,7 +377,14 @@ const PostModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0">
+      <DialogContent className="max-w-4xl p-0 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 rounded-full bg-white/90 hover:bg-red-100 text-gray-700 hover:text-red-500 shadow-md p-2 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-400"
+          aria-label="Close"
+        >
+          <X className="w-6 h-6" />
+        </button>
         <div className="flex">
           <div className="w-2/3">
             {post.type === 'image' ? (
@@ -383,8 +408,6 @@ const PostModal = ({
                 />
                 <span className="font-medium">{post.author.name}</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-              </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
               <Caption text={post.caption} author={post.author.name} />
@@ -404,7 +427,7 @@ const PostModal = ({
                             setSelectedPostId(post.id);
                             setShareModalOpen(true);
                           }}>
-                  <Share2 />
+                  <PaperPlaneIcon className="w-5 h-5" />
                 </Button>
               </div>
               <Button
@@ -554,23 +577,27 @@ const Edukasi = () => {
     console.log("Sharing post:", postId);
   };
 
+  // Helper: apakah infinite scroll diaktifkan?
+  const isInfiniteScrollEnabled = activeFilter === "all";
+
   // Load more posts when scrolling
   useEffect(() => {
-  if (inView && !loading) {
-    setLoading(true);
-    // Simulate API call to load more posts
-    setTimeout(() => {
-      const newPosts = [...dummyEducationContent].map(post => ({
-        ...post,
-        id: `${post.id}-${page}`,
-        timestamp: new Date(post.timestamp.getTime() - page * 24 * 60 * 60 * 1000)
-      }));
-      setPosts(prev => [...prev, ...newPosts]);
-      setPage(prev => prev + 1);
-      setLoading(false);
-    }, 1000);
-  }
-}, [inView, page, loading]);
+    if (!isInfiniteScrollEnabled) return; // hanya aktif jika tanpa filter/bookmark
+    if (inView && !loading) {
+      setLoading(true);
+      // Simulate API call to load more posts
+      setTimeout(() => {
+        // Jangan ubah tanggal konten
+        const newPosts = [...dummyEducationContent].map(post => ({
+          ...post,
+          id: `${post.id}-${page}`
+        }));
+        setPosts(prev => [...prev, ...newPosts]);
+        setPage(prev => prev + 1);
+        setLoading(false);
+      }, 1000);
+    }
+  }, [inView, page, loading, isInfiniteScrollEnabled]);
 
   const [selectedPost, setSelectedPost] = useState<EducationPost | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -720,7 +747,10 @@ const Edukasi = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleLike(post.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLike(post.id);
+                          }}
                           className={post.isLiked ? "text-red-500" : ""}
                         >
                           <Heart className={post.isLiked ? "fill-current" : ""} />
@@ -728,18 +758,22 @@ const Edukasi = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedPostId(post.id);
                             setShareModalOpen(true);
                           }}
                         >
-                          <Share2 />
+                          <PaperPlaneIcon className="w-5 h-5" />
                         </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleBookmark(post.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookmark(post.id);
+                        }}
                         className={post.isBookmarked ? "text-yellow-500" : ""}
                       >
                         <Bookmark className={post.isBookmarked ? "fill-current" : ""} />
@@ -764,7 +798,7 @@ const Edukasi = () => {
 
             {/* Loading indicator */}
             <div ref={ref} className="w-full py-8 text-center">
-              {loading && <PostSkeleton />}
+              {loading && isInfiniteScrollEnabled && <PostSkeleton />}
             </div>
 
             {/* Share Modal */}
@@ -814,7 +848,6 @@ const Edukasi = () => {
         </section>
       </div>
       
-      <Footer />
     </div>
   );
 };
