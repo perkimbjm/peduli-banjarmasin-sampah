@@ -1,5 +1,4 @@
-
-// useMapLayers.ts - Perbaikan bug label RT
+// useMapLayers.ts - Perbaikan lengkap
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import L from 'leaflet';
@@ -40,8 +39,6 @@ export const useMapLayers = (
   const prevFilterRef = useRef(filter);
   // Cache untuk menyimpan data fitur dari layer yang sudah dimuat
   const featureCacheRef = useRef<Record<string, GeoJSON.FeatureCollection>>({});
-  // Cache untuk menyimpan layer label yang sudah dibuat
-  const labelLayersRef = useRef<Record<string, L.LayerGroup>>({});
 
   // Update ref when layerInstances changes
   useEffect(() => {
@@ -200,7 +197,7 @@ export const useMapLayers = (
     return false;
   }, [map]);
 
-  // PERBAIKAN: Buat atau perbarui label layer dengan memperhatikan filter
+  // Buat layer label dari data GeoJSON yang sudah ada
   const createLabelLayer = useCallback((layer: LayerConfig): L.LayerGroup | null => {
     if (!layer.sourceLayer || !layer.labelProperty) {
       console.error('Label layer requires sourceLayer and labelProperty', layer);
@@ -214,82 +211,28 @@ export const useMapLayers = (
       return null;
     }
     
-    // Buat layer group baru atau gunakan yang sudah ada
-    let labelGroup = labelLayersRef.current[layer.id] || L.layerGroup();
+    const labelGroup = L.layerGroup();
     
-    // Kosongkan layer group jika sudah ada sebelumnya
-    if (labelLayersRef.current[layer.id]) {
-      labelGroup.clearLayers();
-    }
-    
-    // Tentukan apakah ini label untuk RT
-    const isRTLabel = layer.id === 'label-rt';
-    
-    // Buat label untuk setiap fitur dengan memperhatikan filter
+    // Buat label untuk setiap fitur
     sourceData.features.forEach(feature => {
-      // Skip jika tidak memiliki properti yang dibutuhkan
       if (!feature.properties || !feature.properties[layer.labelProperty]) return;
-      
-      // Apply filtering untuk label RT
-      if (isRTLabel && filter) {
-        // Jika filter kelurahan aktif, filter berdasarkan KEL
-        if (filter.selectedKelurahan && 
-            feature.properties.KEL && 
-            feature.properties.KEL !== filter.selectedKelurahan) {
-          return;
-        }
-        
-        // Jika filter RT aktif, filter berdasarkan Nama_RT
-        if (filter.selectedRT && 
-            feature.properties.Nama_RT && 
-            feature.properties.Nama_RT !== filter.selectedRT) {
-          return;
-        }
-      }
       
       // Dapatkan label text dari properti
       const labelText = feature.properties[layer.labelProperty];
       
-      // PERBAIKAN: Hitung centroid dari geometri untuk penempatan label dengan pengecekan ekstra
+      // Hitung centroid dari geometri untuk penempatan label
       let center: [number, number] | null = null;
       
-      try {
-        if (feature.geometry && feature.geometry.coordinates) {
-          if (feature.geometry.type === 'Polygon') {
-            // Untuk polygon, gunakan pusat bounding box
-            const polygon = L.polygon(
-              (feature.geometry.coordinates[0] as [number, number][]).map(
-                coord => [coord[1], coord[0]] as [number, number]
-              )
-            );
-            const bounds = polygon.getBounds();
-            center = [bounds.getCenter().lat, bounds.getCenter().lng];
-          } else if (feature.geometry.type === 'MultiPolygon') {
-            // Untuk multiPolygon, gunakan pusat bounding box dari polygon pertama
-            if (feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0]) {
-              const polygon = L.polygon(
-                (feature.geometry.coordinates[0][0] as [number, number][]).map(
-                  coord => [coord[1], coord[0]] as [number, number]
-                )
-              );
-              const bounds = polygon.getBounds();
-              center = [bounds.getCenter().lat, bounds.getCenter().lng];
-            }
-          } else if (feature.geometry.type === 'Point') {
-            // Untuk point, gunakan koordinat point
-            center = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]] as [number, number];
-          }
-        }
-      } catch (error) {
-        console.warn(`Error calculating centroid for ${layer.id}:`, error);
-        return; // Skip this feature
+      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        // Untuk polygon, gunakan pusat bounding box
+        const bounds = L.geoJSON(feature).getBounds();
+        center = [bounds.getCenter().lat, bounds.getCenter().lng];
+      } else if (feature.geometry.type === 'Point') {
+        // Untuk point, gunakan koordinat point
+        center = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
       }
       
-      // PERBAIKAN: Jangan buat marker jika tidak ada center yang valid
-      if (!center || center[0] === undefined || center[1] === undefined) {
-        console.warn(`Invalid center coordinates for ${layer.labelProperty}:${labelText}`, feature);
-        return;
-      }
+      if (!center) return;
       
       // Buat div icon dengan style dari layer config
       const icon = L.divIcon({
@@ -301,12 +244,9 @@ export const useMapLayers = (
           text-shadow: ${layer.style?.textShadow || 'none'};
           text-align: center;
           white-space: nowrap;
-          padding: 3px;
-          background-color: rgba(255,255,255,0.5);
-          border-radius: 3px;
           ">${labelText}</div>`,
-        iconSize: [100, 30],
-        iconAnchor: [50, 15]
+        iconSize: [100, 20],
+        iconAnchor: [50, 10]
       });
       
       // Buat marker dengan div icon
@@ -316,11 +256,8 @@ export const useMapLayers = (
       labelGroup.addLayer(marker);
     });
     
-    // Simpan referensi labelGroup untuk pembaruan selanjutnya
-    labelLayersRef.current[layer.id] = labelGroup;
-    
     return labelGroup;
-  }, [filter]);
+  }, []);
 
   // Load a specific layer with loading state tracking
   const loadLayer = useCallback(async (layer: LayerConfig): Promise<L.Layer | null> => {
@@ -599,49 +536,6 @@ export const useMapLayers = (
     handleLayerChanges();
   }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity, createLabelLayer]);
 
-  // PERBAIKAN: Update label layers saat filter berubah
-  useEffect(() => {
-    if (!initialized || !map) return;
-
-    // Check if filter changed
-    const filterChanged = JSON.stringify(prevFilterRef.current) !== JSON.stringify(filter);
-    if (!filterChanged) return;
-
-    prevFilterRef.current = filter;
-
-    // Cari semua layer label
-    const labelLayers = layerGroups.filter(layer => 
-      layer.type === 'label' &&
-      layer.visible &&
-      layerInstancesRef.current[layer.id]
-    );
-
-    // Perbarui setiap layer label yang sudah ada
-    labelLayers.forEach(layerConfig => {
-      // Hapus layer lama dari peta
-      const existingLayer = layerInstancesRef.current[layerConfig.id];
-      if (existingLayer && map.hasLayer(existingLayer)) {
-        map.removeLayer(existingLayer);
-      }
-
-      // Buat ulang layer dengan filter baru
-      const newLabelLayer = createLabelLayer(layerConfig);
-      if (newLabelLayer) {
-        // Update referensi di layerInstances
-        layerInstancesRef.current[layerConfig.id] = newLabelLayer;
-        
-        // Tambahkan ke peta jika visible
-        if (layerConfig.visible) {
-          map.addLayer(newLabelLayer);
-        }
-      }
-    });
-
-    // Update state dengan referensi layer yang diperbarui
-    setLayerInstances({...layerInstancesRef.current});
-
-  }, [filter, initialized, map, layerGroups, createLabelLayer]);
-
   // Update cache when RT or kelurahan data changes
   useEffect(() => {
     if (rtFeatures.length > 0) {
@@ -658,35 +552,29 @@ export const useMapLayers = (
         }))
       };
       
-      // Jika label layer RT sudah dimuat, perbarui
+      // Jika label layer sudah dimuat, perbarui
       const rtLabelLayer = layerInstancesRef.current['label-rt'];
-      if (rtLabelLayer && initialized && filter) {
-        // Temukan konfigurasi label RT
-        const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
-        if (rtLabelConfig) {
-          // Buat layer label baru dengan data dan filter terbaru
-          const newLabelLayer = createLabelLayer(rtLabelConfig);
-          if (newLabelLayer) {
-            // Hapus layer lama dari peta
-            if (map && map.hasLayer(rtLabelLayer)) {
-              map.removeLayer(rtLabelLayer);
+      if (rtLabelLayer) {
+        // Hapus semua marker lama
+        if (rtLabelLayer instanceof L.LayerGroup) {
+          rtLabelLayer.clearLayers();
+          
+          // Temukan konfigurasi label RT
+          const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
+          if (rtLabelConfig) {
+            // Buat layer label baru
+            const newLabelLayer = createLabelLayer(rtLabelConfig);
+            if (newLabelLayer) {
+              // Tambahkan semua marker baru ke layer group yang sudah ada
+              newLabelLayer.eachLayer(marker => {
+                rtLabelLayer.addLayer(marker);
+              });
             }
-            
-            // Update referensi
-            layerInstancesRef.current['label-rt'] = newLabelLayer;
-            
-            // Tambahkan ke peta jika layer visible
-            if (rtLabelConfig.visible && map) {
-              map.addLayer(newLabelLayer);
-            }
-            
-            // Update state
-            setLayerInstances({...layerInstancesRef.current});
           }
         }
       }
     }
-  }, [rtFeatures, createLabelLayer, layerGroups, map, filter, initialized]);
+  }, [rtFeatures, createLabelLayer, layerGroups]);
 
   // Perbarui layer RT dan kelurahan saat filter, visibilitas, atau data berubah
   useEffect(() => {
@@ -694,7 +582,7 @@ export const useMapLayers = (
     // ---- RT LAYER ----
     const rtLayer = layerInstancesRef.current['batas-rt'];
     // Temukan config layer RT untuk cek visibility
-    const rtLayerConfig = layerGroups.find(layer => layer.id === 'batas-rt');
+    const rtLayerConfig = layerGroups.flatMap(g => (g.layers || [])).find(layer => layer.id === 'batas-rt');
     const rtVisible = rtLayerConfig && rtLayerConfig.visible && rtLayer && map.hasLayer(rtLayer);
     if (rtLayer && rtLayer instanceof L.GeoJSON) {
       // Selalu refresh fitur, baik layer visible maupun tidak
@@ -715,6 +603,7 @@ export const useMapLayers = (
       rtLayer.addData(geoJSON as GeoJSON.GeoJsonObject);
     }
     // ---- END RT LAYER ----
+    // (Kelurahan: biarkan patch kelurahan tetap seperti sebelumnya)
   }, [map, initialized, filter, rtFeatures, layerGroups]);
 
   // Effect to handle filter changes - reload GeoJSON layers when filter changes
@@ -766,7 +655,7 @@ export const useMapLayers = (
     initialized,
     updateLayerVisibility,
     updateLayerOpacity,
-    addUploadedLayer,
-    removeUploadedLayer
+    addUploadedLayer: useCallback(() => false, []), // Sementara dinonaktifkan
+    removeUploadedLayer: useCallback(() => false, []) // Sementara dinonaktifkan
   };
 };
