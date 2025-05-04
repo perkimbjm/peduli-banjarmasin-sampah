@@ -3,10 +3,29 @@ import { MapContainer as LeafletMapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import LayerManager from "./LayerManager";
 import MapContent from "./MapContent";
+import Sidebar from "./Sidebar";
 import { LayerConfig, LayerGroup, MapState } from "./types";
 import "leaflet-omnivore";
 import { useToast } from "@/hooks/use-toast";
 import L from "leaflet";
+import { useKelurahanData } from '../../contexts/KelurahanDataContext';
+
+// Define the GeoJSON feature type
+interface KelurahanFeature {
+  type: string;
+  properties: {
+    KODE_KEL: string;
+    KELURAHAN: string;
+    KECAMATAN: string;
+    [key: string]: string | number;
+  };
+  geometry: {
+    type: string;
+    coordinates: number[][][];
+  };
+}
+
+console.log("MapContainer rendered!");
 
 // Define initial layer groups
 const getInitialLayerGroups = (): LayerGroup[] => [
@@ -72,7 +91,6 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         id: "batas-kelurahan",
         name: "Batas Kelurahan",
         type: "geojson",
-        url: "/data-map/kelurahan.geojson",
         visible: true,
         opacity: 0.7,
         group: "batas-wilayah",
@@ -155,7 +173,89 @@ const MapContainer = () => {
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const layerPanelRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  
+  const { kelurahanFeatures, loading: kelurahanLoading } = useKelurahanData();
+
+  // State untuk data kelurahan dan filter
+  const [kecamatanList, setKecamatanList] = useState<string[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<string[]>([]);
+  const [rtList, setRtList] = useState<string[]>([]);
+  const [selectedKecamatan, setSelectedKecamatan] = useState<string | null>(null);
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string | null>(null);
+  const [selectedRT, setSelectedRT] = useState<string | null>(null);
+  const [batasRTLayerActive, setBatasRTLayerActive] = useState<boolean>(false);
+
+  // Inisialisasi kecamatanList dan kelurahanList ketika data context sudah siap
+  useEffect(() => {
+    if (!kelurahanLoading && kelurahanFeatures.length > 0) {
+      const kecamatanSet = new Set<string>();
+      kelurahanFeatures.forEach((f: KelurahanFeature) => {
+        if (f.properties && f.properties.KECAMATAN) kecamatanSet.add(f.properties.KECAMATAN);
+      });
+      setKecamatanList(Array.from(kecamatanSet));
+      setKelurahanList(kelurahanFeatures.map((f: KelurahanFeature) => f.properties.KELURAHAN));
+    }
+  }, [kelurahanLoading, kelurahanFeatures]);
+
+  // Filter kelurahan by kecamatan
+  useEffect(() => {
+    if (!selectedKecamatan) {
+      setKelurahanList(kelurahanFeatures.map((f: KelurahanFeature) => f.properties.KELURAHAN));
+    } else {
+      setKelurahanList(
+        kelurahanFeatures.filter((f: KelurahanFeature) => f.properties.KECAMATAN === selectedKecamatan)
+          .map((f: KelurahanFeature) => f.properties.KELURAHAN)
+      );
+    }
+    setSelectedKelurahan(null); // Reset kelurahan saat kecamatan berubah
+    setSelectedRT(null); // Reset RT juga
+  }, [selectedKecamatan, kelurahanFeatures]);
+
+  // Filter RT jika layer aktif dan kelurahan dipilih
+  useEffect(() => {
+    if (!batasRTLayerActive || !selectedKelurahan) {
+      setRtList([]);
+      return;
+    }
+    fetch('/data-map/BATAS_RT_AR.geojson')
+      .then(res => res.json())
+      .then(data => {
+        const filtered = data.features.filter((f: any) => f.properties.KEL === selectedKelurahan);
+        setRtList(filtered.map((f: any) => f.properties.Nama_RT));
+      });
+  }, [selectedKelurahan, batasRTLayerActive]);
+
+  // Handler untuk toggle layer batas RT (misal dari kontrol peta)
+  const handleToggleBatasRTLayer = (active: boolean) => {
+    setBatasRTLayerActive(active);
+    if (!active) setSelectedRT(null);
+  };
+
+  // Handler filter untuk Sidebar
+  const handleKecamatanChange = (v: string) => setSelectedKecamatan(v || null);
+  const handleKelurahanChange = (v: string) => setSelectedKelurahan(v || null);
+  const handleRTChange = (v: string) => setSelectedRT(v || null);
+
+  // Handler untuk reset semua filter
+  const handleResetFilters = () => {
+    setSelectedKecamatan(null);
+    setSelectedKelurahan(null);
+    setSelectedRT(null);
+    toast({
+      title: 'Filter direset',
+      description: 'Semua filter telah dihapus',
+    });
+  };
+
+  // Filtering data kelurahan/RT untuk layer peta:
+  const filteredKelurahanFeatures = selectedKecamatan || selectedKelurahan
+    ? kelurahanFeatures.filter(f =>
+        (!selectedKecamatan || f.properties.KECAMATAN === selectedKecamatan) &&
+        (!selectedKelurahan || f.properties.KELURAHAN === selectedKelurahan)
+      )
+    : kelurahanFeatures;
+
+  // Untuk layer RT: fetch & filter di komponen layer peta, gunakan selectedKelurahan & selectedRT
+
   // Apply toast styles
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -212,6 +312,30 @@ const MapContainer = () => {
       }
     };
   }, []);
+
+  // Ubah layerGroups agar layer 'batas-kelurahan' mengambil data dari context, bukan url
+  useEffect(() => {
+    if (!kelurahanLoading && kelurahanFeatures.length > 0) {
+      setMapState(prev => {
+        const newLayerGroups = prev.layerGroups.map(group => {
+          if (group.id !== 'batas-wilayah') return group;
+          return {
+            ...group,
+            layers: group.layers.map(layer => {
+              if (layer.id !== 'batas-kelurahan') return layer;
+              // inject data dari context, hapus url
+              return {
+                ...layer,
+                url: undefined,
+                data: JSON.stringify({ type: 'FeatureCollection', features: kelurahanFeatures })
+              };
+            })
+          };
+        });
+        return { ...prev, layerGroups: newLayerGroups };
+      });
+    }
+  }, [kelurahanLoading, kelurahanFeatures]);
 
   const handleLayerToggle = (layerId: string) => {
     setMapState((prev) => {
@@ -404,8 +528,21 @@ const MapContainer = () => {
 
   return (
     <div className="relative h-full w-full">
+      <Sidebar
+        kecamatanList={kecamatanList}
+        kelurahanList={kelurahanList}
+        rtList={rtList}
+        selectedKecamatan={selectedKecamatan}
+        selectedKelurahan={selectedKelurahan}
+        selectedRT={selectedRT}
+        onKecamatanChange={handleKecamatanChange}
+        onKelurahanChange={handleKelurahanChange}
+        onRTChange={handleRTChange}
+        batasRTLayerActive={batasRTLayerActive}
+        loading={kelurahanLoading}
+        onResetFilters={handleResetFilters}
+      />
       <LeafletMapContainer
-
         id="leaflet-map"
         center={mapState.center}
         zoom={mapState.zoom}
@@ -420,6 +557,9 @@ const MapContainer = () => {
           isLayerPanelOpen={isLayerPanelOpen}
           onLayerPanelToggle={() => setIsLayerPanelOpen(!isLayerPanelOpen)}
           onRemoveUploadedLayer={handleRemoveUploadedLayer}
+          selectedKecamatan={selectedKecamatan}
+          selectedKelurahan={selectedKelurahan}
+          selectedRT={selectedRT}
         />
       </LeafletMapContainer>
       {isLayerPanelOpen && (

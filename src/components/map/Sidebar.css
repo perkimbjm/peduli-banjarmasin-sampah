@@ -1,0 +1,189 @@
+.sidebar-container {
+  background: var(--sidebar-bg, #fff);
+  color: var(--sidebar-fg, #23272f);
+  position: absolute;
+  top: 0px;
+  left: 0;
+  z-index: 9000;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+  width: 280px;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s, color 0.2s;
+  transform: translateX(0);
+}
+
+.sidebar-container.collapsed {
+  transform: translateX(-240px);
+  width: 40px;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  left: 0;
+  right: auto;
+  top: 60%;
+  border-radius: 2px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  background: #fff;
+  color: var(--sidebar-toggle-fg, #23272f);
+  background-position: 50% 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 1.5px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9100;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  font-size: 18px;
+  padding: 0;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  -webkit-transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  -moz-transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  -ms-transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  -o-transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--sidebar-toggle-hover, #f3f3f3);
+  color: var(--sidebar-toggle-fg-hover, #1a73e8);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+
+.sidebar-container.collapsed .sidebar-toggle {
+  position: relative;
+  left: 12px;
+  right: auto;
+  top: 175px;
+  border-radius: 2px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+  border-left: 1.5px solid #ccc;
+}
+
+
+.sidebar-content {
+  padding: 24px 16px 16px 16px;
+}
+
+.sidebar-filter {
+  margin-bottom: 18px;
+}
+
+.sidebar-filter label {
+  display: block;
+  font-size: 0.96em;
+  margin-bottom: 6px;
+}
+
+.sidebar-filter select {
+  width: 100%;
+  padding: 7px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  font-size: 1em;
+  background: var(--sidebar-bg, #fff);
+  color: var(--sidebar-fg, #23272f);
+}
+
+.sidebar-loading {
+  padding: 32px 0;
+  text-align: center;
+  color: #aaa;
+  font-size: 1.1em;
+}
+
+.sidebar-rt-disabled {
+  color: #888;
+  font-size: 0.9em;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.sidebar-reset-button {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 8px 12px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.sidebar-reset-button:hover {
+  background-color: #d32f2f;
+}
+
+.sidebar-reset-button:disabled {
+  background-color: #cccccc;
+  color: #888888;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sidebar-bg: #eee;
+    --sidebar-fg: #232323;
+    --sidebar-toggle-bg: #23272f;
+    --sidebar-toggle-fg: #eee;
+    --sidebar-toggle-hover: #313642;
+    --sidebar-toggle-fg-hover: #7ab7ff;
+  }
+  .sidebar-container {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-fg);
+  }
+  .sidebar-toggle {
+    background: var(--sidebar-toggle-bg);
+    color: var(--sidebar-toggle-fg);
+    border: 1px solid #444;
+  }
+  .sidebar-toggle:hover {
+    background: var(--sidebar-toggle-hover);
+    color: var(--sidebar-toggle-fg-hover);
+  }
+  .sidebar-filter select {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-fg);
+    border: 1px solid #444;
+  }
+  .sidebar-loading {
+    color: var(--sidebar-fg);
+  }
+  .sidebar-reset-button {
+    background-color: #d32f2f;
+    color: white;
+  }
+  .sidebar-reset-button:hover {
+    background-color: #b71c1c;
+  }
+  .sidebar-reset-button:disabled {
+    background-color: #666666;
+    color: #444444;
+  }
+}
+
+body.dark .sidebar-container,
+html.dark .sidebar-container {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+}
+
+body.dark .sidebar-container .sidebar-toggle,
+html.dark .sidebar-container .sidebar-toggle {
+  background: var(--sidebar-toggle-bg);
+  color: var(--sidebar-toggle-fg);
+}

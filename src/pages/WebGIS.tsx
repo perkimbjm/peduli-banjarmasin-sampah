@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import MapContainer from "@/components/map/MapContainer";
+import { KelurahanDataProvider } from "@/contexts/KelurahanDataContext";
 
 const WebGIS = () => {
   return (
@@ -8,15 +9,8 @@ const WebGIS = () => {
       <Navbar />
       
       <div className="flex-1 bg-gray-100 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Peta Pengelolaan Sampah</h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">
-                Visualisasi data spasial pengelolaan sampah di Banjarmasin
-              </p>
-            </div>
-          </div>
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
           
           <div id="data-board" className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
@@ -35,10 +29,13 @@ const WebGIS = () => {
               <p className="text-gray-500 dark:text-gray-400 mt-1">Melayani 12 kelurahan</p>
             </div>
           </div>
+          
 
          
-          <div className="my-8 relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden h-[600px]">
-            <MapContainer />
+          <div className="my-8 relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden h-[65vh] md:h-[68vh] lg:h-[72vh] xl:h-[80vh] 2xl:h-[85vh]">
+            <KelurahanDataProvider>
+              <MapContainer />
+            </KelurahanDataProvider>
           </div>
           
         </div>

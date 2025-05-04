@@ -15,6 +15,9 @@ interface MapContentProps {
   isLayerPanelOpen: boolean;
   onLayerPanelToggle: () => void;
   onRemoveUploadedLayer: (layerId: string) => void;
+  selectedKecamatan?: string | null;
+  selectedKelurahan?: string | null;
+  selectedRT?: string | null;
 }
 
 const MapContent = ({
@@ -24,13 +27,18 @@ const MapContent = ({
   onLayerOpacityChange,
   isLayerPanelOpen,
   onLayerPanelToggle,
-  onRemoveUploadedLayer
+  onRemoveUploadedLayer,
+  selectedKecamatan,
+  selectedKelurahan,
+  selectedRT
 }: MapContentProps) => {
   const map = useMap();
   const mapRef = useRef(map);
+  // PATCH: Kirim filter ke useMapLayers agar fitur terfilter
   const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
     map,
-    layerGroups.flatMap(group => group.layers)
+    layerGroups.flatMap(group => group.layers),
+    { selectedKecamatan, selectedKelurahan, selectedRT }
   );
   // handleFileUpload siap dipass ke MapControls (file: File) => void
   const handleFileUpload = useFileUpload(map, onFileUpload);

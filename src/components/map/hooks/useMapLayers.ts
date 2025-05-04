@@ -5,7 +5,16 @@ import L from 'leaflet';
 import { LayerConfig, LayerInstances } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
-export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
+// PATCH: Tambahkan parameter filter ke useMapLayers
+export const useMapLayers = (
+  map: L.Map | null,
+  layerGroups: LayerConfig[],
+  filter?: {
+    selectedKecamatan?: string | null;
+    selectedKelurahan?: string | null;
+    selectedRT?: string | null;
+  }
+) => {
   const [layerInstances, setLayerInstances] = useState<LayerInstances>({});
   const [initialized, setInitialized] = useState(false);
   const layerInstancesRef = useRef<LayerInstances>({});
@@ -15,6 +24,8 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
   const loadingLayersRef = useRef(new Set<string>());
   // Track initialization state
   const initializingRef = useRef(false);
+  // Track current filter to detect changes
+  const prevFilterRef = useRef(filter);
 
   // Update ref when layerInstances changes
   useEffect(() => {
@@ -167,6 +178,11 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
         } else {
           return null;
         }
+        
+        // Check if this is the kelurahan layer that needs filtering
+        const isKelurahanLayer = layer.id === 'batas-kelurahan' || 
+                               (layer.url && layer.url.includes('kelurahan.geojson'));
+        
         // Tambahkan komentar pada lokasi error agar developer tahu harus melakukan type assertion atau validasi sebelum casting ke GeoJsonObject
         // Contoh: jika yakin data adalah GeoJSON
         // const geoLayer = L.geoJSON(data as GeoJSON.GeoJsonObject);
@@ -188,6 +204,26 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
               );
             }
           },
+          filter: (feature: GeoJSON.Feature) => {
+            // Only apply filtering to kelurahan layer
+            if (!isKelurahanLayer) {
+              return true;
+            }
+            
+            // Skip filtering for features without properties
+            if (!feature.properties) {
+              return true;
+            }
+            
+            if (filter) {
+              const { selectedKecamatan, selectedKelurahan, selectedRT } = filter;
+              // Use uppercase property names to match the GeoJSON data structure
+              if (selectedKecamatan && feature.properties?.KECAMATAN !== selectedKecamatan) return false;
+              if (selectedKelurahan && feature.properties?.KELURAHAN !== selectedKelurahan) return false;
+              if (selectedRT && feature.properties?.RT !== selectedRT) return false;
+            }
+            return true;
+          },
         });
         return geoJSONLayer;
       }
@@ -203,7 +239,7 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
       loadingLayersRef.current.delete(layer.id);
     }
     return null;
-  }, [toast]);
+  }, [toast, filter]);
 
   // Initial setup when map is ready
   useEffect(() => {
@@ -278,6 +314,51 @@ export const useMapLayers = (map: L.Map | null, layerGroups: LayerConfig[]) => {
     
     handleLayerChanges();
   }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity]);
+
+  // Effect to handle filter changes - reload GeoJSON layers when filter changes
+  useEffect(() => {
+    // Skip if not initialized or no map
+    if (!initialized || !map) return;
+    
+    // Check if filter has changed
+    const filterChanged = JSON.stringify(prevFilterRef.current) !== JSON.stringify(filter);
+    if (!filterChanged) return;
+    
+    // Update filter ref
+    prevFilterRef.current = filter;
+    
+    // Find only the kelurahan boundary layer to refresh
+    // We only want to apply filters to the kelurahan layer, not other layers like TPS
+    const kelurahanLayer = layerGroups.find(layer => 
+      layer.id === 'batas-kelurahan' || 
+      (layer.type === 'geojson' && layer.url?.includes('kelurahan.geojson'))
+    );
+    
+    if (!kelurahanLayer) return;
+    
+    const reloadKelurahanLayer = async () => {
+      const updatedLayers = { ...layerInstancesRef.current };
+      
+      // Remove existing kelurahan layer from map if it exists
+      if (updatedLayers[kelurahanLayer.id] && map.hasLayer(updatedLayers[kelurahanLayer.id])) {
+        map.removeLayer(updatedLayers[kelurahanLayer.id]);
+      }
+      
+      // Reload the kelurahan layer with new filter
+      if (kelurahanLayer.visible) {
+        const layer = await loadLayer(kelurahanLayer);
+        if (layer) {
+          updatedLayers[kelurahanLayer.id] = layer;
+          map.addLayer(layer);
+          
+          // Update state
+          setLayerInstances(updatedLayers);
+        }
+      }
+    };
+    
+    reloadKelurahanLayer();
+  }, [filter, initialized, map, layerGroups, loadLayer]);
 
   return {
     initialized,
