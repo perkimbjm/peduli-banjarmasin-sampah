@@ -4,6 +4,16 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import L from 'leaflet';
 import { LayerConfig, LayerInstances } from '../types';
 import { useToast } from '@/hooks/use-toast';
+import { useRTData } from '@/contexts/RTDataContext';
+
+interface LabelOptions {
+  style: {
+    fontSize?: string;
+    fontWeight?: string;
+    color?: string;
+    textShadow?: string;
+  }
+}
 
 // PATCH: Tambahkan parameter filter ke useMapLayers
 export const useMapLayers = (
@@ -19,6 +29,7 @@ export const useMapLayers = (
   const [initialized, setInitialized] = useState(false);
   const layerInstancesRef = useRef<LayerInstances>({});
   const { toast } = useToast();
+  const { rtFeatures } = useRTData(); // Ambil data RT dari context
   
   // Track which layers are currently loading
   const loadingLayersRef = useRef(new Set<string>());
@@ -26,6 +37,8 @@ export const useMapLayers = (
   const initializingRef = useRef(false);
   // Track current filter to detect changes
   const prevFilterRef = useRef(filter);
+  // Cache untuk menyimpan data fitur dari layer yang sudah dimuat
+  const featureCacheRef = useRef<Record<string, GeoJSON.FeatureCollection>>({});
 
   // Update ref when layerInstances changes
   useEffect(() => {
@@ -33,18 +46,18 @@ export const useMapLayers = (
     window.mapLayers = layerInstances;
   }, [layerInstances]);
 
+  // Update layer visibility (show/hide on map)
   const updateLayerVisibility = useCallback((layerId: string, visible: boolean) => {
     const layer = layerInstancesRef.current[layerId];
+    if (!layer || !map) return;
     
-    if (layer && map) {
-      if (visible) {
-        if (!map.hasLayer(layer)) {
-          map.addLayer(layer);
-        }
-      } else {
-        if (map.hasLayer(layer)) {
-          map.removeLayer(layer);
-        }
+    if (visible) {
+      if (!map.hasLayer(layer)) {
+        map.addLayer(layer);
+      }
+    } else {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
       }
     }
   }, [map]);
@@ -54,11 +67,57 @@ export const useMapLayers = (
     
     if (layer) {
       if ('setOpacity' in layer) {
+        // Untuk tile layer
         (layer as L.TileLayer).setOpacity(opacity);
       } else if ('setStyle' in layer) {
-        (layer as L.GeoJSON).setStyle({
-          opacity: opacity,
-          fillOpacity: opacity * 0.2
+        // Untuk GeoJSON layer
+        const geoJSONLayer = layer as L.GeoJSON;
+        
+        // Dapatkan style asli dari layer
+        const originalStyle = geoJSONLayer.options.style;
+        let newStyle: L.PathOptions;
+        
+        if (typeof originalStyle === 'function') {
+          // Jika style adalah fungsi, panggil dengan feature kosong untuk mendapatkan style default
+          newStyle = originalStyle({} as GeoJSON.Feature);
+        } else if (originalStyle) {
+          // Jika style adalah objek, gunakan style tersebut
+          newStyle = { ...originalStyle };
+        } else {
+          // Style default jika tidak ada style asli
+          newStyle = {
+            color: "#ff7800",
+            weight: 3,
+            fillColor: "#ff7800"
+          };
+        }
+        
+        // Update opacity sambil mempertahankan style lainnya
+        newStyle.opacity = opacity;
+        newStyle.fillOpacity = opacity * 0.2;
+        
+        // Terapkan style baru ke semua fitur
+        geoJSONLayer.setStyle((feature) => {
+          const featureStyle = typeof originalStyle === 'function' 
+            ? originalStyle(feature as GeoJSON.Feature)
+            : { ...newStyle };
+            
+          return {
+            ...featureStyle,
+            opacity: opacity,
+            fillOpacity: opacity * 0.2
+          };
+        });
+      } else if (layer instanceof L.LayerGroup) {
+        // Untuk layer group (seperti layer label)
+        const labelGroup = layer as L.LayerGroup;
+        labelGroup.eachLayer((marker) => {
+          if (marker instanceof L.Marker && marker.getElement()) {
+            const iconElement = marker.getElement();
+            if (iconElement) {
+              iconElement.style.opacity = opacity.toString();
+            }
+          }
         });
       }
     }
@@ -138,18 +197,95 @@ export const useMapLayers = (
     return false;
   }, [map]);
 
+  // Buat layer label dari data GeoJSON yang sudah ada
+  const createLabelLayer = useCallback((layer: LayerConfig): L.LayerGroup | null => {
+    if (!layer.sourceLayer || !layer.labelProperty) {
+      console.error('Label layer requires sourceLayer and labelProperty', layer);
+      return null;
+    }
+    
+    // Cari data dari layer sumber (cache atau instance)
+    const sourceData = featureCacheRef.current[layer.sourceLayer];
+    if (!sourceData || !sourceData.features || !sourceData.features.length) {
+      console.warn(`Source data for ${layer.sourceLayer} not found, label layer ${layer.id} will be created later`);
+      return null;
+    }
+    
+    const labelGroup = L.layerGroup();
+    
+    // Buat label untuk setiap fitur
+    sourceData.features.forEach(feature => {
+      if (!feature.properties || !feature.properties[layer.labelProperty]) return;
+      
+      // Dapatkan label text dari properti
+      const labelText = feature.properties[layer.labelProperty];
+      
+      // Hitung centroid dari geometri untuk penempatan label
+      let center: [number, number] | null = null;
+      
+      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        // Untuk polygon, gunakan pusat bounding box
+        const bounds = L.geoJSON(feature).getBounds();
+        center = [bounds.getCenter().lat, bounds.getCenter().lng];
+      } else if (feature.geometry.type === 'Point') {
+        // Untuk point, gunakan koordinat point
+        center = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+      }
+      
+      if (!center) return;
+      
+      // Buat div icon dengan style dari layer config
+      const icon = L.divIcon({
+        className: 'custom-label-icon',
+        html: `<div style="
+          font-size: ${layer.style?.fontSize || '12px'};
+          font-weight: ${layer.style?.fontWeight || 'normal'};
+          color: ${layer.style?.color || '#000'};
+          text-shadow: ${layer.style?.textShadow || 'none'};
+          text-align: center;
+          white-space: nowrap;
+          ">${labelText}</div>`,
+        iconSize: [100, 20],
+        iconAnchor: [50, 10]
+      });
+      
+      // Buat marker dengan div icon
+      const marker = L.marker(center, { icon });
+      
+      // Tambahkan ke group
+      labelGroup.addLayer(marker);
+    });
+    
+    return labelGroup;
+  }, []);
+
   // Load a specific layer with loading state tracking
   const loadLayer = useCallback(async (layer: LayerConfig): Promise<L.Layer | null> => {
     // Mark this layer as loading
     loadingLayersRef.current.add(layer.id);
     try {
+      // Handle tile layers
       if (layer.type === "tile") {
         const tileLayer = L.tileLayer(layer.url!, {
           attribution: layer.attribution,
           opacity: layer.opacity,
         });
         return tileLayer;
-      } else if (layer.type === "geojson") {
+      } 
+      // Handle label layers
+      else if (layer.type === "label") {
+        // Try to create a label layer
+        const labelLayer = createLabelLayer(layer);
+        if (labelLayer) {
+          return labelLayer;
+        }
+        
+        // If we can't create it now (source data not loaded yet),
+        // schedule it for later when data becomes available
+        return null;
+      }
+      // Handle geojson layers
+      else if (layer.type === "geojson") {
         let data: unknown = null;
         if (layer.url) {
           // load from url
@@ -179,49 +315,119 @@ export const useMapLayers = (
           return null;
         }
         
+        // Jika ini adalah layer RT dan tidak ada data dari URL/data property, gunakan data dari context
+        if (layer.id === 'batas-rt' && !data && rtFeatures.length > 0) {
+          data = {
+            type: 'FeatureCollection',
+            features: rtFeatures
+          };
+        }
+        
         // Check if this is the kelurahan layer that needs filtering
         const isKelurahanLayer = layer.id === 'batas-kelurahan' || 
                                (layer.url && layer.url.includes('kelurahan.geojson'));
+                               
+        // Check if this is the RT layer that needs filtering
+        const isRTLayer = layer.id === 'batas-rt';
         
-        // Tambahkan komentar pada lokasi error agar developer tahu harus melakukan type assertion atau validasi sebelum casting ke GeoJsonObject
-        // Contoh: jika yakin data adalah GeoJSON
-        // const geoLayer = L.geoJSON(data as GeoJSON.GeoJsonObject);
-        // atau lakukan validasi sebelum casting
+        // Check if this is the TPS layer
+        const isTPSLayer = layer.id === 'tps';
+        
+        // Store a copy of the GeoJSON data in the cache for label layers to use
+        if (data && typeof data === 'object' && 'features' in data) {
+          // Clone data sebelum disimpan di cache
+          featureCacheRef.current[layer.id] = JSON.parse(JSON.stringify(data));
+        }
+        
         const geoJSONLayer = L.geoJSON(data as GeoJSON.GeoJsonObject, {
-          style: () => ({
-            color: layer.style?.color || "#3388ff",
-            weight: layer.style?.weight || 3,
-            opacity: layer.opacity,
-            fillColor: layer.style?.fillColor || "#3388ff",
-            fillOpacity: layer.opacity * 0.2,
-          }),
+          style: (feature) => {
+            // Khusus untuk layer TPS
+            if (isTPSLayer) {
+              return {
+                color: "#ff0000",
+                weight: 2,
+                opacity: layer.opacity,
+                fillColor: "#ff0000",
+                fillOpacity: layer.opacity * 0.5
+              };
+            }
+            
+            // Untuk layer lainnya
+            return {
+              color: layer.style?.color || "#3388ff",
+              weight: layer.style?.weight || 3,
+              opacity: layer.opacity,
+              fillColor: layer.style?.fillColor || "#3388ff",
+              fillOpacity: layer.opacity * 0.2,
+            };
+          },
           onEachFeature: (feature, layer) => {
             if (feature.properties) {
-              layer.bindPopup(
-                Object.entries(feature.properties)
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join("<br>")
-              );
+              // Menentukan jenis layer berdasarkan properti fitur
+              if (feature.properties.nama && feature.properties.KELURAHAN) {
+                // Popup khusus untuk layer komposting
+                layer.bindPopup(`
+                  <div class="p-2">
+                    <h3 class="font-bold text-amber-800">${feature.properties.nama}</h3>
+                    <p class="text-sm mt-1">Alamat: ${feature.properties.alamat || '-'}</p>
+                    <p class="text-sm">Kelurahan: ${feature.properties.KELURAHAN || '-'}</p>
+                    <p class="text-sm">Kecamatan: ${feature.properties.KECAMATAN || '-'}</p>
+                  </div>
+                `);
+              } else if (feature.properties.Nama && feature.properties.KELURAHAN) {
+                // Popup khusus untuk layer bank sampah
+                layer.bindPopup(`
+                  <div class="p-2">
+                    <h3 class="font-bold text-green-600">${feature.properties.Nama}</h3>
+                    <p class="text-sm mt-1">ID: ${feature.properties.ID || '-'}</p>
+                    <p class="text-sm">Kelurahan: ${feature.properties.KELURAHAN || '-'}</p>
+                    <p class="text-sm">Kecamatan: ${feature.properties.KECAMATAN || '-'}</p>
+                  </div>
+                `);
+              } else {
+                // Default popup untuk layer lainnya
+                layer.bindPopup(
+                  Object.entries(feature.properties)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join("<br>")
+                );
+              }
             }
           },
           filter: (feature: GeoJSON.Feature) => {
             // Only apply filtering to kelurahan layer
-            if (!isKelurahanLayer) {
+            if (isKelurahanLayer) {
+              // Skip filtering for features without properties
+              if (!feature.properties) {
+                return true;
+              }
+              
+              if (filter) {
+                const { selectedKecamatan, selectedKelurahan } = filter;
+                // Use uppercase property names to match the GeoJSON data structure
+                if (selectedKecamatan && feature.properties?.KECAMATAN !== selectedKecamatan) return false;
+                if (selectedKelurahan && feature.properties?.KELURAHAN !== selectedKelurahan) return false;
+              }
               return true;
             }
             
-            // Skip filtering for features without properties
-            if (!feature.properties) {
+            // Apply filtering to RT layer
+            if (isRTLayer) {
+              // Skip filtering for features without properties
+              if (!feature.properties) {
+                return true;
+              }
+              
+              if (filter) {
+                const { selectedKelurahan, selectedRT } = filter;
+                // RT layer uses "KEL" property instead of "KELURAHAN"
+                if (selectedKelurahan && feature.properties?.KEL !== selectedKelurahan) return false;
+                if (selectedRT && feature.properties?.Nama_RT !== selectedRT) return false;
+              }
               return true;
             }
             
-            if (filter) {
-              const { selectedKecamatan, selectedKelurahan, selectedRT } = filter;
-              // Use uppercase property names to match the GeoJSON data structure
-              if (selectedKecamatan && feature.properties?.KECAMATAN !== selectedKecamatan) return false;
-              if (selectedKelurahan && feature.properties?.KELURAHAN !== selectedKelurahan) return false;
-              if (selectedRT && feature.properties?.RT !== selectedRT) return false;
-            }
+            // For all other layers, don't apply filtering
             return true;
           },
         });
@@ -239,7 +445,7 @@ export const useMapLayers = (
       loadingLayersRef.current.delete(layer.id);
     }
     return null;
-  }, [toast, filter]);
+  }, [toast, filter, rtFeatures, createLabelLayer]);
 
   // Initial setup when map is ready
   useEffect(() => {
@@ -273,9 +479,7 @@ export const useMapLayers = (
     const currentMap = map;
     return () => {
       if (currentMap !== null && typeof currentMap.off === 'function') {
-        // Remove all custom event listeners here
-        // Example: currentMap.off('layeradd', onLayerAdd);
-        // If you have custom listeners, add guards here
+        // Remove all custom event listeners here if needed
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -306,6 +510,23 @@ export const useMapLayers = (
         }
       }
       
+      // Create any label layers that depend on data that was just loaded
+      const labelLayers = layerGroups.filter(
+        layer => layer.type === 'label' && !updatedLayers[layer.id] && layer.visible
+      );
+      
+      for (const labelConfig of labelLayers) {
+        const labelLayer = createLabelLayer(labelConfig);
+        if (labelLayer) {
+          updatedLayers[labelConfig.id] = labelLayer;
+          // Add to map if visible
+          if (labelConfig.visible) {
+            map.addLayer(labelLayer);
+          }
+          hasUpdates = true;
+        }
+      }
+      
       // Only update state if new layers were loaded
       if (hasUpdates) {
         setLayerInstances(updatedLayers);
@@ -313,7 +534,77 @@ export const useMapLayers = (
     };
     
     handleLayerChanges();
-  }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity]);
+  }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity, createLabelLayer]);
+
+  // Update cache when RT or kelurahan data changes
+  useEffect(() => {
+    if (rtFeatures.length > 0) {
+      // Simpan data RT di cache untuk digunakan oleh label layer
+      featureCacheRef.current['batas-rt'] = {
+        type: 'FeatureCollection',
+        features: rtFeatures.map(feature => ({
+          ...feature,
+          type: 'Feature',
+          geometry: {
+            ...feature.geometry,
+            type: 'MultiPolygon' as const
+          }
+        }))
+      };
+      
+      // Jika label layer sudah dimuat, perbarui
+      const rtLabelLayer = layerInstancesRef.current['label-rt'];
+      if (rtLabelLayer) {
+        // Hapus semua marker lama
+        if (rtLabelLayer instanceof L.LayerGroup) {
+          rtLabelLayer.clearLayers();
+          
+          // Temukan konfigurasi label RT
+          const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
+          if (rtLabelConfig) {
+            // Buat layer label baru
+            const newLabelLayer = createLabelLayer(rtLabelConfig);
+            if (newLabelLayer) {
+              // Tambahkan semua marker baru ke layer group yang sudah ada
+              newLabelLayer.eachLayer(marker => {
+                rtLabelLayer.addLayer(marker);
+              });
+            }
+          }
+        }
+      }
+    }
+  }, [rtFeatures, createLabelLayer, layerGroups]);
+
+  // Perbarui layer RT dan kelurahan saat filter, visibilitas, atau data berubah
+  useEffect(() => {
+    if (!map || !initialized) return;
+    // ---- RT LAYER ----
+    const rtLayer = layerInstancesRef.current['batas-rt'];
+    // Temukan config layer RT untuk cek visibility
+    const rtLayerConfig = layerGroups.flatMap(g => (g.layers || [])).find(layer => layer.id === 'batas-rt');
+    const rtVisible = rtLayerConfig && rtLayerConfig.visible && rtLayer && map.hasLayer(rtLayer);
+    if (rtLayer && rtLayer instanceof L.GeoJSON) {
+      // Selalu refresh fitur, baik layer visible maupun tidak
+      rtLayer.clearLayers();
+      let features = rtFeatures;
+      if (filter && (filter.selectedKelurahan || filter.selectedRT)) {
+        features = rtFeatures.filter(feature => {
+          if (!feature.properties) return true;
+          if (filter.selectedKelurahan && feature.properties.KEL !== filter.selectedKelurahan) return false;
+          if (filter.selectedRT && feature.properties.Nama_RT !== filter.selectedRT) return false;
+          return true;
+        });
+      }
+      const geoJSON = {
+        type: 'FeatureCollection',
+        features
+      };
+      rtLayer.addData(geoJSON as GeoJSON.GeoJsonObject);
+    }
+    // ---- END RT LAYER ----
+    // (Kelurahan: biarkan patch kelurahan tetap seperti sebelumnya)
+  }, [map, initialized, filter, rtFeatures, layerGroups]);
 
   // Effect to handle filter changes - reload GeoJSON layers when filter changes
   useEffect(() => {
@@ -364,7 +655,7 @@ export const useMapLayers = (
     initialized,
     updateLayerVisibility,
     updateLayerOpacity,
-    addUploadedLayer,
-    removeUploadedLayer
+    addUploadedLayer: useCallback(() => false, []), // Sementara dinonaktifkan
+    removeUploadedLayer: useCallback(() => false, []) // Sementara dinonaktifkan
   };
 };

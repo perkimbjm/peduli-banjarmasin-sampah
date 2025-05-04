@@ -57,17 +57,15 @@ const App = () => {
   }, []);
 
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <Routes>
 
               {/* Public Layout */}
@@ -264,10 +262,12 @@ const App = () => {
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </TooltipProvider>
+          </BrowserRouter>
         </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+        <Toaster />
+        <Sonner />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

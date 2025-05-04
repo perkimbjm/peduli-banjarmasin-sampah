@@ -190,6 +190,7 @@ const MapControls = ({ onLayerPanelToggle, onFileUpload, isLayerPanelOpen }: Map
             onClick={onLayerPanelToggle}
             tooltip="Panel Layer"
             active={isLayerPanelOpen}
+            data-layer-toggle="true"
           />
           <MapButton
             icon={Upload}

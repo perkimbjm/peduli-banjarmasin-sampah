@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Search, Filter } from "lucide-react";
 
-// Mock data for bank sampah performance
+// Interface untuk data Bank Sampah dari GeoJSON
+interface BankSampahData {
+  id: string;
+  name: string;
+  kelurahan: string;
+  kecamatan: string;
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+// Mock data untuk kinerja bank sampah (masih menggunakan mock untuk visualisasi)
 const bankSampahData = [
   { name: 'Bank Sampah Sejahtera', volume: 450, income: 1250000, members: 80 },
   { name: 'Bank Sampah Bersih', volume: 380, income: 980000, members: 65 },
@@ -181,6 +190,51 @@ const recycledProducts = [
 const BankSampah = () => {
   const { userRole } = useAuth();
   const [activeTab, setActiveTab] = useState("bank-sampah");
+  const [bankSampahList, setBankSampahList] = useState<BankSampahData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [kecamatanStats, setKecamatanStats] = useState<{name: string, count: number}[]>([]);
+
+  // Fungsi untuk mengambil data dari GeoJSON
+  useEffect(() => {
+    const fetchBankSampahData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/data-map/bank_sampah.geojson');
+        const data = await response.json();
+        
+        // Transformasi data GeoJSON ke format BankSampahData
+        const bankList = data.features.map(feature => ({
+          id: String(feature.properties.ID),
+          name: feature.properties.Nama,
+          kelurahan: feature.properties.KELURAHAN || "Tidak diketahui",
+          kecamatan: feature.properties.KECAMATAN || "Tidak diketahui",
+          coordinates: feature.geometry.coordinates as [number, number]
+        }));
+        
+        setBankSampahList(bankList);
+        
+        // Hitung statistik per kecamatan
+        const kecamatanCounts: Record<string, number> = {};
+        bankList.forEach(bank => {
+          if (bank.kecamatan && bank.kecamatan !== "Tidak diketahui") {
+            kecamatanCounts[bank.kecamatan] = (kecamatanCounts[bank.kecamatan] || 0) + 1;
+          }
+        });
+        
+        const kecamatanStatsData = Object.entries(kecamatanCounts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
+        
+        setKecamatanStats(kecamatanStatsData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching bank sampah data:", error);
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBankSampahData();
+  }, []);
 
   return (
     <div className="container mx-auto">
@@ -209,93 +263,150 @@ const BankSampah = () => {
           </TabsList>
 
           <TabsContent value="bank-sampah" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <BankSampahStats bankSampahData={bankSampahData} />
-              <WasteDistribution wasteTypeData={wasteTypeData} />
-              <MonthlyPerformance monthlyData={monthlyPerformanceData} />
-              
-              {/* Facility Recommendations Card */}
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Rekomendasi Pengembangan Fasilitas</CardTitle>
-                  <CardDescription>Lokasi potensial untuk penambahan fasilitas baru</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-4">Lokasi</th>
-                          <th className="text-left p-4">Jenis Fasilitas</th>
-                          <th className="text-left p-4">Prioritas</th>
-                          <th className="text-left p-4">Alasan</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {facilityRecommendations.map((rec) => (
-                          <tr key={rec.id} className="border-b hover:bg-muted/50">
-                            <td className="p-4">{rec.location}</td>
-                            <td className="p-4">{rec.type}</td>
-                            <td className="p-4">
-                              <Badge 
-                                variant={
-                                  rec.priority === "high" ? "destructive" : 
-                                  rec.priority === "medium" ? "default" : "outline"
-                                }
-                              >
-                                {rec.priority === "high" ? "Tinggi" : 
-                                 rec.priority === "medium" ? "Menengah" : "Rendah"}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p>Memuat data bank sampah...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="col-span-3">
+                  <CardHeader>
+                    <CardTitle>Statistik Bank Sampah</CardTitle>
+                    <CardDescription>
+                      Total Bank Sampah: {bankSampahList.length} unit di {kecamatanStats.length} kecamatan
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Distribusi per Kecamatan</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left p-2">Kecamatan</th>
+                                <th className="text-right p-2">Jumlah</th>
+                                <th className="text-right p-2">Persentase</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {kecamatanStats.map((item, index) => (
+                                <tr key={index} className="border-b hover:bg-muted/50">
+                                  <td className="p-2">{item.name}</td>
+                                  <td className="p-2 text-right">{item.count}</td>
+                                  <td className="p-2 text-right">
+                                    {((item.count / bankSampahList.length) * 100).toFixed(1)}%
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Daftar Kelurahan dengan Bank Sampah</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {[...new Set(bankSampahList.map(b => b.kelurahan).filter(Boolean))].sort()
+                            .filter(kelurahan => kelurahan !== "Tidak diketahui")
+                            .map((kelurahan, index) => (
+                              <Badge key={index} variant="outline" className="mb-1">
+                                {kelurahan}
                               </Badge>
-                            </td>
-                            <td className="p-4">{rec.reason}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Market Data Card */}
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Data Pasar</CardTitle>
-                  <CardDescription>Harga, permintaan, dan ketersediaan</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-4">Material</th>
-                          <th className="text-left p-4">Harga (Rp/kg)</th>
-                          <th className="text-left p-4">Tren</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {marketData.map((item) => (
-                          <tr key={item.id} className="border-b hover:bg-muted/50">
-                            <td className="p-4">{item.material}</td>
-                            <td className="p-4">{item.price.toLocaleString()}</td>
-                            <td className="p-4">
-                              <Badge 
-                                variant={
-                                  item.trend === "up" ? "default" : 
-                                  item.trend === "down" ? "destructive" : "outline"
-                                }
-                              >
-                                {item.trend === "up" ? "▲ Naik" : 
-                                 item.trend === "down" ? "▼ Turun" : "► Stabil"}
-                              </Badge>
-                            </td>
+                <BankSampahStats bankSampahData={bankSampahData} />
+                <WasteDistribution wasteTypeData={wasteTypeData} />
+                <MonthlyPerformance monthlyData={monthlyPerformanceData} />
+                
+                {/* Facility Recommendations Card */}
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Rekomendasi Pengembangan Fasilitas</CardTitle>
+                    <CardDescription>Lokasi potensial untuk penambahan fasilitas baru</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-4">Lokasi</th>
+                            <th className="text-left p-4">Jenis Fasilitas</th>
+                            <th className="text-left p-4">Prioritas</th>
+                            <th className="text-left p-4">Alasan</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                        </thead>
+                        <tbody>
+                          {facilityRecommendations.map((rec) => (
+                            <tr key={rec.id} className="border-b hover:bg-muted/50">
+                              <td className="p-4">{rec.location}</td>
+                              <td className="p-4">{rec.type}</td>
+                              <td className="p-4">
+                                <Badge 
+                                  variant={
+                                    rec.priority === "high" ? "destructive" : 
+                                    rec.priority === "medium" ? "default" : "outline"
+                                  }
+                                >
+                                  {rec.priority === "high" ? "Tinggi" : 
+                                   rec.priority === "medium" ? "Menengah" : "Rendah"}
+                                </Badge>
+                              </td>
+                              <td className="p-4">{rec.reason}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Market Data Card */}
+                <Card className="md:col-span-1">
+                  <CardHeader>
+                    <CardTitle>Data Pasar</CardTitle>
+                    <CardDescription>Harga, permintaan, dan ketersediaan</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-4">Material</th>
+                            <th className="text-left p-4">Harga (Rp/kg)</th>
+                            <th className="text-left p-4">Tren</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {marketData.map((item) => (
+                            <tr key={item.id} className="border-b hover:bg-muted/50">
+                              <td className="p-4">{item.material}</td>
+                              <td className="p-4">{item.price.toLocaleString()}</td>
+                              <td className="p-4">
+                                <Badge 
+                                  variant={
+                                    item.trend === "up" ? "default" : 
+                                    item.trend === "down" ? "destructive" : "outline"
+                                  }
+                                >
+                                  {item.trend === "up" ? "▲ Naik" : 
+                                   item.trend === "down" ? "▼ Turun" : "► Stabil"}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           {/* TPS 3R Tab */}

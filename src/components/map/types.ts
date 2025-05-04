@@ -1,8 +1,7 @@
-
 export interface LayerConfig {
   id: string;
   name: string;
-  type: 'geojson' | 'marker' | 'shapefile' | 'tile';
+  type: 'geojson' | 'marker' | 'shapefile' | 'tile' | 'label';
   url?: string;
   visible: boolean;
   data?: string; // <-- make optional and for GeoJSON string
@@ -14,8 +13,13 @@ export interface LayerConfig {
     opacity?: number;
     fillColor?: string;
     fillOpacity?: number;
+    fontSize?: string;
+    fontWeight?: string;
+    textShadow?: string;
   };
   attribution?: string;
+  sourceLayer?: string; // Layer ID sumber data (untuk layer label)
+  labelProperty?: string; // Properti yang akan digunakan sebagai teks label
 }
 
 export interface LayerGroup {

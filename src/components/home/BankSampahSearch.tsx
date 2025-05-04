@@ -9,81 +9,93 @@ import { Link } from "react-router-dom";
 interface BankSampah {
   id: string;
   name: string;
-  address: string;
+  address?: string;
   kelurahan: string;
-  phoneNumber: string;
-  wasteTypes: string[];
+  kecamatan: string;
+  phoneNumber?: string;
+  wasteTypes?: string[];
+  coordinates?: [number, number]; // [longitude, latitude]
 }
 
-// Mock data - in a real app this would come from an API or database
-const bankSampahMockData: BankSampah[] = [
-  {
-    id: "bs-001",
-    name: "Bank Sampah Mekar Sari",
-    address: "Jl. Raya Banjar No. 123",
-    kelurahan: "Sungai Jingah",
-    phoneNumber: "0812-3456-7890",
-    wasteTypes: ["Plastik", "Kertas", "Logam"]
-  },
-  {
-    id: "bs-002",
-    name: "Bank Sampah Bersih Banjarmasin",
-    address: "Jl. Belitung Darat No. 45",
-    kelurahan: "Belitung Selatan",
-    phoneNumber: "0812-8765-4321",
-    wasteTypes: ["Plastik", "Elektronik"]
-  },
-  {
-    id: "bs-003",
-    name: "Bank Sampah Sejahtera",
-    address: "Jl. Veteran No. 78",
-    kelurahan: "Sungai Miai",
-    phoneNumber: "0877-1234-5678",
-    wasteTypes: ["Plastik", "Kertas", "Kaca"]
-  },
-  {
-    id: "bs-004",
-    name: "Bank Sampah Maju Jaya",
-    address: "Jl. Ahmad Yani Km 4",
-    kelurahan: "Pemurus Dalam",
-    phoneNumber: "0857-8765-4321",
-    wasteTypes: ["Plastik", "Kertas", "Organik"]
-  },
-  {
-    id: "bs-005",
-    name: "Bank Sampah Cahaya Bersih",
-    address: "Jl. Pramuka No. 56",
-    kelurahan: "Sungai Miai",
-    phoneNumber: "0821-2345-6789",
-    wasteTypes: ["Plastik", "Logam", "Elektronik"]
-  }
-];
+// Interface untuk GeoJSON Feature
+interface BankSampahFeature {
+  type: string;
+  properties: {
+    ID: number;
+    Nama: string;
+    KELURAHAN?: string;
+    KECAMATAN?: string;
+  };
+  geometry: {
+    type: string;
+    coordinates: [number, number];
+  };
+}
 
-// List of all kelurahan in Banjarmasin
-const kelurahanList = [
-  "Sungai Jingah", "Surgi Mufti", "Antasan Kecil Timur", "Kuin Utara", 
-  "Pangeran", "Sungai Miai", "Kelayan Barat", "Kelayan Dalam", "Kelayan Timur", 
-  "Kelayan Tengah", "Pemurus Dalam", "Pemurus Baru", "Teluk Dalam", "Belitung Selatan",
-  "Belitung Utara", "Kuin Cerucuk", "Kuin Selatan", "Basirih", "Basirih Selatan"
-];
+// Jenis sampah default sementara (karena tidak ada di GeoJSON)
+const defaultWasteTypes = ["Plastik", "Kertas", "Logam"];
 
 const BankSampahSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string | null>(null);
   const [results, setResults] = useState<BankSampah[]>([]);
+  const [bankSampahData, setBankSampahData] = useState<BankSampah[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fungsi untuk mengambil data dari GeoJSON
+  useEffect(() => {
+    const fetchBankSampahData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/data-map/bank_sampah.geojson');
+        const data = await response.json();
+        
+        // Transformasi data GeoJSON ke format BankSampah
+        const bankSampahList = data.features.map((feature: BankSampahFeature) => ({
+          id: String(feature.properties.ID),
+          name: feature.properties.Nama,
+          address: "",
+          kelurahan: feature.properties.KELURAHAN || "Tidak diketahui",
+          kecamatan: feature.properties.KECAMATAN || "Tidak diketahui",
+          phoneNumber: "", // Tidak ada di GeoJSON, bisa ditambahkan nanti
+          wasteTypes: defaultWasteTypes, // Default waste types
+          coordinates: feature.geometry.coordinates as [number, number]
+        }));
+        
+        setBankSampahData(bankSampahList);
+        
+        // Ekstrak daftar kelurahan unik
+        const uniqueKelurahan = [...new Set(
+          bankSampahList
+            .map(bank => bank.kelurahan)
+            .filter(kelurahan => kelurahan && kelurahan !== "Tidak diketahui")
+        )] as string[];
+        
+        setKelurahanList(uniqueKelurahan.sort());
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching bank sampah data:", error);
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBankSampahData();
+  }, []);
+
+  // Filter hasil berdasarkan pencarian
   useEffect(() => {
     const filteredResults = selectedKelurahan
-      ? bankSampahMockData.filter(bank => bank.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase())
+      ? bankSampahData.filter(bank => bank.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase())
       : searchTerm 
-        ? bankSampahMockData.filter(bank => 
+        ? bankSampahData.filter(bank => 
             bank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             bank.kelurahan.toLowerCase().includes(searchTerm.toLowerCase())
           )
         : [];
     
     setResults(filteredResults);
-  }, [searchTerm, selectedKelurahan]);
+  }, [searchTerm, selectedKelurahan, bankSampahData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -96,7 +108,7 @@ const BankSampahSearch = () => {
     setSearchTerm(kelurahan);
   };
 
-  // Filter kelurahan list based on search term for autocomplete
+  // Filter kelurahan list berdasarkan search term untuk autocomplete
   const filteredKelurahan = kelurahanList.filter(
     kelurahan => kelurahan.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -128,6 +140,7 @@ const BankSampahSearch = () => {
                   value={searchTerm}
                   onChange={handleInputChange}
                   className="w-full"
+                  disabled={isLoading}
                 />
                 {searchTerm && !selectedKelurahan && (
                   <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md border max-h-60 overflow-auto">
@@ -153,55 +166,68 @@ const BankSampahSearch = () => {
         </Card>
         
         <div className="mt-8">
-          <h3 className="text-lg font-medium mb-4">
-            {results.length > 0 
-              ? `${results.length} Bank Sampah ditemukan ${selectedKelurahan ? `di ${selectedKelurahan}` : ''}`
-              : `Tidak ada Bank Sampah ditemukan ${selectedKelurahan ? `di ${selectedKelurahan}` : ''}`
-            }
-          </h3>
-          
-          <div className="grid gap-4">
-            {results.map((bank) => (
-              <Card key={bank.id} className="overflow-hidden">
-                <div className="flex flex-col md:flex-row">
-                  <div className="bg-gradient-to-r from-green-600 to-green-800 text-white p-4 flex items-center justify-center md:w-16">
-                    <Building className="h-8 w-8" />
-                  </div>
-                  <CardContent className="flex-1 p-4">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <h4 className="font-semibold text-lg">{bank.name}</h4>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {bank.address}, Kel. {bank.kelurahan}
-                        </p>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p>Memuat data bank sampah...</p>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium mb-4">
+                {results.length > 0 
+                  ? `${results.length} Bank Sampah ditemukan ${selectedKelurahan ? `di ${selectedKelurahan}` : ''}`
+                  : `Tidak ada Bank Sampah ditemukan ${selectedKelurahan ? `di ${selectedKelurahan}` : ''}`
+                }
+              </h3>
+              
+              <div className="grid gap-4">
+                {results.map((bank) => (
+                  <Card key={bank.id} className="overflow-hidden">
+                    <div className="flex flex-col md:flex-row">
+                      <div className="bg-gradient-to-r from-green-600 to-green-800 text-white p-4 flex items-center justify-center md:w-16">
+                        <Building className="h-8 w-8" />
                       </div>
-                      <div className="mt-2 md:mt-0">
-                        <p className="text-sm font-medium">{bank.phoneNumber}</p>
-                      </div>
+                      <CardContent className="flex-1 p-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <h4 className="font-semibold text-lg">{bank.name}</h4>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 flex items-center">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {bank.address ? bank.address + ", " : ""} 
+                              Kel. {bank.kelurahan}, Kec. {bank.kecamatan}
+                            </p>
+                          </div>
+                          {bank.phoneNumber && (
+                            <div className="mt-2 md:mt-0">
+                              <p className="text-sm font-medium">{bank.phoneNumber}</p>
+                            </div>
+                          )}
+                        </div>
+                        {bank.wasteTypes && bank.wasteTypes.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-sm mb-1">Jenis Sampah yang Diterima:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {bank.wasteTypes.map((type, index) => (
+                                <Badge key={index} variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                                  {type}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
                     </div>
-                    <div className="mt-2">
-                      <p className="text-sm mb-1">Jenis Sampah yang Diterima:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {bank.wasteTypes.map((type, index) => (
-                          <Badge key={index} variant="outline" className="bg-green-50 text-green-800 border-green-200">
-                            {type}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-                <CardFooter className="bg-gray-50 dark:bg-gray-800 py-2 px-4 flex justify-end">
-                  <Link to={`/bank/${bank.id}`}>
-                    <Button variant="link" className="text-green-600 hover:text-green-700 p-0 h-auto flex items-center">
-                      Detail <ArrowRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                    <CardFooter className="bg-gray-50 dark:bg-gray-800 py-2 px-4 flex justify-end">
+                      <Link to={`/bank/${bank.id}`}>
+                        <Button variant="link" className="text-green-600 hover:text-green-700 p-0 h-auto flex items-center">
+                          Detail <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>

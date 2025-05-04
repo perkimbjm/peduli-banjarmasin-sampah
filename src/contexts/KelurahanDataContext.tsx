@@ -2,8 +2,15 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 interface KelurahanFeature {
   type: string;
-  properties: Record<string, any>;
-  geometry: any;
+  properties: {
+    KECAMATAN: string;
+    KELURAHAN: string;
+    [key: string]: string | number;
+  };
+  geometry: {
+    type: string;
+    coordinates: number[][][];
+  };
 }
 
 interface KelurahanDataContextType {

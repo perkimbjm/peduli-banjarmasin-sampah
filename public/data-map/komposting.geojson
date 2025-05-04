@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"name": "komposting",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"xy_coordinate_resolution": 1e-06,
+"features": [
+{ "type": "Feature", "properties": { "nama": "Rumah Kompos Basirih", "id": 1594, "alamat": "Gubernur Subarjo, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Basirih", "KECAMATAN": "Banjarmasin Barat" }, "geometry": { "type": "Point", "coordinates": [ 114.567473, -3.338509 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Benawa", "id": 1595, "alamat": "Jl. Batu Benawa, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Teluk Dalam", "KECAMATAN": "Banjarmasin Tengah" }, "geometry": { "type": "Point", "coordinates": [ 114.583005, -3.315187 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Bahagia 08", "id": 1596, "alamat": "Jl. Teluk Tiram Komp. Bahagia RT. 08, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Teluk Tiram", "KECAMATAN": "Banjarmasin Barat" }, "geometry": { "type": "Point", "coordinates": [ 114.580837, -3.339173 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Tugu", "id": 1597, "alamat": "Jl. 9 Nopember RT 1, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Banua Anyar", "KECAMATAN": "Banjarmasin Timur" }, "geometry": { "type": "Point", "coordinates": [ 114.612167, -3.313281 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Bahe'Mart (RT 69 Kel. Sungai Andai)", "id": 1598, "alamat": "Sungai Andai 69, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Sungai Andai", "KECAMATAN": "Banjarmasin Utara" }, "geometry": { "type": "Point", "coordinates": [ 114.607512, -3.29646 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Kunang-Kunang", "id": 1599, "alamat": "Komplek H. Idris 13 / 02, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Sungai Miai", "KECAMATAN": "Banjarmasin Utara" }, "geometry": { "type": "Point", "coordinates": [ 114.596837, -3.294598 ] } },
+{ "type": "Feature", "properties": { "nama": "PDU SKALA RT Mahatama", "id": 1600, "alamat": "gerilya komplek graha mahatama blok mangga 4 23, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Tanjung Pagar", "KECAMATAN": "Banjarmasin Selatan" }, "geometry": { "type": "Point", "coordinates": [ 114.599236, -3.353981 ] } },
+{ "type": "Feature", "properties": { "nama": "Rumah Kompos Sungai Biuku", "id": 9636, "alamat": "Jalan Lakstrada Tembus Terantang Sungai, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Sungai Andai", "KECAMATAN": "Banjarmasin Utara" }, "geometry": { "type": "Point", "coordinates": [ 114.618266, -3.288299 ] } },
+{ "type": "Feature", "properties": { "nama": "Rumah Cacah Antasari", "id": 9637, "alamat": "Jalan Jati Pasar Antasari, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Kelayan Luar", "KECAMATAN": "Banjarmasin Tengah" }, "geometry": { "type": "Point", "coordinates": [ 114.597713, -3.329677 ] } },
+{ "type": "Feature", "properties": { "nama": "Magot Larvanesi", "id": 10615, "alamat": "Jl. PH. M.Noor, Kota Banjarmasin, Kalimantan Selatan", "KELURAHAN": "Antasan Besar", "KECAMATAN": "Banjarmasin Tengah" }, "geometry": { "type": "Point", "coordinates": [ 114.592524, -3.315039 ] } }
+]
+}

@@ -89,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </select>
                   </>
                 ) : (
-                  <div className="sidebar-rt-disabled">Aktifkan dulu layer BATAS RT</div>
+                  <div className="sidebar-rt-disabled">Layer Batas RT tidak aktif</div>
                 )}
                 <button 
                   className="sidebar-reset-button"

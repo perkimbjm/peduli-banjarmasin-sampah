@@ -34,13 +34,11 @@ const MapContent = ({
 }: MapContentProps) => {
   const map = useMap();
   const mapRef = useRef(map);
-  // PATCH: Kirim filter ke useMapLayers agar fitur terfilter
   const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
     map,
     layerGroups.flatMap(group => group.layers),
     { selectedKecamatan, selectedKelurahan, selectedRT }
   );
-  // handleFileUpload siap dipass ke MapControls (file: File) => void
   const handleFileUpload = useFileUpload(map, onFileUpload);
 
   useEffect(() => {
@@ -54,7 +52,9 @@ const MapContent = ({
     const layers = layerGroups.flatMap(group => group.layers);
     layers.forEach(layer => {
       updateLayerVisibility(layer.id, layer.visible);
-      updateLayerOpacity(layer.id, layer.opacity);
+      if (layer.visible) {
+        updateLayerOpacity(layer.id, layer.opacity);
+      }
     });
   }, [layerGroups, initialized, updateLayerVisibility, updateLayerOpacity]);
 
@@ -66,11 +66,27 @@ const MapContent = ({
     const currentMap = map;
     return () => {
       if (currentMap && typeof currentMap.off === 'function') {
-        // Remove any event listeners added in MapContent
-        // Example: currentMap.off('some-event', handler)
+        currentMap.off();
       }
     };
   }, [map]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const isClickOnToggleButton = target.closest('[data-layer-toggle]');
+      const isClickInsidePanel = target.closest('[data-layer-panel]');
+      
+      if (isLayerPanelOpen && !isClickInsidePanel && !isClickOnToggleButton) {
+        onLayerPanelToggle();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLayerPanelOpen, onLayerPanelToggle]);
 
   return (
     <div className="h-full w-full">
@@ -78,11 +94,14 @@ const MapContent = ({
         onLayerPanelToggle={onLayerPanelToggle} 
         onFileUpload={(file) => handleFileUpload(file)} 
         isLayerPanelOpen={isLayerPanelOpen}
+        data-layer-toggle="true"
       />
-      {/* Cleanup component to ensure LocateControl is always removed safely */}
       <LocateControlCleanup map={map} />
       {isLayerPanelOpen && (
-        <div className="absolute top-4 right-4 z-[1000]">
+        <div 
+          className="absolute top-4 right-4 z-[9999]" 
+          data-layer-panel="true"
+        >
           <LayerManager
             layerGroups={layerGroups}
             onLayerToggle={onLayerToggle}
