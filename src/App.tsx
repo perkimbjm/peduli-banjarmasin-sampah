@@ -19,6 +19,8 @@ import DashboardPublic from "@/pages/DashboardPublic";
 import Edukasi from "@/pages/Edukasi";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import AuthCallback from "@/pages/AuthCallback";
 import Unauthorized from "@/pages/Unauthorized";
 import Dashboard from "@/pages/Dashboard";
@@ -76,6 +78,8 @@ const App = () => {
                 <Route path="/edukasi" element={<Edukasi />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 <Route path="/bank/:id" element={<BankSampahDetail />} />
