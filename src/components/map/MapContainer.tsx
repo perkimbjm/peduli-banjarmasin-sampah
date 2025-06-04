@@ -790,7 +790,6 @@ const MapContainer = () => {
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}
         className="z-10"
-        whenReady={handleMapReady}
       >
         <MapContent 
           onFileUpload={handleFileUpload} 

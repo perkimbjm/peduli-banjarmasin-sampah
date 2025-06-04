@@ -7,6 +7,7 @@ import MapControls from './MapControls';
 import LayerManager from './LayerManager';
 import LocateControlCleanup from './LocateControlCleanup';
 import { LayerGroup, LayerConfig } from './types';
+import L from 'leaflet';
 
 interface MapContentProps {
   onFileUpload: (file: File, layerConfig: LayerConfig) => void;
@@ -46,6 +47,32 @@ const MapContent = ({
   );
   
   const handleFileUpload = useFileUpload(map, onFileUpload);
+
+  // Initialize geocoder plugin
+  useEffect(() => {
+    // Cegah penambahan ganda
+    if (!(map as any)._geocoderControl && (L as any).Control && (L as any).Control.Geocoder) {
+      const geocoder = (L as any).Control.Geocoder.nominatim();
+      const geocoderControl = (L as any).Control.geocoder({
+        defaultMarkGeocode: true,
+        geocoder,
+        position: 'topleft',
+      }).addTo(map);
+      (map as any)._geocoderControl = geocoderControl;
+    }
+
+    return () => {
+      // Cleanup geocoder on unmount
+      if ((map as any)._geocoderControl) {
+        try {
+          map.removeControl((map as any)._geocoderControl);
+          (map as any)._geocoderControl = null;
+        } catch (e) {
+          console.warn('Error removing geocoder control:', e);
+        }
+      }
+    };
+  }, [map]);
 
   useEffect(() => {
     console.log('MapContent: onFileUpload type', typeof onFileUpload);
