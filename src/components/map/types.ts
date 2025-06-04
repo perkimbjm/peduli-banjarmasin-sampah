@@ -1,3 +1,4 @@
+
 export interface LayerConfig {
   id: string;
   name: string;
@@ -16,7 +17,13 @@ export interface LayerConfig {
     fontSize?: string;
     fontWeight?: string;
     textShadow?: string;
-  };
+  } | ((feature: GeoJSON.Feature) => {
+    color?: string;
+    weight?: number;
+    opacity?: number;
+    fillColor?: string;
+    fillOpacity?: number;
+  });
   attribution?: string;
   sourceLayer?: string; // Layer ID sumber data (untuk layer label)
   labelProperty?: string; // Properti yang akan digunakan sebagai teks label
@@ -45,6 +52,19 @@ export interface MapControlProps {
 // Add the LayerInstances interface
 export interface LayerInstances {
   [key: string]: L.Layer;
+}
+
+// Define proper GeoJSON types for RT features
+export interface RTFeature extends GeoJSON.Feature {
+  type: 'Feature';
+  properties: {
+    KEC: string;
+    KEL: string;
+    Nama_RT: string;
+    Nama_RW: string;
+    [key: string]: string | number;
+  };
+  geometry: GeoJSON.MultiPolygon;
 }
 
 // Extend the Window interface to include mapLayers property

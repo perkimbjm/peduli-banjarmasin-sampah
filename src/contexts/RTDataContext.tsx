@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 
 interface RTFeature {
-  type: string;
+  type: 'Feature';
   properties: {
     KEC: string;
     KEL: string;
@@ -10,8 +11,8 @@ interface RTFeature {
     [key: string]: string | number;
   };
   geometry: {
-    type: string;
-    coordinates: number[][][];
+    type: 'MultiPolygon';
+    coordinates: number[][][][];
   };
 }
 

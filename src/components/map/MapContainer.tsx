@@ -179,13 +179,13 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         visible: true,
         opacity: 1,
         group: "infrastruktur",
-        style: (feature: GeoJSON.Feature) => ({
+        style: {
           color: "#ff0000",
           weight: 2,
           opacity: 1,
           fillColor: "#ff0000",
           fillOpacity: 0.5,
-        }),
+        },
       },
       {
         id: "bank_sampah",

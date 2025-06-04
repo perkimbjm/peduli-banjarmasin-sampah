@@ -1,8 +1,7 @@
-// useMapLayers.ts - Perbaikan lengkap
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import L from 'leaflet';
-import { LayerConfig, LayerInstances } from '../types';
+import { LayerConfig, LayerInstances, RTFeature } from '../types';
 import { useToast } from '@/hooks/use-toast';
 import { useRTData } from '@/contexts/RTDataContext';
 
@@ -14,6 +13,76 @@ interface LabelOptions {
     textShadow?: string;
   }
 }
+
+// Helper function to calculate centroid of a MultiPolygon
+const calculateMultiPolygonCentroid = (coordinates: number[][][][]): [number, number] | null => {
+  try {
+    if (!coordinates || !coordinates.length) return null;
+    
+    let totalLat = 0;
+    let totalLng = 0;
+    let pointCount = 0;
+    
+    // For each polygon in the MultiPolygon
+    for (const polygon of coordinates) {
+      if (!polygon || !polygon.length) continue;
+      
+      // Get the exterior ring (first array in polygon)
+      const ring = polygon[0];
+      if (!ring || !ring.length) continue;
+      
+      // Calculate centroid of this ring
+      for (const coord of ring) {
+        if (coord && coord.length >= 2 && typeof coord[0] === 'number' && typeof coord[1] === 'number') {
+          totalLng += coord[0];
+          totalLat += coord[1];
+          pointCount++;
+        }
+      }
+    }
+    
+    if (pointCount === 0) return null;
+    
+    return [totalLat / pointCount, totalLng / pointCount];
+  } catch (error) {
+    console.error('Error calculating MultiPolygon centroid:', error);
+    return null;
+  }
+};
+
+// Helper function to calculate centroid of any geometry
+const calculateGeometryCentroid = (geometry: GeoJSON.Geometry): [number, number] | null => {
+  try {
+    if (geometry.type === 'MultiPolygon') {
+      return calculateMultiPolygonCentroid(geometry.coordinates);
+    } else if (geometry.type === 'Polygon') {
+      const coords = geometry.coordinates[0]; // exterior ring
+      if (!coords || !coords.length) return null;
+      
+      let totalLat = 0;
+      let totalLng = 0;
+      let pointCount = 0;
+      
+      for (const coord of coords) {
+        if (coord && coord.length >= 2) {
+          totalLng += coord[0];
+          totalLat += coord[1];
+          pointCount++;
+        }
+      }
+      
+      return pointCount > 0 ? [totalLat / pointCount, totalLng / pointCount] : null;
+    } else if (geometry.type === 'Point') {
+      const coords = geometry.coordinates;
+      return coords && coords.length >= 2 ? [coords[1], coords[0]] : null;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error calculating geometry centroid:', error);
+    return null;
+  }
+};
 
 // PATCH: Tambahkan parameter filter ke useMapLayers
 export const useMapLayers = (
@@ -205,9 +274,30 @@ export const useMapLayers = (
     }
     
     // Cari data dari layer sumber (cache atau instance)
-    const sourceData = featureCacheRef.current[layer.sourceLayer];
+    let sourceData = featureCacheRef.current[layer.sourceLayer];
+    
+    // Untuk RT labels, gunakan filtered data jika ada filter
+    if (layer.sourceLayer === 'batas-rt' && rtFeatures.length > 0) {
+      let filteredFeatures = rtFeatures;
+      
+      // Apply filter if exists
+      if (filter && (filter.selectedKelurahan || filter.selectedRT)) {
+        filteredFeatures = rtFeatures.filter(feature => {
+          if (!feature.properties) return true;
+          if (filter.selectedKelurahan && feature.properties.KEL !== filter.selectedKelurahan) return false;
+          if (filter.selectedRT && feature.properties.Nama_RT !== filter.selectedRT) return false;
+          return true;
+        });
+      }
+      
+      sourceData = {
+        type: 'FeatureCollection',
+        features: filteredFeatures as GeoJSON.Feature[]
+      };
+    }
+    
     if (!sourceData || !sourceData.features || !sourceData.features.length) {
-      console.warn(`Source data for ${layer.sourceLayer} not found, label layer ${layer.id} will be created later`);
+      console.warn(`Source data for ${layer.sourceLayer} not found or empty, label layer ${layer.id} will be created later`);
       return null;
     }
     
@@ -215,49 +305,58 @@ export const useMapLayers = (
     
     // Buat label untuk setiap fitur
     sourceData.features.forEach(feature => {
-      if (!feature.properties || !feature.properties[layer.labelProperty]) return;
+      if (!feature.properties || !feature.properties[layer.labelProperty!]) return;
       
       // Dapatkan label text dari properti
-      const labelText = feature.properties[layer.labelProperty];
+      const labelText = feature.properties[layer.labelProperty!];
       
       // Hitung centroid dari geometri untuk penempatan label
-      let center: [number, number] | null = null;
+      const center = calculateGeometryCentroid(feature.geometry);
       
-      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-        // Untuk polygon, gunakan pusat bounding box
-        const bounds = L.geoJSON(feature).getBounds();
-        center = [bounds.getCenter().lat, bounds.getCenter().lng];
-      } else if (feature.geometry.type === 'Point') {
-        // Untuk point, gunakan koordinat point
-        center = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+      if (!center) {
+        console.warn('Could not calculate centroid for feature:', feature.properties);
+        return;
       }
       
-      if (!center) return;
+      // Validasi koordinat sebelum membuat marker
+      if (typeof center[0] !== 'number' || typeof center[1] !== 'number' || 
+          isNaN(center[0]) || isNaN(center[1]) || 
+          !isFinite(center[0]) || !isFinite(center[1])) {
+        console.warn('Invalid coordinates for label:', center, feature.properties);
+        return;
+      }
       
-      // Buat div icon dengan style dari layer config
-      const icon = L.divIcon({
-        className: 'custom-label-icon',
-        html: `<div style="
-          font-size: ${layer.style?.fontSize || '12px'};
-          font-weight: ${layer.style?.fontWeight || 'normal'};
-          color: ${layer.style?.color || '#000'};
-          text-shadow: ${layer.style?.textShadow || 'none'};
-          text-align: center;
-          white-space: nowrap;
-          ">${labelText}</div>`,
-        iconSize: [100, 20],
-        iconAnchor: [50, 10]
-      });
-      
-      // Buat marker dengan div icon
-      const marker = L.marker(center, { icon });
-      
-      // Tambahkan ke group
-      labelGroup.addLayer(marker);
+      try {
+        // Buat div icon dengan style dari layer config
+        const icon = L.divIcon({
+          className: 'custom-label-icon',
+          html: `<div style="
+            font-size: ${layer.style?.fontSize || '12px'};
+            font-weight: ${layer.style?.fontWeight || 'normal'};
+            color: ${layer.style?.color || '#000'};
+            text-shadow: ${layer.style?.textShadow || 'none'};
+            text-align: center;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 4px;
+            border-radius: 3px;
+            ">${labelText}</div>`,
+          iconSize: [100, 20],
+          iconAnchor: [50, 10]
+        });
+        
+        // Buat marker dengan div icon
+        const marker = L.marker(center, { icon });
+        
+        // Tambahkan ke group
+        labelGroup.addLayer(marker);
+      } catch (error) {
+        console.error('Error creating label marker:', error, center, feature.properties);
+      }
     });
     
     return labelGroup;
-  }, []);
+  }, [filter, rtFeatures]);
 
   // Load a specific layer with loading state tracking
   const loadLayer = useCallback(async (layer: LayerConfig): Promise<L.Layer | null> => {
@@ -341,6 +440,8 @@ export const useMapLayers = (
         
         const geoJSONLayer = L.geoJSON(data as GeoJSON.GeoJsonObject, {
           style: (feature) => {
+            const styleConfig = layer.style;
+            
             // Khusus untuk layer TPS
             if (isTPSLayer) {
               return {
@@ -352,12 +453,17 @@ export const useMapLayers = (
               };
             }
             
-            // Untuk layer lainnya
+            // Handle function style
+            if (typeof styleConfig === 'function') {
+              return styleConfig(feature!);
+            }
+            
+            // Handle object style
             return {
-              color: layer.style?.color || "#3388ff",
-              weight: layer.style?.weight || 3,
+              color: styleConfig?.color || "#3388ff",
+              weight: styleConfig?.weight || 3,
               opacity: layer.opacity,
-              fillColor: layer.style?.fillColor || "#3388ff",
+              fillColor: styleConfig?.fillColor || "#3388ff",
               fillOpacity: layer.opacity * 0.2,
             };
           },
@@ -536,75 +642,43 @@ export const useMapLayers = (
     handleLayerChanges();
   }, [layerGroups, initialized, map, loadLayer, updateLayerVisibility, updateLayerOpacity, createLabelLayer]);
 
-  // Update cache when RT or kelurahan data changes
+  // Update cache when RT data changes and recreate RT labels if needed
   useEffect(() => {
     if (rtFeatures.length > 0) {
       // Simpan data RT di cache untuk digunakan oleh label layer
-      featureCacheRef.current['batas-rt'] = {
+      const rtGeoJSON: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
-        features: rtFeatures.map(feature => ({
-          ...feature,
-          type: 'Feature',
-          geometry: {
-            ...feature.geometry,
-            type: 'MultiPolygon' as const
-          }
-        }))
+        features: rtFeatures as GeoJSON.Feature[]
       };
       
-      // Jika label layer sudah dimuat, perbarui
+      featureCacheRef.current['batas-rt'] = rtGeoJSON;
+      
+      // Jika RT label layer sudah dimuat dan visible, perbarui
       const rtLabelLayer = layerInstancesRef.current['label-rt'];
-      if (rtLabelLayer) {
-        // Hapus semua marker lama
-        if (rtLabelLayer instanceof L.LayerGroup) {
-          rtLabelLayer.clearLayers();
+      const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
+      
+      if (rtLabelLayer && rtLabelConfig && rtLabelConfig.visible) {
+        // Hapus layer lama dari map
+        if (map && map.hasLayer(rtLabelLayer)) {
+          map.removeLayer(rtLabelLayer);
+        }
+        
+        // Buat layer label baru
+        const newLabelLayer = createLabelLayer(rtLabelConfig);
+        if (newLabelLayer) {
+          // Update instances
+          const updatedInstances = { ...layerInstancesRef.current };
+          updatedInstances['label-rt'] = newLabelLayer;
+          setLayerInstances(updatedInstances);
           
-          // Temukan konfigurasi label RT
-          const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
-          if (rtLabelConfig) {
-            // Buat layer label baru
-            const newLabelLayer = createLabelLayer(rtLabelConfig);
-            if (newLabelLayer) {
-              // Tambahkan semua marker baru ke layer group yang sudah ada
-              newLabelLayer.eachLayer(marker => {
-                rtLabelLayer.addLayer(marker);
-              });
-            }
+          // Add to map if visible
+          if (map && rtLabelConfig.visible) {
+            map.addLayer(newLabelLayer);
           }
         }
       }
     }
-  }, [rtFeatures, createLabelLayer, layerGroups]);
-
-  // Perbarui layer RT dan kelurahan saat filter, visibilitas, atau data berubah
-  useEffect(() => {
-    if (!map || !initialized) return;
-    // ---- RT LAYER ----
-    const rtLayer = layerInstancesRef.current['batas-rt'];
-    // Temukan config layer RT untuk cek visibility
-    const rtLayerConfig = layerGroups.flatMap(g => (g.layers || [])).find(layer => layer.id === 'batas-rt');
-    const rtVisible = rtLayerConfig && rtLayerConfig.visible && rtLayer && map.hasLayer(rtLayer);
-    if (rtLayer && rtLayer instanceof L.GeoJSON) {
-      // Selalu refresh fitur, baik layer visible maupun tidak
-      rtLayer.clearLayers();
-      let features = rtFeatures;
-      if (filter && (filter.selectedKelurahan || filter.selectedRT)) {
-        features = rtFeatures.filter(feature => {
-          if (!feature.properties) return true;
-          if (filter.selectedKelurahan && feature.properties.KEL !== filter.selectedKelurahan) return false;
-          if (filter.selectedRT && feature.properties.Nama_RT !== filter.selectedRT) return false;
-          return true;
-        });
-      }
-      const geoJSON = {
-        type: 'FeatureCollection',
-        features
-      };
-      rtLayer.addData(geoJSON as GeoJSON.GeoJsonObject);
-    }
-    // ---- END RT LAYER ----
-    // (Kelurahan: biarkan patch kelurahan tetap seperti sebelumnya)
-  }, [map, initialized, filter, rtFeatures, layerGroups]);
+  }, [rtFeatures, createLabelLayer, layerGroups, map]);
 
   // Effect to handle filter changes - reload GeoJSON layers when filter changes
   useEffect(() => {
@@ -618,8 +692,29 @@ export const useMapLayers = (
     // Update filter ref
     prevFilterRef.current = filter;
     
+    // Reload RT labels when filter changes
+    const rtLabelLayer = layerInstancesRef.current['label-rt'];
+    const rtLabelConfig = layerGroups.find(layer => layer.id === 'label-rt');
+    
+    if (rtLabelLayer && rtLabelConfig && rtLabelConfig.visible) {
+      // Remove existing label layer
+      if (map.hasLayer(rtLabelLayer)) {
+        map.removeLayer(rtLabelLayer);
+      }
+      
+      // Create new label layer with current filter
+      const newLabelLayer = createLabelLayer(rtLabelConfig);
+      if (newLabelLayer) {
+        const updatedInstances = { ...layerInstancesRef.current };
+        updatedInstances['label-rt'] = newLabelLayer;
+        setLayerInstances(updatedInstances);
+        
+        // Add to map
+        map.addLayer(newLabelLayer);
+      }
+    }
+    
     // Find only the kelurahan boundary layer to refresh
-    // We only want to apply filters to the kelurahan layer, not other layers like TPS
     const kelurahanLayer = layerGroups.find(layer => 
       layer.id === 'batas-kelurahan' || 
       (layer.type === 'geojson' && layer.url?.includes('kelurahan.geojson'))
@@ -649,7 +744,7 @@ export const useMapLayers = (
     };
     
     reloadKelurahanLayer();
-  }, [filter, initialized, map, layerGroups, loadLayer]);
+  }, [filter, initialized, map, layerGroups, loadLayer, createLabelLayer]);
 
   return {
     initialized,
