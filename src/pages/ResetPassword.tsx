@@ -27,18 +27,73 @@ const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have the required tokens for password reset
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
-    
-    if (!accessToken || !refreshToken) {
-      toast({
-        variant: "destructive",
-        title: "Link tidak valid",
-        description: "Link reset password tidak valid atau sudah kedaluwarsa",
-      });
-      navigate("/forgot-password");
-    }
+    const processAuthTokens = async () => {
+      // Check URL hash fragment first (from email link)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const tokenType = hashParams.get("token_type");
+      const type = hashParams.get("type");
+
+      console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+
+      // Also check search params as fallback
+      const searchAccessToken = searchParams.get("access_token");
+      const searchRefreshToken = searchParams.get("refresh_token");
+      const searchType = searchParams.get("type");
+
+      console.log('Search params:', { accessToken: !!searchAccessToken, refreshToken: !!searchRefreshToken, type: searchType });
+
+      const finalAccessToken = accessToken || searchAccessToken;
+      const finalRefreshToken = refreshToken || searchRefreshToken;
+      const finalType = type || searchType;
+
+      if (!finalAccessToken || !finalRefreshToken || finalType !== "recovery") {
+        console.error('Missing or invalid tokens:', { 
+          hasAccessToken: !!finalAccessToken, 
+          hasRefreshToken: !!finalRefreshToken, 
+          type: finalType 
+        });
+        
+        toast({
+          variant: "destructive",
+          title: "Link tidak valid",
+          description: "Link reset password tidak valid atau sudah kedaluwarsa",
+        });
+        navigate("/forgot-password");
+        return;
+      }
+
+      try {
+        // Set the session using the tokens from the URL
+        const { data, error } = await supabase.auth.setSession({
+          access_token: finalAccessToken,
+          refresh_token: finalRefreshToken,
+        });
+
+        if (error) {
+          console.error('Error setting session:', error);
+          throw error;
+        }
+
+        console.log('Session set successfully:', !!data.session);
+        
+        // Clear the URL hash to clean up the URL
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      } catch (error: any) {
+        console.error('Session error:', error);
+        toast({
+          variant: "destructive",
+          title: "Link tidak valid",
+          description: "Link reset password tidak valid atau sudah kedaluwarsa",
+        });
+        navigate("/forgot-password");
+      }
+    };
+
+    processAuthTokens();
   }, [searchParams, navigate, toast]);
 
   const validatePassword = (password: string) => {
@@ -94,6 +149,7 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       navigate("/login");
     } catch (error: any) {
+      console.error('Update password error:', error);
       setErrorMessage(error.message || "Terjadi kesalahan saat mengubah password");
       toast({
         variant: "destructive",

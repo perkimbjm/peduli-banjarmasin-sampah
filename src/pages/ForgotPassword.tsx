@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, AlertTriangle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getRedirectUrl } from "@/utils/environment";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -28,8 +29,11 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
+      const redirectTo = getRedirectUrl("/reset-password");
+      console.log('Redirect URL untuk reset password:', redirectTo);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo,
       });
 
       if (error) {

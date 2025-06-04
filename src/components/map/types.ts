@@ -5,28 +5,35 @@ export interface LayerConfig {
   type: 'geojson' | 'marker' | 'shapefile' | 'tile' | 'label';
   url?: string;
   visible: boolean;
-  data?: string; // <-- make optional and for GeoJSON string
+  data?: string;
   opacity: number;
   group: string;
-  style?: {
-    color?: string;
-    weight?: number;
-    opacity?: number;
-    fillColor?: string;
-    fillOpacity?: number;
-    fontSize?: string;
-    fontWeight?: string;
-    textShadow?: string;
-  } | ((feature: GeoJSON.Feature) => {
-    color?: string;
-    weight?: number;
-    opacity?: number;
-    fillColor?: string;
-    fillOpacity?: number;
-  });
+  style?: LayerStyle | LayerStyleFunction;
   attribution?: string;
-  sourceLayer?: string; // Layer ID sumber data (untuk layer label)
-  labelProperty?: string; // Properti yang akan digunakan sebagai teks label
+  sourceLayer?: string;
+  labelProperty?: string;
+}
+
+// Separate interfaces for static and function styles
+export interface LayerStyle {
+  color?: string;
+  weight?: number;
+  opacity?: number;
+  fillColor?: string;
+  fillOpacity?: number;
+  fontSize?: string;
+  fontWeight?: string;
+  textShadow?: string;
+}
+
+export interface LayerStyleFunction {
+  (feature: GeoJSON.Feature): {
+    color?: string;
+    weight?: number;
+    opacity?: number;
+    fillColor?: string;
+    fillOpacity?: number;
+  };
 }
 
 export interface LayerGroup {
@@ -49,12 +56,11 @@ export interface MapControlProps {
   onFileUpload: (file: File) => void;
 } 
 
-// Add the LayerInstances interface
 export interface LayerInstances {
   [key: string]: L.Layer;
 }
 
-// Define proper GeoJSON types for RT features
+// Consistent RT Feature interface
 export interface RTFeature extends GeoJSON.Feature {
   type: 'Feature';
   properties: {
@@ -67,7 +73,6 @@ export interface RTFeature extends GeoJSON.Feature {
   geometry: GeoJSON.MultiPolygon;
 }
 
-// Extend the Window interface to include mapLayers property
 declare global {
   interface Window {
     mapLayers?: LayerInstances;
