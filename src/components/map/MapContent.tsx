@@ -1,6 +1,7 @@
+
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
-import { useMapLayers } from './hooks/useMapLayers';
+import useMapLayers from './hooks/useMapLayers';
 import { useFileUpload } from './hooks/useFileUpload';
 import MapControls from './MapControls';
 import LayerManager from './LayerManager';
@@ -34,29 +35,22 @@ const MapContent = ({
 }: MapContentProps) => {
   const map = useMap();
   const mapRef = useRef(map);
-  const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
+  
+  // Use the hook correctly with default export
+  useMapLayers(
     map,
-    layerGroups.flatMap(group => group.layers),
-    { selectedKecamatan, selectedKelurahan, selectedRT }
+    layerGroups,
+    selectedKecamatan,
+    selectedKelurahan,
+    selectedRT
   );
+  
   const handleFileUpload = useFileUpload(map, onFileUpload);
 
   useEffect(() => {
     console.log('MapContent: onFileUpload type', typeof onFileUpload);
     console.log('MapContent: MapControls mounted');
   }, [onFileUpload]);
-
-  useEffect(() => {
-    if (!initialized) return;
-
-    const layers = layerGroups.flatMap(group => group.layers);
-    layers.forEach(layer => {
-      updateLayerVisibility(layer.id, layer.visible);
-      if (layer.visible) {
-        updateLayerOpacity(layer.id, layer.opacity);
-      }
-    });
-  }, [layerGroups, initialized, updateLayerVisibility, updateLayerOpacity]);
 
   useEffect(() => {
     console.log('LayerGroups di MapContent:', layerGroups);

@@ -526,7 +526,7 @@ const MapContainer = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
 
   // Inisialisasi plugin geocoder setelah map instance didapat
-  const handleMapCreated = (map: L.Map) => {
+  const handleMapReady = (map: L.Map) => {
     mapInstanceRef.current = map;
     // Cegah penambahan ganda
     if (!(map as any)._geocoderControl && (L as any).Control && (L as any).Control.Geocoder) {
@@ -790,7 +790,7 @@ const MapContainer = () => {
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}
         className="z-10"
-        whenCreated={handleMapCreated}
+        whenReady={handleMapReady}
       >
         <MapContent 
           onFileUpload={handleFileUpload} 
