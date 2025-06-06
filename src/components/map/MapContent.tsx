@@ -1,13 +1,11 @@
-
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
-import useMapLayers from './hooks/useMapLayers';
+import { useMapLayers } from './hooks/useMapLayers';
 import { useFileUpload } from './hooks/useFileUpload';
 import MapControls from './MapControls';
 import LayerManager from './LayerManager';
 import LocateControlCleanup from './LocateControlCleanup';
 import { LayerGroup, LayerConfig } from './types';
-import L from 'leaflet';
 
 interface MapContentProps {
   onFileUpload: (file: File, layerConfig: LayerConfig) => void;
@@ -36,69 +34,29 @@ const MapContent = ({
 }: MapContentProps) => {
   const map = useMap();
   const mapRef = useRef(map);
-  
-  // Use the hook correctly with default export
-  useMapLayers(
+  const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
     map,
-    layerGroups,
-    selectedKecamatan,
-    selectedKelurahan,
-    selectedRT
+    layerGroups.flatMap(group => group.layers),
+    { selectedKecamatan, selectedKelurahan, selectedRT }
   );
-  
   const handleFileUpload = useFileUpload(map, onFileUpload);
-
-  // Initialize geocoder plugin
-  useEffect(() => {
-    // Cegah penambahan ganda
-    if (!(map as any)._geocoderControl && (L as any).Control && (L as any).Control.Geocoder) {
-      const geocoder = (L as any).Control.Geocoder.nominatim();
-      const geocoderControl = (L as any).Control.geocoder({
-        defaultMarkGeocode: true,
-        geocoder,
-        position: 'topleft',
-      }).addTo(map);
-      (map as any)._geocoderControl = geocoderControl;
-    }
-
-    return () => {
-      // Cleanup geocoder on unmount
-      if ((map as any)._geocoderControl) {
-        try {
-          map.removeControl((map as any)._geocoderControl);
-          (map as any)._geocoderControl = null;
-        } catch (e) {
-          console.warn('Error removing geocoder control:', e);
-        }
-      }
-    };
-  }, [map]);
-
-  // Add custom CSS for label styling
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .custom-label {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-      }
-      .custom-label .leaflet-div-icon {
-        background: transparent !important;
-        border: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   useEffect(() => {
     console.log('MapContent: onFileUpload type', typeof onFileUpload);
     console.log('MapContent: MapControls mounted');
   }, [onFileUpload]);
+
+  useEffect(() => {
+    if (!initialized) return;
+
+    const layers = layerGroups.flatMap(group => group.layers);
+    layers.forEach(layer => {
+      updateLayerVisibility(layer.id, layer.visible);
+      if (layer.visible) {
+        updateLayerOpacity(layer.id, layer.opacity);
+      }
+    });
+  }, [layerGroups, initialized, updateLayerVisibility, updateLayerOpacity]);
 
   useEffect(() => {
     console.log('LayerGroups di MapContent:', layerGroups);

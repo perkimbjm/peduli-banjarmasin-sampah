@@ -1,6 +1,20 @@
 
 import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
-import { RTFeature } from '@/components/map/types';
+
+interface RTFeature {
+  type: 'Feature';
+  properties: {
+    KEC: string;
+    KEL: string;
+    Nama_RT: string;
+    Nama_RW: string;
+    [key: string]: string | number;
+  };
+  geometry: {
+    type: 'MultiPolygon';
+    coordinates: number[][][][];
+  };
+}
 
 interface RTDataContextType {
   rtFeatures: RTFeature[];
@@ -36,7 +50,7 @@ export const RTDataProvider = ({ children }: { children: ReactNode }) => {
         return res.json();
       })
       .then(data => {
-        setRTFeatures(data.features as RTFeature[]);
+        setRTFeatures(data.features);
         setLoading(false);
         loadedRef.current = true;
         loadingRef.current = false;

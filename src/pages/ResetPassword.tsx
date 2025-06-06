@@ -16,10 +16,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const ResetPassword = () => {
-  const [passwordBaru, setPasswordBaru] = useState("");
-  const [konfirmasiPasswordBaru, setKonfirmasiPasswordBaru] = useState("");
-  const [showPasswordBaru, setShowPasswordBaru] = useState(false);
-  const [showKonfirmasiPasswordBaru, setShowKonfirmasiPasswordBaru] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [searchParams] = useSearchParams();
@@ -27,73 +27,18 @@ const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const processAuthTokens = async () => {
-      // Check URL hash fragment first (from email link)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-      const tokenType = hashParams.get("token_type");
-      const type = hashParams.get("type");
-
-      console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
-
-      // Also check search params as fallback
-      const searchAccessToken = searchParams.get("access_token");
-      const searchRefreshToken = searchParams.get("refresh_token");
-      const searchType = searchParams.get("type");
-
-      console.log('Search params:', { accessToken: !!searchAccessToken, refreshToken: !!searchRefreshToken, type: searchType });
-
-      const finalAccessToken = accessToken || searchAccessToken;
-      const finalRefreshToken = refreshToken || searchRefreshToken;
-      const finalType = type || searchType;
-
-      if (!finalAccessToken || !finalRefreshToken || finalType !== "recovery") {
-        console.error('Missing or invalid tokens:', { 
-          hasAccessToken: !!finalAccessToken, 
-          hasRefreshToken: !!finalRefreshToken, 
-          type: finalType 
-        });
-        
-        toast({
-          variant: "destructive",
-          title: "Link tidak valid",
-          description: "Link reset password tidak valid atau sudah kedaluwarsa",
-        });
-        navigate("/forgot-password");
-        return;
-      }
-
-      try {
-        // Set the session using the tokens from the URL
-        const { data, error } = await supabase.auth.setSession({
-          access_token: finalAccessToken,
-          refresh_token: finalRefreshToken,
-        });
-
-        if (error) {
-          console.error('Error setting session:', error);
-          throw error;
-        }
-
-        console.log('Session set successfully:', !!data.session);
-        
-        // Clear the URL hash to clean up the URL
-        if (window.location.hash) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      } catch (error: any) {
-        console.error('Session error:', error);
-        toast({
-          variant: "destructive",
-          title: "Link tidak valid",
-          description: "Link reset password tidak valid atau sudah kedaluwarsa",
-        });
-        navigate("/forgot-password");
-      }
-    };
-
-    processAuthTokens();
+    // Check if we have the required tokens for password reset
+    const accessToken = searchParams.get("access_token");
+    const refreshToken = searchParams.get("refresh_token");
+    
+    if (!accessToken || !refreshToken) {
+      toast({
+        variant: "destructive",
+        title: "Link tidak valid",
+        description: "Link reset password tidak valid atau sudah kedaluwarsa",
+      });
+      navigate("/forgot-password");
+    }
   }, [searchParams, navigate, toast]);
 
   const validatePassword = (password: string) => {
@@ -117,15 +62,15 @@ const ResetPassword = () => {
     setErrorMessage("");
 
     // Validate password
-    const passwordError = validatePassword(passwordBaru);
+    const passwordError = validatePassword(password);
     if (passwordError) {
       setErrorMessage(passwordError);
       return;
     }
 
     // Check if passwords match
-    if (passwordBaru !== konfirmasiPasswordBaru) {
-      setErrorMessage("Password Baru dan Konfirmasi Password Baru tidak sama");
+    if (password !== confirmPassword) {
+      setErrorMessage("Password dan konfirmasi password tidak sama");
       return;
     }
 
@@ -133,7 +78,7 @@ const ResetPassword = () => {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: passwordBaru
+        password: password
       });
 
       if (error) {
@@ -149,7 +94,6 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       navigate("/login");
     } catch (error: any) {
-      console.error('Update password error:', error);
       setErrorMessage(error.message || "Terjadi kesalahan saat mengubah password");
       toast({
         variant: "destructive",
@@ -193,25 +137,24 @@ const ResetPassword = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="passwordBaru">Password Baru</Label>
+                <Label htmlFor="password">Password Baru</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
-                    id="passwordBaru"
-                    name="passwordBaru"
-                    type={showPasswordBaru ? "text" : "password"}
+                    id="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Masukkan password baru"
                     className="pl-10 pr-10"
-                    value={passwordBaru}
-                    onChange={(e) => setPasswordBaru(e.target.value)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowPasswordBaru(!showPasswordBaru)}
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPasswordBaru ? <EyeOff /> : <Eye />}
+                    {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -220,25 +163,24 @@ const ResetPassword = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="konfirmasiPasswordBaru">Konfirmasi Password Baru</Label>
+                <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
-                    id="konfirmasiPasswordBaru"
-                    name="konfirmasiPasswordBaru"
-                    type={showKonfirmasiPasswordBaru ? "text" : "password"}
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Konfirmasi password baru"
                     className="pl-10 pr-10"
-                    value={konfirmasiPasswordBaru}
-                    onChange={(e) => setKonfirmasiPasswordBaru(e.target.value)}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowKonfirmasiPasswordBaru(!showKonfirmasiPasswordBaru)}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showKonfirmasiPasswordBaru ? <EyeOff /> : <Eye />}
+                    {showConfirmPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
               </div>

@@ -356,8 +356,8 @@ const MapContainer = () => {
       return;
     }
     // Filter RT dari context berdasarkan kelurahan yang dipilih
-    const filtered = rtFeatures.filter((f) => f.properties.KEL === selectedKelurahan);
-    const uniqueRTs = Array.from(new Set(filtered.map((f) => f.properties.Nama_RT)))
+    const filtered = rtFeatures.filter((f: RTFeature) => f.properties.KEL === selectedKelurahan);
+    const uniqueRTs = Array.from(new Set(filtered.map((f: RTFeature) => f.properties.Nama_RT)))
       .sort((a, b) => parseInt(a) - parseInt(b));
     setRtList(uniqueRTs);
   }, [selectedKelurahan, batasRTLayerActive, rtFeatures, rtLoading]);
@@ -522,11 +522,11 @@ const MapContainer = () => {
     };
   }, []);
 
-  // Simpan map instance dengan proper typing
+  // Simpan map instance
   const mapInstanceRef = useRef<L.Map | null>(null);
 
   // Inisialisasi plugin geocoder setelah map instance didapat
-  const handleMapReady = (map: L.Map) => {
+  const handleMapCreated = (map: L.Map) => {
     mapInstanceRef.current = map;
     // Cegah penambahan ganda
     if (!(map as any)._geocoderControl && (L as any).Control && (L as any).Control.Geocoder) {
@@ -790,6 +790,7 @@ const MapContainer = () => {
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}
         className="z-10"
+        whenReady={(map) => handleMapCreated(map.target)}
       >
         <MapContent 
           onFileUpload={handleFileUpload} 
