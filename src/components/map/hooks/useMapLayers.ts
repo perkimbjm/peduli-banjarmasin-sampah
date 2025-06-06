@@ -22,6 +22,7 @@ const useMapLayers = (
   const [layers, setLayers] = useState<{ [id: string]: L.Layer }>({});
   const currentLayersRef = useRef<{ [id: string]: L.Layer }>({});
   const basemapLayersRef = useRef<{ [id: string]: L.TileLayer }>({});
+  const currentBasemapRef = useRef<L.TileLayer | null>(null);
 
   useEffect(() => {
     currentLayersRef.current = layers;
@@ -228,12 +229,12 @@ const useMapLayers = (
             if (newLayer) {
               // For basemap layers, ensure only one is visible at a time
               if (layerConfig.group === 'basemap') {
-                // Remove all other basemap layers first
-                Object.values(basemapLayersRef.current).forEach(basemapLayer => {
-                  if (map.hasLayer(basemapLayer)) {
-                    map.removeLayer(basemapLayer);
-                  }
-                });
+                // Remove current basemap if exists
+                if (currentBasemapRef.current && map.hasLayer(currentBasemapRef.current)) {
+                  map.removeLayer(currentBasemapRef.current);
+                }
+                // Set new basemap as current
+                currentBasemapRef.current = newLayer as L.TileLayer;
               }
               
               newLayer.addTo(map);
@@ -244,6 +245,10 @@ const useMapLayers = (
           // Layer tidak visible, hapus dari peta jika ada
           if (existingLayer && map.hasLayer(existingLayer)) {
             map.removeLayer(existingLayer);
+            // If it's a basemap, clear the current basemap reference
+            if (layerConfig.group === 'basemap' && currentBasemapRef.current === existingLayer) {
+              currentBasemapRef.current = null;
+            }
           }
         }
       });
@@ -265,6 +270,9 @@ const useMapLayers = (
         map.removeLayer(layer);
       }
     });
+    
+    // Clear current basemap reference
+    currentBasemapRef.current = null;
     
     setLayers({});
   }, [map, layers]);
