@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -20,6 +21,7 @@ const useMapLayers = (
 ) => {
   const [layers, setLayers] = useState<{ [id: string]: L.Layer }>({});
   const currentLayersRef = useRef<{ [id: string]: L.Layer }>({});
+  const basemapLayersRef = useRef<{ [id: string]: L.TileLayer }>({});
 
   useEffect(() => {
     currentLayersRef.current = layers;
@@ -39,10 +41,17 @@ const useMapLayers = (
 
     switch (layerConfig.type) {
       case 'tile':
-        return L.tileLayer(layerConfig.url!, {
+        const tileLayer = L.tileLayer(layerConfig.url!, {
           attribution: layerConfig.attribution,
           opacity: layerConfig.opacity,
         });
+        
+        // Store basemap layers separately for proper management
+        if (layerConfig.group === 'basemap') {
+          basemapLayersRef.current[layerConfig.id] = tileLayer;
+        }
+        
+        return tileLayer;
 
       case 'geojson':
         if (!layerConfig.data && !layerConfig.url) {
@@ -164,15 +173,19 @@ const useMapLayers = (
               
               if (centroid && L.latLng(centroid).lat !== 0 && L.latLng(centroid).lng !== 0) {
                 const labelStyle = layerConfig.style as LayerStyle;
+                
+                // Apply consistent styling for both RT and Kelurahan labels (no background)
                 const divIcon = L.divIcon({
                   className: 'custom-label',
                   html: `<span style="
                     font-size: ${getStyleProperty(labelStyle, 'fontSize', '12px')};
                     font-weight: ${getStyleProperty(labelStyle, 'fontWeight', 'normal')};
                     color: ${getStyleProperty(labelStyle, 'color', '#000')};
-                    text-shadow: ${getStyleProperty(labelStyle, 'textShadow', '1px 1px 0 #fff')};
+                    text-shadow: ${getStyleProperty(labelStyle, 'textShadow', '1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff')};
                     white-space: nowrap;
                     pointer-events: none;
+                    background: transparent;
+                    border: none;
                   ">${labelText}</span>`,
                   iconSize: [0, 0],
                   iconAnchor: [0, 0],
@@ -213,6 +226,16 @@ const useMapLayers = (
             // Layer belum ada, buat dan tambahkan ke peta
             const newLayer = createLayer(layerConfig);
             if (newLayer) {
+              // For basemap layers, ensure only one is visible at a time
+              if (layerConfig.group === 'basemap') {
+                // Remove all other basemap layers first
+                Object.values(basemapLayersRef.current).forEach(basemapLayer => {
+                  if (map.hasLayer(basemapLayer)) {
+                    map.removeLayer(basemapLayer);
+                  }
+                });
+              }
+              
               newLayer.addTo(map);
               newLayers[layerConfig.id] = newLayer;
             }
@@ -235,6 +258,14 @@ const useMapLayers = (
         map.removeLayer(layer);
       }
     });
+    
+    // Clear basemap layers too
+    Object.values(basemapLayersRef.current).forEach((layer) => {
+      if (map && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+    
     setLayers({});
   }, [map, layers]);
 

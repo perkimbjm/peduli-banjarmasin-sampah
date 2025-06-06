@@ -74,6 +74,27 @@ const MapContent = ({
     };
   }, [map]);
 
+  // Add custom CSS for label styling
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .custom-label {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .custom-label .leaflet-div-icon {
+        background: transparent !important;
+        border: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   useEffect(() => {
     console.log('MapContent: onFileUpload type', typeof onFileUpload);
     console.log('MapContent: MapControls mounted');
