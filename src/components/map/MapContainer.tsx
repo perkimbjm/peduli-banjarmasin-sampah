@@ -29,9 +29,9 @@ interface KelurahanFeature {
   };
 }
 
-// Define the RT GeoJSON feature type
+// Define the RT GeoJSON feature type - align with context definition
 interface RTFeature {
-  type: string;
+  type: 'Feature';
   properties: {
     KEC: string;
     KEL: string;
@@ -40,8 +40,8 @@ interface RTFeature {
     [key: string]: string | number;
   };
   geometry: {
-    type: string;
-    coordinates: number[][][];
+    type: 'MultiPolygon';
+    coordinates: number[][][][];
   };
 }
 
@@ -281,6 +281,12 @@ const toastStyles = `
   .leaflet-control-geocoder-form input {
     min-width: 180px;
   }
+  /* Remove background from custom label icons */
+  .custom-label-icon > div {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
 `;
 
 const MapContainer = () => {
@@ -355,9 +361,9 @@ const MapContainer = () => {
       setRtList([]);
       return;
     }
-    // Filter RT dari context berdasarkan kelurahan yang dipilih
-    const filtered = rtFeatures.filter((f: RTFeature) => f.properties.KEL === selectedKelurahan);
-    const uniqueRTs = Array.from(new Set(filtered.map((f: RTFeature) => f.properties.Nama_RT)))
+    // Filter RT dari context berdasarkan kelurahan yang dipilih - fix type casting
+    const filtered = rtFeatures.filter((f: any) => f.properties.KEL === selectedKelurahan);
+    const uniqueRTs = Array.from(new Set(filtered.map((f: any) => f.properties.Nama_RT)))
       .sort((a, b) => parseInt(a) - parseInt(b));
     setRtList(uniqueRTs);
   }, [selectedKelurahan, batasRTLayerActive, rtFeatures, rtLoading]);
@@ -790,7 +796,6 @@ const MapContainer = () => {
         zoom={mapState.zoom}
         style={{ height: "100%", width: "100%" }}
         className="z-10"
-        whenReady={(map) => handleMapCreated(map.target)}
       >
         <MapContent 
           onFileUpload={handleFileUpload} 

@@ -16,10 +16,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const ResetPassword = () => {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordBaru, setPasswordBaru] = useState("");
+  const [konfirmasiPasswordBaru, setKonfirmasiPasswordBaru] = useState("");
+  const [showPasswordBaru, setShowPasswordBaru] = useState(false);
+  const [showKonfirmasiPasswordBaru, setShowKonfirmasiPasswordBaru] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [searchParams] = useSearchParams();
@@ -62,15 +62,15 @@ const ResetPassword = () => {
     setErrorMessage("");
 
     // Validate password
-    const passwordError = validatePassword(password);
+    const passwordError = validatePassword(passwordBaru);
     if (passwordError) {
       setErrorMessage(passwordError);
       return;
     }
 
     // Check if passwords match
-    if (password !== confirmPassword) {
-      setErrorMessage("Password dan konfirmasi password tidak sama");
+    if (passwordBaru !== konfirmasiPasswordBaru) {
+      setErrorMessage("Password Baru dan Konfirmasi Password Baru tidak sama");
       return;
     }
 
@@ -78,7 +78,7 @@ const ResetPassword = () => {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password
+        password: passwordBaru
       });
 
       if (error) {
@@ -137,24 +137,24 @@ const ResetPassword = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password Baru</Label>
+                <Label htmlFor="passwordBaru">Password Baru</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
+                    id="passwordBaru"
+                    type={showPasswordBaru ? "text" : "password"}
                     placeholder="Masukkan password baru"
                     className="pl-10 pr-10"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={passwordBaru}
+                    onChange={(e) => setPasswordBaru(e.target.value)}
                     required
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowPasswordBaru(!showPasswordBaru)}
                   >
-                    {showPassword ? <EyeOff /> : <Eye />}
+                    {showPasswordBaru ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -163,24 +163,24 @@ const ResetPassword = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+                <Label htmlFor="konfirmasiPasswordBaru">Konfirmasi Password Baru</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    id="konfirmasiPasswordBaru"
+                    type={showKonfirmasiPasswordBaru ? "text" : "password"}
                     placeholder="Konfirmasi password baru"
                     className="pl-10 pr-10"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={konfirmasiPasswordBaru}
+                    onChange={(e) => setKonfirmasiPasswordBaru(e.target.value)}
                     required
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onClick={() => setShowKonfirmasiPasswordBaru(!showKonfirmasiPasswordBaru)}
                   >
-                    {showConfirmPassword ? <EyeOff /> : <Eye />}
+                    {showKonfirmasiPasswordBaru ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
               </div>

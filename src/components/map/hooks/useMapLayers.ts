@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback, useState, useRef } from 'react';
 import L from 'leaflet';
 import { LayerConfig, LayerInstances, RTFeature } from '../types';
@@ -327,19 +326,26 @@ export const useMapLayers = (
       }
       
       try {
-        // Buat div icon dengan style dari layer config
+        // Check if layer style exists and has the required properties
+        const layerStyle = layer.style;
+        const fontSize = (layerStyle && typeof layerStyle === 'object' && 'fontSize' in layerStyle) ? layerStyle.fontSize : '12px';
+        const fontWeight = (layerStyle && typeof layerStyle === 'object' && 'fontWeight' in layerStyle) ? layerStyle.fontWeight : 'normal';
+        const color = (layerStyle && typeof layerStyle === 'object' && 'color' in layerStyle) ? layerStyle.color : '#000';
+        const textShadow = (layerStyle && typeof layerStyle === 'object' && 'textShadow' in layerStyle) ? layerStyle.textShadow : 'none';
+        
+        // Buat div icon dengan style dari layer config - tanpa background
         const icon = L.divIcon({
           className: 'custom-label-icon',
           html: `<div style="
-            font-size: ${layer.style?.fontSize || '12px'};
-            font-weight: ${layer.style?.fontWeight || 'normal'};
-            color: ${layer.style?.color || '#000'};
-            text-shadow: ${layer.style?.textShadow || 'none'};
+            font-size: ${fontSize};
+            font-weight: ${fontWeight};
+            color: ${color};
+            text-shadow: ${textShadow};
             text-align: center;
             white-space: nowrap;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2px 4px;
-            border-radius: 3px;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
             ">${labelText}</div>`,
           iconSize: [100, 20],
           iconAnchor: [50, 10]
@@ -458,14 +464,26 @@ export const useMapLayers = (
               return styleConfig(feature!);
             }
             
-            // Handle object style
-            return {
-              color: styleConfig?.color || "#3388ff",
-              weight: styleConfig?.weight || 3,
+            // Handle object style - check if styleConfig exists and has required properties
+            const defaultStyle = {
+              color: "#3388ff",
+              weight: 3,
               opacity: layer.opacity,
-              fillColor: styleConfig?.fillColor || "#3388ff",
+              fillColor: "#3388ff",
               fillOpacity: layer.opacity * 0.2,
             };
+            
+            if (styleConfig && typeof styleConfig === 'object' && 'color' in styleConfig) {
+              return {
+                color: styleConfig.color || defaultStyle.color,
+                weight: ('weight' in styleConfig) ? styleConfig.weight : defaultStyle.weight,
+                opacity: layer.opacity,
+                fillColor: ('fillColor' in styleConfig) ? styleConfig.fillColor : defaultStyle.fillColor,
+                fillOpacity: layer.opacity * 0.2,
+              };
+            }
+            
+            return defaultStyle;
           },
           onEachFeature: (feature, layer) => {
             if (feature.properties) {
