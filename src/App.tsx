@@ -1,3 +1,4 @@
+
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -46,7 +47,8 @@ import PelaporanPage from "@/pages/PelaporanPage";
 import MonitoringRitase from "@/pages/MonitoringRitase";
 import MonitoringKinerja from "@/pages/MonitoringKinerja";
 import MonitoringSumberSampah from "@/pages/MonitoringSumberSampah";
-import MonitoringEkonomiSirkular from "@/pages/MonitoringEkonomiSirkular"; // Import the new page
+import MonitoringEkonomiSirkular from "@/pages/MonitoringEkonomiSirkular";
+import GisAnalytics from "@/pages/GisAnalytics"; // Import the new page
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -91,7 +93,7 @@ const App = () => {
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 {/* WebGIS */}
                 <Route path="/webgis-admin/peta-monitoring" element={<ProtectedRoute><WebGisAdmin /></ProtectedRoute>} />
-                <Route path="/webgis-admin/gis-analitik" element={<ProtectedRoute><WebGisAdmin /></ProtectedRoute>} />
+                <Route path="/webgis-admin/gis-analitik" element={<ProtectedRoute><GisAnalytics /></ProtectedRoute>} />
                 {/* Monitoring */}
                 <Route path="/monitoring/sumber-sampah" element={<ProtectedRoute><MonitoringSumberSampah /></ProtectedRoute>} />
                 <Route path="/monitoring/ritase-kendaraan" element={<ProtectedRoute><MonitoringRitase /></ProtectedRoute>} />
