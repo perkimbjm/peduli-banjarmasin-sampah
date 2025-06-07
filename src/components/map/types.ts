@@ -1,75 +1,66 @@
 
+import L from 'leaflet';
+
+export interface LayerStyle {
+  color?: string;
+  weight?: number;
+  opacity?: number;
+  fillColor?: string;
+  fillOpacity?: number;
+  fontSize?: string;
+  fontWeight?: string;
+  textShadow?: string;
+}
+
 export interface LayerConfig {
   id: string;
   name: string;
-  type: 'geojson' | 'marker' | 'shapefile' | 'tile' | 'label';
+  type: 'geojson' | 'tile' | 'label';
   url?: string;
+  data?: string;
   visible: boolean;
-  data?: string; // <-- make optional and for GeoJSON string
   opacity: number;
-  group: string;
-  style?: {
-    color?: string;
-    weight?: number;
-    opacity?: number;
-    fillColor?: string;
-    fillOpacity?: number;
-    fontSize?: string;
-    fontWeight?: string;
-    textShadow?: string;
-  } | ((feature: GeoJSON.Feature) => {
-    color?: string;
-    weight?: number;
-    opacity?: number;
-    fillColor?: string;
-    fillOpacity?: number;
-  });
+  style?: LayerStyle | ((feature: any) => LayerStyle);
   attribution?: string;
-  sourceLayer?: string; // Layer ID sumber data (untuk layer label)
-  labelProperty?: string; // Properti yang akan digunakan sebagai teks label
+  sourceLayer?: string;
+  labelProperty?: string;
 }
 
 export interface LayerGroup {
   id: string;
   name: string;
-  data: string;
   layers: LayerConfig[];
 }
 
 export interface MapState {
   center: [number, number];
   zoom: number;
-  activeLayers: string[];
-  layerGroups: LayerGroup[];
+  basemap: string;
 }
 
-export interface MapControlProps {
-  onLayerToggle: (layerId: string) => void;
-  onLayerOpacityChange: (layerId: string, opacity: number) => void;
-  onFileUpload: (file: File) => void;
-} 
-
-// Add the LayerInstances interface
-export interface LayerInstances {
-  [key: string]: L.Layer;
+export interface SearchResult {
+  id: string;
+  name: string;
+  coordinates: [number, number];
+  type: string;
 }
 
-// Define proper GeoJSON types for RT features
-export interface RTFeature extends GeoJSON.Feature {
-  type: 'Feature';
-  properties: {
-    KEC: string;
-    KEL: string;
-    Nama_RT: string;
-    Nama_RW: string;
-    [key: string]: string | number;
-  };
-  geometry: GeoJSON.MultiPolygon;
+export interface FilterState {
+  kecamatan: string | null;
+  kelurahan: string | null;
+  rt: string | null;
+  category: string | null;
 }
 
-// Extend the Window interface to include mapLayers property
-declare global {
-  interface Window {
-    mapLayers?: LayerInstances;
-  }
+export interface MapControlsProps {
+  onExportPNG: () => void;
+  onExportCSV: () => void;
+  onToggleFullscreen: () => void;
+  isFullscreen: boolean;
+}
+
+export interface StatisticsData {
+  totalFeatures: number;
+  categories: { [key: string]: number };
+  coverage: number;
 }

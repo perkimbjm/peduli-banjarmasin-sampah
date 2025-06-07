@@ -4,12 +4,6 @@ import L from 'leaflet';
 import { LayerConfig, LayerGroup } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
-declare global {
-  interface Window {
-    mapLayers: { [key: string]: L.Layer };
-  }
-}
-
 interface UseMapLayersProps {
   map: L.Map | null;
   layerGroups: LayerGroup[];
@@ -19,6 +13,9 @@ interface UseMapLayersProps {
   selectedKelurahan: string | null;
   selectedRT: string | null;
 }
+
+// Global map layers storage
+let mapLayers: { [key: string]: L.Layer } = {};
 
 export const useMapLayers = ({
   map,
@@ -30,13 +27,6 @@ export const useMapLayers = ({
   selectedRT
 }: UseMapLayersProps) => {
   const { toast } = useToast();
-
-  // Initialize global mapLayers
-  useEffect(() => {
-    if (!window.mapLayers) {
-      window.mapLayers = {};
-    }
-  }, []);
 
   const addGeoJSONLayer = useCallback((config: LayerConfig, geoJSONData: any) => {
     if (!map) return null;
@@ -61,7 +51,7 @@ export const useMapLayers = ({
     }
 
     const filteredGeoJSON = {
-      type: 'FeatureCollection',
+      type: 'FeatureCollection' as const,
       features: filteredFeatures
     };
 
@@ -72,12 +62,13 @@ export const useMapLayers = ({
         layerStyle = config.style;
       } else {
         // It's an object, so create a function that returns it
+        const styleObj = config.style as any;
         layerStyle = () => ({
-          color: config.style?.color || '#000',
-          weight: config.style?.weight || 1,
+          color: styleObj.color || '#000',
+          weight: styleObj.weight || 1,
           opacity: config.opacity || 1,
-          fillColor: config.style?.fillColor || '#fff',
-          fillOpacity: config.style?.fillOpacity || 0.1
+          fillColor: styleObj.fillColor || '#fff',
+          fillOpacity: styleObj.fillOpacity || 0.1
         });
       }
     }
@@ -199,12 +190,12 @@ export const useMapLayers = ({
     if (!map) return;
 
     // Clear existing layers
-    Object.values(window.mapLayers).forEach(layer => {
+    Object.values(mapLayers).forEach(layer => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
       }
     });
-    window.mapLayers = {};
+    mapLayers = {};
 
     // Process all layers
     for (const group of layerGroups) {
@@ -219,12 +210,12 @@ export const useMapLayers = ({
             layer = addGeoJSONLayer(config, data);
           }
         } else if (config.type === 'label') {
-          const sourceLayer = window.mapLayers[config.sourceLayer || ''];
+          const sourceLayer = mapLayers[config.sourceLayer || ''];
           layer = addLabelLayer(config, sourceLayer);
         }
 
         if (layer) {
-          window.mapLayers[config.id] = layer;
+          mapLayers[config.id] = layer;
         }
       }
     }
@@ -237,7 +228,7 @@ export const useMapLayers = ({
   const toggleLayer = useCallback((layerId: string) => {
     if (!map) return;
 
-    const layer = window.mapLayers[layerId];
+    const layer = mapLayers[layerId];
     if (!layer) return;
 
     if (map.hasLayer(layer)) {
@@ -250,7 +241,7 @@ export const useMapLayers = ({
   }, [map, onLayerToggle]);
 
   const changeLayerOpacity = useCallback((layerId: string, opacity: number) => {
-    const layer = window.mapLayers[layerId] as any;
+    const layer = mapLayers[layerId] as any;
     if (!layer) return;
 
     if (layer.setOpacity) {

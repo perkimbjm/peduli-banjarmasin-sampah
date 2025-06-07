@@ -1,29 +1,15 @@
 
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
-  Home, 
   Sun, 
   Moon, 
-  Map, 
-  FileBarChart2, 
-  BookOpen, 
-  Users, 
-  Trash2, 
-  Settings, 
-  LogOut,
-  MessagesSquare,
-  Building2,
-  AlertCircle,
-  Truck,
-  UserRound,
-  ClipboardList,
   Menu,
   X,
-  Flag,
-  BarChart2
+  LogOut,
+  UserRound
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,11 +23,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import NavigationSidebar from "@/components/navigation/NavigationSidebar";
 
 const ProtectedLayout = () => {
   const { user, signOut, userRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -74,31 +60,6 @@ const ProtectedLayout = () => {
   // Get user's display information
   const userEmail = user?.email || 'admin@example.com';
   const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
-
-  // Navigation items based on user role
-  const navigationItems = [
-    { name: "Beranda", href: "/dashboard", icon: Home, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "WebGIS", href: "/webgis-admin", icon: Map, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Sumber", href: "/monitoring-sumber-sampah", icon: Trash2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Ritase", href: "/monitoring-ritase", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Kinerja", href: "/monitoring-kinerja", icon: BarChart2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Analitik", href: "/dashboard-admin", icon: FileBarChart2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Edukasi", href: "/edukasi-admin", icon: BookOpen, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Portal Kolaborasi", href: "/kolaborasi", icon: MessagesSquare, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "Bank Sampah", href: "/bank-sampah", icon: Building2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Pelaporan Masyarakat", href: "/pelaporan", icon: Flag, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "Pengaduan", href: "/pengaduan", icon: AlertCircle, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Logistik", href: "/logistik", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Manajemen Petugas", href: "/petugas", icon: UserRound, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Manajemen Tugas", href: "/tugas", icon: ClipboardList, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Pengguna", href: "/users", icon: Users, roles: ['admin'] },
-    { name: "Pengaturan", href: "/settings", icon: Settings, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-  ];
-
-  // Filter navigation items based on user role
-  const filteredNavItems = navigationItems.filter(item => 
-    !userRole || item.roles.includes(userRole)
-  );
 
   const handleSignOut = async () => {
     try {
@@ -140,29 +101,8 @@ const ProtectedLayout = () => {
             )}
           </div>
 
-          {/* Navigation Items */}
-          <nav className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-1">
-              {filteredNavItems.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    navigate(item.href);
-                    if (isMobile) setIsOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    location.pathname === item.href
-                      ? "bg-peduli-100 text-peduli-600 dark:bg-peduli-900 dark:text-peduli-400"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </button>
-              ))}
-            </div>
-          </nav>
+          {/* Navigation using new NavigationSidebar component */}
+          <NavigationSidebar />
 
           {/* User Profile */}
           <div className="border-t p-4">
