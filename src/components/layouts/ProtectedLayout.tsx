@@ -1,4 +1,3 @@
-
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -75,30 +74,164 @@ const ProtectedLayout = () => {
   const userEmail = user?.email || 'admin@example.com';
   const userInitials = userEmail.split('@')[0].substring(0, 2).toUpperCase();
 
-  // Navigation items based on user role
-  const navigationItems = [
-    { name: "Beranda", href: "/dashboard", icon: Home, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "WebGIS", href: "/webgis-admin", icon: Map, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Sumber", href: "/monitoring-sumber-sampah", icon: Trash2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Ritase", href: "/monitoring-ritase", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Monitoring Kinerja", href: "/monitoring-kinerja", icon: BarChart2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Analitik", href: "/dashboard-admin", icon: FileBarChart2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Edukasi", href: "/edukasi-admin", icon: BookOpen, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Portal Kolaborasi", href: "/kolaborasi", icon: MessagesSquare, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "Bank Sampah", href: "/bank-sampah", icon: Building2, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Pelaporan Masyarakat", href: "/pelaporan", icon: Flag, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
-    { name: "Pengaduan", href: "/pengaduan", icon: AlertCircle, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Logistik", href: "/logistik", icon: Truck, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Manajemen Petugas", href: "/petugas", icon: UserRound, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Manajemen Tugas", href: "/tugas", icon: ClipboardList, roles: ['admin', 'leader', 'stakeholder'] },
-    { name: "Pengguna", href: "/users", icon: Users, roles: ['admin'] },
-    { name: "Pengaturan", href: "/settings", icon: Settings, roles: ['admin', 'volunteer', 'leader', 'stakeholder'] },
+  // Sidebar menu structure sesuai instruksi (8 utama, submenus, role-based)
+  const sidebarMenu = [
+    {
+      title: "Dashboard",
+      icon: Home,
+      href: "/dashboard",
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "WebGIS",
+      icon: Map,
+      submenus: [
+        { title: "Peta Monitoring", href: "/webgis-admin/peta-monitoring" },
+        { title: "GIS Analitik", href: "/webgis-admin/gis-analitik" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "Monitoring",
+      icon: BarChart2,
+      submenus: [
+        { title: "Sumber Sampah", href: "/monitoring/sumber-sampah" },
+        { title: "Ritase Kendaraan", href: "/monitoring/ritase-kendaraan" },
+        { title: "Kinerja Wilayah", href: "/monitoring/kinerja-wilayah" },
+        { title: "Kinerja Fasilitas", href: "/monitoring/kinerja-fasilitas" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "Edukasi",
+      icon: BookOpen,
+      submenus: [
+        { title: "Konten Edukasi", href: "/edukasi/konten" },
+        { title: "Statistik Kampanye", href: "/edukasi/statistik" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "Kolaborasi",
+      icon: MessagesSquare,
+      submenus: [
+        { title: "Forum Diskusi", href: "/kolaborasi/forum" },
+        { title: "Perpustakaan Digital", href: "/kolaborasi/perpustakaan" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "Bank Sampah",
+      icon: Building2,
+      submenus: [
+        { title: "Data Bank Sampah", href: "/bank-sampah/data" },
+        { title: "Data TPS 3R", href: "/bank-sampah/tps3r" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
+    {
+      title: "Manajemen",
+      icon: Users,
+      submenus: [
+        { title: "Petugas", href: "/manajemen/petugas" },
+        { title: "Tugas", href: "/manajemen/tugas" },
+        { title: "Armada & Rute", href: "/manajemen/armada-rute" },
+        { title: "Pengguna", href: "/manajemen/pengguna", roles: ["admin"] },
+      ],
+      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Pengaturan",
+      icon: Settings,
+      submenus: [
+        { title: "Profil", href: "/pengaturan/profil" },
+        { title: "Notifikasi", href: "/pengaturan/notifikasi" },
+        { title: "Keamanan", href: "/pengaturan/keamanan" },
+        { title: "Tampilan", href: "/pengaturan/tampilan" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
+    },
   ];
 
   // Filter navigation items based on user role
-  const filteredNavItems = navigationItems.filter(item => 
+  const filteredNavItems = sidebarMenu.filter(item => 
     !userRole || item.roles.includes(userRole)
   );
+
+  // Helper for role access
+  const hasAccess = (roles) => {
+    if (!roles) return true;
+    if (!userRole) return false;
+    return roles.includes(userRole);
+  };
+
+  // Sidebar menu rendering with collapsible submenus
+  const renderSidebarMenu = () =>
+    sidebarMenu.map((item) => {
+      if (!hasAccess(item.roles)) return null;
+      if (!item.submenus) {
+        return (
+          <button
+            key={item.title}
+            onClick={() => {
+              navigate(item.href);
+              if (isMobile) setIsOpen(false);
+            }}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              location.pathname.startsWith(item.href)
+                ? "bg-peduli-100 text-peduli-600 dark:bg-peduli-900 dark:text-peduli-400"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+            <span>{item.title}</span>
+          </button>
+        );
+      }
+      // Collapsible for submenus
+      return (
+        <div key={item.title} className="mb-1">
+          <details className="group">
+            <summary
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-base font-semibold transition-colors select-none",
+                item.submenus.some((sm) => location.pathname.startsWith(sm.href))
+                  ? "bg-peduli-100 text-peduli-600 dark:bg-peduli-900 dark:text-peduli-400"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="flex-1">{item.title}</span>
+              {/* Simple chevron icon for collapsible, rotates when open */}
+              <svg className="ml-auto h-4 w-4 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </summary>
+            <div className="ml-7 mt-1 flex flex-col gap-1">
+              {item.submenus.map((submenu) => {
+                if (!hasAccess(submenu.roles)) return null;
+                return (
+                  <button
+                    key={submenu.title}
+                    onClick={() => {
+                      navigate(submenu.href);
+                      if (isMobile) setIsOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1 text-base font-normal transition-colors hover:bg-muted hover:text-foreground",
+                      location.pathname.startsWith(submenu.href)
+                        ? "bg-peduli-100 text-peduli-600 dark:bg-peduli-900 dark:text-peduli-400"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {submenu.title}
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+        </div>
+      );
+    });
 
   const handleSignOut = async () => {
     try {
@@ -143,24 +276,7 @@ const ProtectedLayout = () => {
           {/* Navigation Items */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-1">
-              {filteredNavItems.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    navigate(item.href);
-                    if (isMobile) setIsOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    location.pathname === item.href
-                      ? "bg-peduli-100 text-peduli-600 dark:bg-peduli-900 dark:text-peduli-400"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </button>
-              ))}
+              {renderSidebarMenu()}
             </div>
           </nav>
 

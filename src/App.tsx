@@ -87,180 +87,35 @@ const App = () => {
 
               {/* Protected Layout */}
               <Route element={<ProtectedLayout />}>
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/laporan"
-                  element={
-                    <ProtectedRoute>
-                      <CommunityReport />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/jadwal"
-                  element={
-                    <ProtectedRoute>
-                      <WasteManagementSchedule />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/jadwal/:id"
-                  element={
-                    <ProtectedRoute>
-                      <ScheduleDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/webgis-admin"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <WebGisAdmin />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/edukasi-admin"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <EdukasiAdmin />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Route for Monitoring Ritase */}
-                <Route
-                  path="/monitoring-ritase"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <MonitoringRitase />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Route for Monitoring Kinerja */}
-                <Route
-                  path="/monitoring-kinerja"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <MonitoringKinerja />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Route for Monitoring Sumber Sampah */}
-                <Route
-                  path="/monitoring-sumber-sampah"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <MonitoringSumberSampah />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* New Route for Monitoring Ekonomi Sirkular */}
-                <Route
-                  path="/monitoring-ekonomi-sirkular"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <MonitoringEkonomiSirkular />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* New Routes */}
-                <Route
-                  path="/kolaborasi"
-                  element={
-                    <ProtectedRoute>
-                      <Kolaborasi />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bank-sampah"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <BankSampah />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/pengaduan"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <Pengaduan />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/logistik"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <Logistik />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <UsersAdmin />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* New Management Routes */}
-                <Route
-                  path="/petugas"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <ManajemenPetugas />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tugas"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "leader", "stakeholder"]}>
-                      <ManajemenTugas />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard-admin"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/pelaporan"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <PelaporanPage/>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <SettingsPage />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Dashboard */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                {/* WebGIS */}
+                <Route path="/webgis-admin/peta-monitoring" element={<ProtectedRoute><WebGisAdmin /></ProtectedRoute>} />
+                <Route path="/webgis-admin/gis-analitik" element={<ProtectedRoute><WebGisAdmin /></ProtectedRoute>} />
+                {/* Monitoring */}
+                <Route path="/monitoring/sumber-sampah" element={<ProtectedRoute><MonitoringSumberSampah /></ProtectedRoute>} />
+                <Route path="/monitoring/ritase-kendaraan" element={<ProtectedRoute><MonitoringRitase /></ProtectedRoute>} />
+                <Route path="/monitoring/kinerja-wilayah" element={<ProtectedRoute><MonitoringKinerja /></ProtectedRoute>} />
+                <Route path="/monitoring/kinerja-fasilitas" element={<ProtectedRoute><MonitoringEkonomiSirkular /></ProtectedRoute>} />
+                {/* Edukasi & Kampanye */}
+                <Route path="/edukasi/konten" element={<ProtectedRoute><Edukasi /></ProtectedRoute>} />
+                <Route path="/edukasi/statistik" element={<ProtectedRoute><EdukasiAdmin /></ProtectedRoute>} />
+                {/* Kolaborasi */}
+                <Route path="/kolaborasi/forum" element={<ProtectedRoute><Kolaborasi /></ProtectedRoute>} />
+                <Route path="/kolaborasi/perpustakaan" element={<ProtectedRoute><Kolaborasi /></ProtectedRoute>} />
+                {/* Bank Sampah */}
+                <Route path="/bank-sampah/data" element={<ProtectedRoute><BankSampah /></ProtectedRoute>} />
+                <Route path="/bank-sampah/tps3r" element={<ProtectedRoute><BankSampahDetail /></ProtectedRoute>} />
+                {/* Manajemen */}
+                <Route path="/manajemen/petugas" element={<ProtectedRoute><ManajemenPetugas /></ProtectedRoute>} />
+                <Route path="/manajemen/tugas" element={<ProtectedRoute><ManajemenTugas /></ProtectedRoute>} />
+                <Route path="/manajemen/armada-rute" element={<ProtectedRoute><Logistik /></ProtectedRoute>} />
+                <Route path="/manajemen/pengguna" element={<ProtectedRoute allowedRoles={["admin"]}><UsersAdmin /></ProtectedRoute>} />
+                {/* Pengaturan */}
+                <Route path="/pengaturan/profil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/pengaturan/notifikasi" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/pengaturan/keamanan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/pengaturan/tampilan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               </Route>
 
               {/* Catch-all */}

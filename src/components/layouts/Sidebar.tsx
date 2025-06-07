@@ -21,20 +21,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import {
   LayoutDashboard,
-  CalendarDays,
   Map,
+  BarChart3,
   BookOpen,
-  AlignJustify,
   Users,
   Settings,
   Building,
   ClipboardList,
-  FileBarChart,
   Truck,
-  BarChart3,
+  AlignJustify,
+  FileBarChart,
   MapPin,
-  CircleDollarSign
+  CircleDollarSign,
+  UserCog,
+  Bell,
+  Shield,
+  Monitor
 } from "lucide-react";
 
 interface NavItem {
@@ -47,112 +55,85 @@ interface NavItem {
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, userRole } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navigationItems: NavItem[] = [
+  // Define the new sidebar menu structure (replace old menu)
+  const sidebarMenu = [
     {
       title: "Dashboard",
-      href: "/dashboard",
       icon: LayoutDashboard,
-    },
-    {
-      title: "Laporan",
-      href: "/laporan",
-      icon: ClipboardList,
-    },
-    {
-      title: "Jadwal",
-      href: "/jadwal",
-      icon: CalendarDays,
+      href: "/dashboard",
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
       title: "WebGIS",
-      href: "/webgis",
       icon: Map,
+      submenus: [
+        { title: "Peta Monitoring", href: "/webgis-admin/peta-monitoring" },
+        { title: "GIS Analitik", href: "/webgis-admin/gis-analitik" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
-      title: "Edukasi",
-      href: "/edukasi",
+      title: "Monitoring",
+      icon: BarChart3,
+      submenus: [
+        { title: "Sumber Sampah", href: "/monitoring/sumber-sampah" },
+        { title: "Ritase Kendaraan", href: "/monitoring/ritase-kendaraan" },
+        { title: "Kinerja Wilayah", href: "/monitoring/kinerja-wilayah" },
+        { title: "Kinerja Fasilitas", href: "/monitoring/kinerja-fasilitas" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
+    },
+    {
+      title: "Edukasi & Kampanye",
       icon: BookOpen,
-    },
-    // Admin Only
-    {
-      title: "WebGIS Admin",
-      href: "/webgis-admin",
-      icon: Map,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Edukasi Admin",
-      href: "/edukasi-admin",
-      icon: BookOpen,
-      roles: ["admin", "leader", "stakeholder"],
+      submenus: [
+        { title: "Konten Edukasi", href: "/edukasi/konten" },
+        { title: "Statistik Kampanye", href: "/edukasi/statistik" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
       title: "Kolaborasi",
-      href: "/kolaborasi",
       icon: AlignJustify,
+      submenus: [
+        { title: "Forum Diskusi", href: "/kolaborasi/forum" },
+        { title: "Perpustakaan Digital", href: "/kolaborasi/perpustakaan" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
       title: "Bank Sampah",
-      href: "/bank-sampah",
       icon: Building,
-      roles: ["admin", "leader", "stakeholder"],
+      submenus: [
+        { title: "Data Bank Sampah", href: "/bank-sampah/data" },
+        { title: "Data TPS 3R", href: "/bank-sampah/tps3r" },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
-      title: "Pengaduan",
-      href: "/pengaduan",
-      icon: AlignJustify,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Logistik",
-      href: "/logistik",
-      icon: AlignJustify,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Users",
-      href: "/users",
+      title: "Manajemen",
       icon: Users,
-      roles: ["admin"],
-    },
-    {
-      title: "Petugas",
-      href: "/petugas",
-      icon: Users,
+      submenus: [
+        { title: "Petugas", href: "/manajemen/petugas" },
+        { title: "Tugas", href: "/manajemen/tugas" },
+        { title: "Armada & Rute", href: "/manajemen/armada-rute" },
+        { title: "Pengguna", href: "/manajemen/pengguna", roles: ["admin"] },
+      ],
       roles: ["admin", "leader", "stakeholder"],
     },
     {
-      title: "Tugas",
-      href: "/tugas",
-      icon: AlignJustify,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Monitoring Ritase",
-      href: "/monitoring-ritase",
-      icon: Truck,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Monitoring Kinerja",
-      href: "/monitoring-kinerja",
-      icon: BarChart3,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Monitoring Sumber Sampah",
-      href: "/monitoring-sumber-sampah",
-      icon: MapPin,
-      roles: ["admin", "leader", "stakeholder"],
-    },
-    {
-      title: "Monitoring Ekonomi Sirkular",
-      href: "/monitoring-ekonomi-sirkular",
-      icon: CircleDollarSign,
-      roles: ["admin", "leader", "stakeholder"],
+      title: "Pengaturan",
+      icon: Settings,
+      submenus: [
+        { title: "Profil", href: "/pengaturan/profil", icon: UserCog },
+        { title: "Notifikasi", href: "/pengaturan/notifikasi", icon: Bell },
+        { title: "Keamanan", href: "/pengaturan/keamanan", icon: Shield },
+        { title: "Tampilan", href: "/pengaturan/tampilan", icon: Monitor },
+      ],
+      roles: ["admin", "leader", "stakeholder", "user"],
     },
   ];
 
@@ -161,30 +142,77 @@ const Sidebar = () => {
     navigate("/login");
   };
 
-  const renderNavItems = () => {
-    return navigationItems.map((item, index) => {
-      if (item.roles && !item.roles.includes(user?.role || "")) {
-        return null;
-      }
+  // Helper to check role access
+  const hasAccess = (itemRoles?: string[]) => {
+    if (!itemRoles) return true;
+    if (!user?.role && !user?.user_metadata?.role && !user?.app_metadata?.role && !userRole) return false;
+    const role = userRole || user?.role || user?.user_metadata?.role || user?.app_metadata?.role;
+    return itemRoles.includes(role);
+  };
 
+  // Render sidebar menu (replace all previous nav rendering)
+  const renderSidebarMenu = () => {
+    return sidebarMenu.map((item) => {
+      if (!hasAccess(item.roles)) return null;
+      if (!item.submenus) {
+        // Direct link (no submenu)
+        return (
+          <Button
+            key={item.title}
+            variant="ghost"
+            className={cn(
+              "w-full justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50",
+              location.pathname.startsWith(item.href)
+                ? "bg-secondary/50 text-primary"
+                : "text-secondary-foreground"
+            )}
+            onClick={() => navigate(item.href)}
+          >
+            <item.icon className="mr-2 h-4 w-4" />
+            <span>{item.title}</span>
+          </Button>
+        );
+      }
+      // Collapsible with submenus
       return (
-        <Button
-          key={index}
-          variant="ghost"
-          className={cn(
-            "justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50",
-            location.pathname === item.href
-              ? "bg-secondary/50 text-primary"
-              : "text-secondary-foreground"
-          )}
-          onClick={() => {
-            navigate(item.href);
-            setIsMenuOpen(false);
-          }}
-        >
-          <item.icon className="mr-2 h-4 w-4" />
-          <span>{item.title}</span>
-        </Button>
+        <Collapsible key={item.title}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50 flex items-center",
+                item.submenus.some((sm) => location.pathname.startsWith(sm.href))
+                  ? "bg-secondary/50 text-primary"
+                  : "text-secondary-foreground"
+              )}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              <span className="flex-1 text-left">{item.title}</span>
+              <span className="ml-auto">▸</span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pl-6">
+            {item.submenus.map((submenu) => {
+              if (!hasAccess(submenu.roles)) return null;
+              return (
+                <Button
+                  key={submenu.title}
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start rounded-md px-2 py-1 text-sm font-normal hover:bg-secondary/40",
+                    location.pathname.startsWith(submenu.href)
+                      ? "bg-secondary/40 text-primary"
+                      : "text-secondary-foreground"
+                  )}
+                  onClick={() => navigate(submenu.href)}
+                >
+                  {submenu.icon && <submenu.icon className="mr-2 h-4 w-4" />}
+                  {submenu.title}
+                </Button>
+              );
+            })}
+          </CollapsibleContent>
+        </Collapsible>
       );
     });
   };
@@ -209,18 +237,14 @@ const Sidebar = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Akun</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  Profil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  Pengaturan
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>Profil</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings")}>Pengaturan</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {renderNavItems()}
+          {renderSidebarMenu()}
         </ScrollArea>
       </aside>
 
@@ -254,18 +278,14 @@ const Sidebar = () => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>Akun</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    Profil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
-                    Pengaturan
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>Profil</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>Pengaturan</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            {renderNavItems()}
+            {renderSidebarMenu()}
           </ScrollArea>
         </SheetContent>
       </Sheet>
