@@ -161,9 +161,7 @@ const KomposisiTab = () => {
         </Card>
         
         <Card className="mt-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Permasalahan Utama</CardTitle>
-          </CardHeader>
+          
           
         </Card>
       </div>
