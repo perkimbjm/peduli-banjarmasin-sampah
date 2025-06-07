@@ -1,5 +1,5 @@
 
-import L from 'leaflet';
+import { LucideIcon } from 'lucide-react';
 
 export interface LayerStyle {
   color?: string;
@@ -24,18 +24,22 @@ export interface LayerConfig {
   attribution?: string;
   sourceLayer?: string;
   labelProperty?: string;
+  group?: string; // Add group property
 }
 
 export interface LayerGroup {
   id: string;
   name: string;
+  data?: string; // Add data property
   layers: LayerConfig[];
 }
 
 export interface MapState {
   center: [number, number];
   zoom: number;
-  basemap: string;
+  basemap: string; // Add basemap property
+  layerGroups: LayerGroup[]; // Add layerGroups property
+  activeLayers: string[]; // Add activeLayers property
 }
 
 export interface SearchResult {

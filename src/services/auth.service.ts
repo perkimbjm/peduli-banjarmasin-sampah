@@ -1,148 +1,186 @@
+import { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
 
-import { supabase } from "@/integrations/supabase/client";
-
-export interface AuthUser {
+export interface User {
   id: string;
   email: string;
-  full_name?: string;
-  role?: string;
+  role: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  full_name?: string;
-}
+export class AuthService {
+  private supabaseClient: SupabaseClient;
+  private static instance: AuthService | null = null;
 
-export interface SignInData {
-  email: string;
-  password: string;
-}
+  constructor(supabaseClient: SupabaseClient) {
+    this.supabaseClient = supabaseClient;
+  }
 
-export const AuthService = {
-  async signUp(data: SignUpData) {
+  public static getInstance(supabaseClient: SupabaseClient): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService(supabaseClient);
+    }
+    return AuthService.instance;
+  }
+
+  async getSession(): Promise<Session | null> {
+    const { data, error } = await this.supabaseClient.auth.getSession();
+    if (error) {
+      console.error('Error getting session:', error);
+      return null;
+    }
+    return data.session;
+  }
+
+  async getUser(): Promise<User | null> {
+    const session = await this.getSession();
+    if (!session) {
+      return null;
+    }
+
+    return {
+      id: session.user.id,
+      email: session.user.email || 'admin@example.com',
+      role: session.user.app_metadata.role || 'volunteer',
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      expiresAt: session.expires_at,
+    };
+  }
+
+  async onAuthStateChange(
+    callback: (event: AuthChangeEvent, session: Session | null) => void
+  ) {
+    return this.supabaseClient.auth.onAuthStateChange(callback);
+  }
+
+  async signIn(email: string, password: string) {
     try {
-      // Validate password using the new validation function
-      const { data: isValidPassword } = await supabase.rpc('validate_password', {
-        password: data.password
+      const { data, error } = await this.supabaseClient.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (!isValidPassword) {
-        throw new Error('Password does not meet security requirements: minimum 8 characters with uppercase, lowercase, and number');
+      if (error) {
+        throw error;
       }
 
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: data.full_name
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      return { user: authData.user, session: authData.session };
-    } catch (error) {
-      console.error("Sign up error:", error);
-      throw error;
+      return data.session;
+    } catch (error: any) {
+      console.error('Sign-in error:', error.message);
+      throw new Error(error.message || 'Failed to sign in');
     }
-  },
-
-  async signIn(data: SignInData) {
-    try {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (error) throw error;
-
-      return { user: authData.user, session: authData.session };
-    } catch (error) {
-      console.error("Sign in error:", error);
-      throw error;
-    }
-  },
+  }
 
   async signOut() {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      console.error("Sign out error:", error);
-      throw error;
+      const { error } = await this.supabaseClient.auth.signOut();
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('Sign-out error:', error.message);
+      throw new Error(error.message || 'Failed to sign out');
     }
-  },
+  }
+
+  async register(email: string, password: string, userRole: 'admin' | 'volunteer' | 'leader' | 'stakeholder' = 'volunteer') {
+    try {
+      // Validate password strength using the database function
+      const { data: isValidPassword, error: validationError } = await this.supabaseClient.rpc('validate_password', { password });
+      
+      if (validationError) {
+        console.error('Password validation error:', validationError);
+      }
+      
+      if (!isValidPassword) {
+        throw new Error('Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters');
+      }
+
+      const { data, error } = await this.supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: userRole,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data.session;
+    } catch (error: any) {
+      console.error('Registration error:', error.message);
+      throw new Error(error.message || 'Failed to register');
+    }
+  }
 
   async resetPassword(email: string) {
     try {
-      const redirectUrl = `${window.location.origin}/reset-password`;
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
-      });
+      const { data, error } = await this.supabaseClient.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/update-password`,
+        }
+      );
 
-      if (error) throw error;
-    } catch (error) {
-      console.error("Reset password error:", error);
-      throw error;
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Password reset error:', error.message);
+      throw new Error(error.message || 'Failed to reset password');
     }
-  },
+  }
 
   async updatePassword(newPassword: string) {
     try {
-      // Validate password using the new validation function
-      const { data: isValidPassword } = await supabase.rpc('validate_password', {
-        password: newPassword
-      });
-
+      // Validate password strength using the database function
+      const { data: isValidPassword, error: validationError } = await this.supabaseClient.rpc('validate_password', { password: newPassword });
+      
+      if (validationError) {
+        console.error('Password validation error:', validationError);
+      }
+      
       if (!isValidPassword) {
-        throw new Error('Password does not meet security requirements: minimum 8 characters with uppercase, lowercase, and number');
+        throw new Error('Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters');
       }
 
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
+      const { data, error } = await this.supabaseClient.auth.updateUser({
+        password: newPassword,
       });
 
-      if (error) throw error;
-    } catch (error) {
-      console.error("Update password error:", error);
-      throw error;
-    }
-  },
+      if (error) {
+        throw error;
+      }
 
-  async getCurrentUser(): Promise<AuthUser | null> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      // Get user profile and role
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      return {
-        id: user.id,
-        email: user.email || '',
-        full_name: profile?.full_name || undefined,
-        role: userRole?.role || undefined
-      };
-    } catch (error) {
-      console.error("Get current user error:", error);
-      return null;
+      return data;
+    } catch (error: any) {
+      console.error('Password update error:', error.message);
+      throw new Error(error.message || 'Failed to update password');
     }
   }
-};
+
+  async updateEmail(newEmail: string) {
+    try {
+      const { data, error } = await this.supabaseClient.auth.updateUser({
+        email: newEmail,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Email update error:', error.message);
+      throw new Error(error.message || 'Failed to update email');
+    }
+  }
+}

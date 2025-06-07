@@ -1,5 +1,4 @@
-
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import L from 'leaflet';
 import { LayerConfig, LayerGroup } from '../types';
 import { useToast } from '@/hooks/use-toast';
@@ -17,16 +16,13 @@ interface UseMapLayersProps {
 // Global map layers storage
 let mapLayers: { [key: string]: L.Layer } = {};
 
-export const useMapLayers = ({
-  map,
-  layerGroups,
-  onLayerToggle,
-  onLayerOpacityChange,
-  selectedKecamatan,
-  selectedKelurahan,
-  selectedRT
-}: UseMapLayersProps) => {
+export const useMapLayers = (
+  map: L.Map | null,
+  layers: LayerConfig[],
+  options: { selectedKecamatan?: string | null; selectedKelurahan?: string | null; selectedRT?: string | null }
+) => {
   const { toast } = useToast();
+  const [initialized, setInitialized] = useState(false);
 
   const addGeoJSONLayer = useCallback((config: LayerConfig, geoJSONData: any) => {
     if (!map) return null;
@@ -34,18 +30,18 @@ export const useMapLayers = ({
     // Filter data based on selections
     let filteredFeatures = geoJSONData.features || [];
     
-    if (config.id === 'batas-kelurahan' && (selectedKecamatan || selectedKelurahan)) {
+    if (config.id === 'batas-kelurahan' && (options.selectedKecamatan || options.selectedKelurahan)) {
       filteredFeatures = filteredFeatures.filter((feature: any) => {
-        if (selectedKelurahan && feature.properties.KELURAHAN !== selectedKelurahan) return false;
-        if (selectedKecamatan && feature.properties.KECAMATAN !== selectedKecamatan) return false;
+        if (options.selectedKelurahan && feature.properties.KELURAHAN !== options.selectedKelurahan) return false;
+        if (options.selectedKecamatan && feature.properties.KECAMATAN !== options.selectedKecamatan) return false;
         return true;
       });
     }
 
-    if (config.id === 'batas-rt' && (selectedKelurahan || selectedRT)) {
+    if (config.id === 'batas-rt' && (options.selectedKelurahan || options.selectedRT)) {
       filteredFeatures = filteredFeatures.filter((feature: any) => {
-        if (selectedKelurahan && feature.properties.KEL !== selectedKelurahan) return false;
-        if (selectedRT && feature.properties.Nama_RT !== selectedRT) return false;
+        if (options.selectedKelurahan && feature.properties.KEL !== options.selectedKelurahan) return false;
+        if (options.selectedRT && feature.properties.Nama_RT !== options.selectedRT) return false;
         return true;
       });
     }
@@ -94,7 +90,7 @@ export const useMapLayers = ({
     }
 
     return layer;
-  }, [map, selectedKecamatan, selectedKelurahan, selectedRT]);
+  }, [map, options.selectedKecamatan, options.selectedKelurahan, options.selectedRT]);
 
   const addLabelLayer = useCallback((config: LayerConfig, sourceLayer: L.Layer | null) => {
     if (!map || !sourceLayer) return null;
@@ -198,49 +194,47 @@ export const useMapLayers = ({
     mapLayers = {};
 
     // Process all layers
-    for (const group of layerGroups) {
-      for (const config of group.layers) {
-        let layer: L.Layer | null = null;
+    for (const config of layers) {
+      let layer: L.Layer | null = null;
 
-        if (config.type === 'tile') {
-          layer = addTileLayer(config);
-        } else if (config.type === 'geojson') {
-          const data = await loadLayerData(config);
-          if (data) {
-            layer = addGeoJSONLayer(config, data);
-          }
-        } else if (config.type === 'label') {
-          const sourceLayer = mapLayers[config.sourceLayer || ''];
-          layer = addLabelLayer(config, sourceLayer);
+      if (config.type === 'tile') {
+        layer = addTileLayer(config);
+      } else if (config.type === 'geojson') {
+        const data = await loadLayerData(config);
+        if (data) {
+          layer = addGeoJSONLayer(config, data);
         }
+      } else if (config.type === 'label') {
+        const sourceLayer = mapLayers[config.sourceLayer || ''];
+        layer = addLabelLayer(config, sourceLayer);
+      }
 
-        if (layer) {
-          mapLayers[config.id] = layer;
-        }
+      if (layer) {
+        mapLayers[config.id] = layer;
       }
     }
-  }, [map, layerGroups, addTileLayer, addGeoJSONLayer, addLabelLayer, loadLayerData]);
+
+    setInitialized(true);
+  }, [map, layers, addTileLayer, addGeoJSONLayer, addLabelLayer, loadLayerData]);
 
   useEffect(() => {
     updateLayers();
   }, [updateLayers]);
 
-  const toggleLayer = useCallback((layerId: string) => {
+  const updateLayerVisibility = useCallback((layerId: string, visible: boolean) => {
     if (!map) return;
 
     const layer = mapLayers[layerId];
     if (!layer) return;
 
-    if (map.hasLayer(layer)) {
-      map.removeLayer(layer);
-    } else {
+    if (visible && !map.hasLayer(layer)) {
       layer.addTo(map);
+    } else if (!visible && map.hasLayer(layer)) {
+      map.removeLayer(layer);
     }
+  }, [map]);
 
-    onLayerToggle(layerId);
-  }, [map, onLayerToggle]);
-
-  const changeLayerOpacity = useCallback((layerId: string, opacity: number) => {
+  const updateLayerOpacity = useCallback((layerId: string, opacity: number) => {
     const layer = mapLayers[layerId] as any;
     if (!layer) return;
 
@@ -249,13 +243,14 @@ export const useMapLayers = ({
     } else if (layer.setStyle) {
       layer.setStyle({ opacity });
     }
-
-    onLayerOpacityChange(layerId, opacity);
-  }, [onLayerOpacityChange]);
+  }, []);
 
   return {
-    toggleLayer,
-    changeLayerOpacity,
+    initialized,
+    updateLayerVisibility,
+    updateLayerOpacity,
+    toggleLayer: updateLayerVisibility,
+    changeLayerOpacity: updateLayerOpacity,
     updateLayers
   };
 };

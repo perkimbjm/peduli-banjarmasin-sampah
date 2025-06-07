@@ -3,18 +3,9 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
   Map,
@@ -28,7 +19,6 @@ import {
   TrendingUp,
   Truck,
   MapPin,
-  FileText,
   MessageSquare,
   Library,
   Database,
@@ -47,7 +37,7 @@ import { NavigationMenu, MenuItem } from "./types";
 const NavigationSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [openGroups, setOpenGroups] = useState<string[]>(['dashboard']);
 
   const menuStructure: NavigationMenu[] = [
@@ -361,40 +351,11 @@ const NavigationSidebar = () => {
   };
 
   return (
-    <aside className="hidden border-r bg-sidebar-background w-60 flex-col py-3 md:flex">
-      <ScrollArea className="flex-1 space-y-2 px-3">
-        <div className="flex items-center justify-between rounded-md px-2 py-1.5">
-          <span className="font-bold">
-            {user?.email}
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Akun</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/profile")}>
-                Profil
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                Pengaturan
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="space-y-1">
-          {filteredMenu.map(renderMenuItem)}
-        </div>
-      </ScrollArea>
-    </aside>
+    <ScrollArea className="flex-1 space-y-2 px-3">
+      <div className="space-y-1">
+        {filteredMenu.map(renderMenuItem)}
+      </div>
+    </ScrollArea>
   );
 };
 
