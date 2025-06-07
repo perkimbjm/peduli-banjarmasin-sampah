@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,10 +33,10 @@ const ResetPassword = () => {
     if (!accessToken || !refreshToken) {
       toast({
         variant: "destructive",
-        title: "Link tidak valid",
-        description: "Link reset password tidak valid atau sudah kedaluwarsa",
+        title: "Token tidak valid",
+        description: "Token reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.",
       });
-      navigate("/forgot-password");
+      navigate("/", { replace: true });
     }
   }, [searchParams, navigate, toast]);
 
