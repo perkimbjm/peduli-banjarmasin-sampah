@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { useMapLayers } from './hooks/useMapLayers';
@@ -35,10 +34,9 @@ const MapContent = ({
 }: MapContentProps) => {
   const map = useMap();
   const mapRef = useRef(map);
-  const layers = layerGroups.flatMap(group => group.layers);
   const { initialized, updateLayerVisibility, updateLayerOpacity } = useMapLayers(
     map,
-    layers,
+    layerGroups.flatMap(group => group.layers),
     { selectedKecamatan, selectedKelurahan, selectedRT }
   );
   const handleFileUpload = useFileUpload(map, onFileUpload);
@@ -51,6 +49,7 @@ const MapContent = ({
   useEffect(() => {
     if (!initialized) return;
 
+    const layers = layerGroups.flatMap(group => group.layers);
     layers.forEach(layer => {
       updateLayerVisibility(layer.id, layer.visible);
       if (layer.visible) {

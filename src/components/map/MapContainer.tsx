@@ -59,6 +59,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         visible: true,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       },
       {
@@ -68,6 +69,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
         visible: false,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>',
       },
       {
@@ -77,6 +79,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
         visible: false,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>',
       },
       {
@@ -86,6 +89,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png",
         visible: false,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
       },
       {
@@ -95,6 +99,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         visible: false,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
       },
       {
@@ -104,6 +109,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
         visible: false,
         opacity: 1,
+        group: "basemap",
         attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors',
       },
     ],
@@ -117,9 +123,10 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         id: "batas-rt",
         name: "Batas RT",
         type: "geojson",
-        data: '',
+        data: '', // Akan di-inject dari context RT
         visible: false,
         opacity: 0.5,
+        group: "batas-wilayah",
         style: {
           color: "#666666",
           weight: 1,
@@ -134,6 +141,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         type: "geojson",
         visible: true,
         opacity: 0.7,
+        group: "batas-wilayah",
         style: {
           color: "#1a73e8",
           weight: 2,
@@ -149,6 +157,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "/data-map/SUNGAI_LN.geojson",
         visible: false,
         opacity: 0.8,
+        group: "infrastruktur",
         style: {
           color: "#1a73e8",
           weight: 2,
@@ -169,6 +178,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         data: '', // Akan di-inject dari context Persampahan
         visible: true,
         opacity: 1,
+        group: "infrastruktur",
         style: {
           color: "#ff0000",
           weight: 2,
@@ -184,6 +194,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "/data-map/bank_sampah.geojson",
         visible: false,
         opacity: 1,
+        group: "infrastruktur",
         style: {
           color: "#008000",
           weight: 2,
@@ -199,6 +210,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         url: "/data-map/komposting.geojson",
         visible: false,
         opacity: 1,
+        group: "infrastruktur",
         style: {
           color: "#8B4513", // Warna coklat untuk komposting
           weight: 2,
@@ -222,6 +234,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         labelProperty: "KELURAHAN",
         visible: false,
         opacity: 1,
+        group: "toponimi",
         style: {
           fontSize: "12px",
           fontWeight: "bold",
@@ -237,6 +250,7 @@ const getInitialLayerGroups = (): LayerGroup[] => [
         labelProperty: "Nama_RT",
         visible: false,
         opacity: 1,
+        group: "toponimi",
         style: {
           fontSize: "10px",
           fontWeight: "normal",
@@ -281,7 +295,6 @@ const MapContainer = () => {
     return {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
-      basemap: "openstreetmap",
       layerGroups: initialGroups,
       activeLayers: initialGroups
         .flatMap((group) => group.layers)
