@@ -1,107 +1,90 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const VolumeTab = () => {
   // Data volume sampah harian per kecamatan
   const volumeData = [
-    { kecamatan: 'Banjarmasin Tengah', volume: 43.2, target: 45.0, percentage: 96 },
-    { kecamatan: 'Banjarmasin Utara', volume: 31.7, target: 35.0, percentage: 91 },
-    { kecamatan: 'Banjarmasin Barat', volume: 24.3, target: 28.0, percentage: 87 },
-    { kecamatan: 'Banjarmasin Selatan', volume: 18.9, target: 22.0, percentage: 86 },
-    { kecamatan: 'Banjarmasin Timur', volume: 9.4, target: 12.0, percentage: 78 }
+    { kecamatan: 'Banjarmasin Tengah', volume: 43.2, target: 45.0, percentage: 96, color: "#2E8B57" },  // bg-peduli-600
+    { kecamatan: 'Banjarmasin Utara', volume: 31.7, target: 35.0, percentage: 91, color: "#42964f" },   // bg-peduli-500
+    { kecamatan: 'Banjarmasin Barat', volume: 24.3, target: 28.0, percentage: 87, color: "#5eb06b" },   // bg-peduli-400
+    { kecamatan: 'Banjarmasin Selatan', volume: 18.9, target: 22.0, percentage: 86, color: "#8ecd97" }, // bg-peduli-300
+    { kecamatan: 'Banjarmasin Timur', volume: 9.4, target: 12.0, percentage: 78, color: "#bae2bf" }     // bg-peduli-200
   ];
 
   const formatKecamatan = (value: string) => {
     return value.replace('Banjarmasin ', '');
   };
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border rounded-lg shadow-lg">
+          <p className="font-semibold mb-1">{label}</p>
+          {payload.map((item: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <span 
+                className="w-3 h-3 rounded-full" 
+                style={{ background: item.dataKey === "volume" ? volumeData.find(d => d.kecamatan === label)?.color : "#e5e7eb" }}
+              />
+              <span>{item.name}:</span>
+              <span className="font-medium">{item.value} ton</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
             <CardTitle>Volume Sampah Harian per Kecamatan</CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={volumeData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
+          <CardContent className="pt-4 overflow-x-auto">
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={volumeData} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
                 <XAxis 
                   dataKey="kecamatan" 
                   tickFormatter={formatKecamatan}
                   angle={-45}
                   textAnchor="end"
                   height={80}
+                  stroke="#6b7280"
                 />
-                <YAxis label={{ value: 'Volume (ton)', angle: -90, position: 'insideLeft' }} />
+                <YAxis 
+                  label={{ value: 'Volume (ton)', angle: -90, position: 'insideLeft' }} 
+                  stroke="#6b7280"
+                />
                 <Tooltip 
-                  formatter={(value: any, name: string) => [
-                    `${value} ton`, 
-                    name === 'volume' ? 'Volume Aktual' : 'Target'
-                  ]}
-                  labelFormatter={(label) => `Kecamatan ${label}`}
+                  content={<CustomTooltip />}
+                  cursor={{ fill: 'rgba(46, 139, 87, 0.1)' }}
                 />
-                <Legend />
-                <Bar dataKey="volume" fill="#3b82f6" name="Volume Aktual" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="target" fill="#e5e7eb" name="Target" radius={[4, 4, 0, 0]} />
+                <Legend 
+                  wrapperStyle={{ paddingTop: "20px" }}
+                />
+                <Bar 
+                  dataKey="volume" 
+                  name="Volume Aktual" 
+                  radius={[4, 4, 0, 0]}
+                  fill="#2E8B57"
+                >
+                  {volumeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+                <Bar 
+                  dataKey="target" 
+                  fill="#e5e7eb" 
+                  name="Target" 
+                  radius={[4, 4, 0, 0]}
+                  activeBar={{ fill: '#d1d5db' }}
+                />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Kecamatan dengan Volume Tertinggi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-4">
-              {volumeData.map((item, index) => (
-                <li key={item.kecamatan} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span 
-                      className={`h-3 w-3 rounded-full mr-2 ${
-                        index === 0 ? 'bg-blue-600' :
-                        index === 1 ? 'bg-blue-500' :
-                        index === 2 ? 'bg-blue-400' :
-                        index === 3 ? 'bg-blue-300' : 'bg-blue-200'
-                      }`}
-                    ></span>
-                    <span className="text-gray-900 dark:text-gray-100 text-sm">
-                      {formatKecamatan(item.kecamatan)}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold">{item.volume} ton</span>
-                    <div className="text-xs text-gray-500">
-                      {item.percentage}% dari target
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-        
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-sm">Ringkasan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>Total Volume Harian:</span>
-                <span className="font-medium">127.5 ton</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Target Total:</span>
-                <span className="font-medium">142.0 ton</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pencapaian:</span>
-                <span className="font-medium text-orange-600">89.8%</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

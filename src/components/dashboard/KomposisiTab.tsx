@@ -68,70 +68,163 @@ const KomposisiTab = () => {
   }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      return <div className="bg-white dark:bg-gray-800 p-3 border rounded shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm">Persentase: {data.value}%</p>
-          <p className="text-sm">Volume: {data.volume} ton/hari</p>
-        </div>;
+      return (
+        <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{data.name}</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Persentase: <span className="font-medium text-gray-900 dark:text-gray-100">{data.value}%</span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Volume: <span className="font-medium text-gray-900 dark:text-gray-100">{data.volume} ton/hari</span>
+            </p>
+          </div>
+        </div>
+      );
     }
     return null;
   };
-  return <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  const BarChartTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{payload[0].payload.jenis}</p>
+          <div className="space-y-1">
+            {payload.map((entry: any, index: number) => (
+              <p key={index} className="text-sm flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-gray-600 dark:text-gray-300">
+                  {entry.name}:{' '}
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {entry.name === 'Volume (ton/hari)' ?
+                      `${entry.value} ton/hari` :
+                      `${entry.value}%`
+                    }
+                  </span>
+                </span>
+              </p>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Pie Chart & Komposisi List */}
       <div>
         <Card>
           <CardHeader>
             <CardTitle>Komposisi Sampah</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={komposisiData} cx="50%" cy="50%" labelLine={false} label={({
-                name,
-                value
-              }) => `${name} ${value}%`} outerRadius={80} fill="#8884d8" dataKey="value">
-                  {komposisiData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                <Pie
+                  data={komposisiData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({
+                    name,
+                    value
+                  }) => `${name} ${value}%`} outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  activeShape={(props) => {
+                    const RADIAN = Math.PI / 180;
+                    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
+                    const sin = Math.sin(-RADIAN * midAngle);
+                    const cos = Math.cos(-RADIAN * midAngle);
+                    const mx = cx + (outerRadius + 15) * cos;
+                    const my = cy + (outerRadius + 15) * sin;
+                    return (
+                      <g>
+                        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
+                          {payload.name}
+                        </text>
+                        <text x={mx} y={my} textAnchor={cos >= 0 ? "start" : "end"} fill="#999">
+                          {`${value}%`}
+                        </text>
+                      </g>
+                    );
+                  }}
+                >
+                  {komposisiData.map((entry, index) =>
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      strokeWidth={2}
+                      stroke="#fff"
+                    />
+                  )}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
             <ul className="space-y-2 mt-4">
-              {komposisiData.map(item => <li key={item.name} className="flex items-center justify-between">
+              {komposisiData.map(item => (
+                <li key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <span className="h-3 w-3 rounded-full mr-2" style={{
-                  backgroundColor: item.color
-                }}></span>
+                      backgroundColor: item.color
+                    }}></span>
                     <span className="text-gray-900 dark:text-gray-100">{item.name}</span>
                   </div>
                   <span className="font-medium">{item.value}%</span>
-                </li>)}
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
       </div>
-      
-      <div className="lg:col-span-2">
+      {/* Bar Chart & Table */}
+      <div className="lg:col-span-2 flex flex-col gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Potensi Pengelolaan Berdasarkan Jenis</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={pengelolaanData} margin={{
-              top: 20,
-              right: 30,
-              left: 20,
-              bottom: 5
-            }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="jenis" />
-                <YAxis />
-                <Tooltip formatter={(value: any, name: string) => [name === 'volume' ? `${value} ton/hari` : `${value}%`, name === 'volume' ? 'Volume' : '% Terdaur Ulang']} />
-                <Legend />
-                <Bar dataKey="volume" fill="#94a3b8" name="Volume (ton/hari)" />
-                <Bar dataKey="terdaurUlang" fill="#22c55e" name="% Terdaur Ulang" />
+              <BarChart
+                data={pengelolaanData}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                <XAxis dataKey="jenis" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip
+                  content={<BarChartTooltip />}
+                  cursor={{ fill: 'rgba(147, 197, 253, 0.1)' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                <Bar
+                  dataKey="volume"
+                  fill="#94a3b8"
+                  name="Volume (ton/hari)"
+                  radius={[4, 4, 0, 0]}
+                  activeBar={{ fill: '#64748b' }}
+                />
+                <Bar
+                  dataKey="terdaurUlang"
+                  fill="#22c55e"
+                  name="% Terdaur Ulang"
+                  radius={[4, 4, 0, 0]}
+                  activeBar={{ fill: '#15803d' }}
+                />
               </BarChart>
             </ResponsiveContainer>
-            
             <div className="overflow-x-auto mt-6">
               <table className="w-full text-sm">
                 <thead>
@@ -143,28 +236,26 @@ const KomposisiTab = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {pengelolaanData.map(item => <tr key={item.jenis} className="border-b dark:border-gray-700">
+                  {pengelolaanData.map(item => (
+                    <tr key={item.jenis} className="border-b dark:border-gray-700">
                       <td className="py-3 px-4 flex items-center">
                         <span className="h-3 w-3 rounded-full mr-2" style={{
-                      backgroundColor: item.color
-                    }}></span>
+                          backgroundColor: item.color
+                        }}></span>
                         {item.jenis}
                       </td>
                       <td className="text-center py-3 px-4">{item.volume}</td>
                       <td className="text-center py-3 px-4">{item.terdaurUlang}%</td>
                       <td className="text-center py-3 px-4">{item.metode}</td>
-                    </tr>)}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="mt-6">
-          
-          
-        </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default KomposisiTab;
