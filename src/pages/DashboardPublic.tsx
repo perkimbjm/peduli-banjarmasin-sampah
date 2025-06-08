@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import KinerjaPengelolaanSampahTab from "@/components/dashboard/KinerjaPengelolaanSampahTab";
 import SumberSampahTab from "@/components/dashboard/SumberSampahTab";
+import VolumeTab from "@/components/dashboard/VolumeTab";
+import KomposisiTab from "@/components/dashboard/KomposisiTab";
 
 const DashboardPublic = () => {
   return (
@@ -122,7 +124,7 @@ const DashboardPublic = () => {
                         <div className="text-center p-4">
                           <BarChart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                           <p className="text-gray-600 dark:text-gray-300">
-                            Grafik bar akan ditampilkan di sini
+                            <VolumeTab />
                           </p>
                         </div>
                       </div>
@@ -194,7 +196,7 @@ const DashboardPublic = () => {
                         <div className="text-center p-4">
                           <PieChart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                           <p className="text-gray-600 dark:text-gray-300">
-                            Grafik pie akan ditampilkan di sini
+                            <KomposisiTab />
                           </p>
                         </div>
                       </div>
