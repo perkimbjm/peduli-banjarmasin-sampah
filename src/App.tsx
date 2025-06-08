@@ -48,7 +48,8 @@ import MonitoringRitase from "@/pages/MonitoringRitase";
 import MonitoringKinerja from "@/pages/MonitoringKinerja";
 import MonitoringSumberSampah from "@/pages/MonitoringSumberSampah";
 import MonitoringEkonomiSirkular from "@/pages/MonitoringEkonomiSirkular";
-import GisAnalytics from "@/pages/GisAnalytics"; // Import the new page
+import GisAnalytics from "@/pages/GisAnalytics";
+import ManajemenKonten from "@/pages/ManajemenKonten";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -100,7 +101,7 @@ const App = () => {
                 <Route path="/monitoring/kinerja-wilayah" element={<ProtectedRoute><MonitoringKinerja /></ProtectedRoute>} />
                 <Route path="/monitoring/kinerja-fasilitas" element={<ProtectedRoute><MonitoringEkonomiSirkular /></ProtectedRoute>} />
                 {/* Edukasi & Kampanye */}
-                <Route path="/edukasi/konten" element={<ProtectedRoute><Edukasi /></ProtectedRoute>} />
+                <Route path="/edukasi/konten" element={<ProtectedRoute><ManajemenKonten /></ProtectedRoute>} />
                 <Route path="/edukasi/statistik" element={<ProtectedRoute><EdukasiAdmin /></ProtectedRoute>} />
                 {/* Kolaborasi */}
                 <Route path="/kolaborasi/forum" element={<ProtectedRoute><Kolaborasi /></ProtectedRoute>} />
