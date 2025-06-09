@@ -57,7 +57,7 @@ interface MenuItem {
 const Sidebar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
 
   const toggleTheme = () => {
@@ -210,7 +210,6 @@ const Sidebar = () => {
     },
   ];
 
-  const userRole = user?.role;
   const userMenuItems = userRole === "admin" ? adminMenuItems : [];
 
   return (
@@ -331,13 +330,13 @@ const Sidebar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="justify-start gap-2 w-full">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.avatar_url || ""} />
+                  <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
                   <AvatarFallback>
-                    {user?.full_name?.slice(0, 2).toUpperCase()}
+                    {user?.user_metadata?.full_name?.slice(0, 2).toUpperCase() || user?.email?.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left">
-                  <p className="text-sm font-medium">{user?.full_name}</p>
+                  <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email}</p>
                   <p className="text-xs text-muted-foreground">
                     {user?.email}
                   </p>
