@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Home,
@@ -22,6 +23,7 @@ import {
   ClipboardList,
   Package,
   Handshake,
+  MenuIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,11 +36,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useTheme } from "next-themes";
-import { useSession, signOut } from "next-auth/react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { usePathname } from 'next/navigation'
+import { useAuth } from "@/contexts/AuthContext";
+import { Link, useLocation } from "react-router-dom";
 
 interface MenuItem {
   title: string;
@@ -50,8 +57,8 @@ interface MenuItem {
 const Sidebar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data: session } = useSession();
-	const pathname = usePathname()
+  const { user, signOut } = useAuth();
+  const location = useLocation();
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");
@@ -203,7 +210,7 @@ const Sidebar = () => {
     },
   ];
 
-  const userRole = session?.user?.role;
+  const userRole = user?.role;
   const userMenuItems = userRole === "admin" ? adminMenuItems : [];
 
   return (
@@ -219,7 +226,7 @@ const Sidebar = () => {
         </Button>
       </SheetTrigger>
       <SheetContent className="w-64 flex flex-col gap-4 pr-0">
-        <Link href="/" className="flex items-center gap-2 font-bold">
+        <Link to="/" className="flex items-center gap-2 font-bold">
           <Recycle className="w-6 h-6" />
           <span>SIGAP</span>
         </Link>
@@ -237,14 +244,14 @@ const Sidebar = () => {
                     <div className="flex flex-col pl-4">
                       {item.submenu.map((subItem, subIndex) => (
                         <Link
-													key={subIndex}
-													href={subItem.url || "#"}
-													className={cn(
-														"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
-														pathname === subItem.url ? "font-semibold" : ""
-													)}
-													onClick={() => setIsMenuOpen(false)}
-												>
+                          key={subIndex}
+                          to={subItem.url || "#"}
+                          className={cn(
+                            "flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+                            location.pathname === subItem.url ? "font-semibold" : ""
+                          )}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
                           <subItem.icon className="w-4 h-4 mr-2" />
                           {subItem.title}
                         </Link>
@@ -255,14 +262,14 @@ const Sidebar = () => {
               </Accordion>
             ) : (
               <Link
-								key={index}
-								href={item.url || "#"}
-								className={cn(
-									"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
-									pathname === item.url ? "font-semibold" : ""
-								)}
-								onClick={() => setIsMenuOpen(false)}
-							>
+                key={index}
+                to={item.url || "#"}
+                className={cn(
+                  "flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+                  location.pathname === item.url ? "font-semibold" : ""
+                )}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <item.icon className="w-4 h-4 mr-2" />
                 {item.title}
               </Link>
@@ -284,14 +291,14 @@ const Sidebar = () => {
                         <div className="flex flex-col pl-4">
                           {item.submenu.map((subItem, subIndex) => (
                             <Link
-															key={subIndex}
-															href={subItem.url || "#"}
-															className={cn(
-																"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
-																pathname === subItem.url ? "font-semibold" : ""
-															)}
-															onClick={() => setIsMenuOpen(false)}
-														>
+                              key={subIndex}
+                              to={subItem.url || "#"}
+                              className={cn(
+                                "flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+                                location.pathname === subItem.url ? "font-semibold" : ""
+                              )}
+                              onClick={() => setIsMenuOpen(false)}
+                            >
                               <subItem.icon className="w-4 h-4 mr-2" />
                               {subItem.title}
                             </Link>
@@ -302,14 +309,14 @@ const Sidebar = () => {
                   </Accordion>
                 ) : (
                   <Link
-										key={index}
-										href={item.url || "#"}
-										className={cn(
-											"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
-											pathname === item.url ? "font-semibold" : ""
-										)}
-										onClick={() => setIsMenuOpen(false)}
-									>
+                    key={index}
+                    to={item.url || "#"}
+                    className={cn(
+                      "flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+                      location.pathname === item.url ? "font-semibold" : ""
+                    )}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     <item.icon className="w-4 h-4 mr-2" />
                     {item.title}
                   </Link>
@@ -319,32 +326,32 @@ const Sidebar = () => {
           )}
         </div>
         <Separator />
-        {session?.user ? (
+        {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="justify-start gap-2 w-full">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={session?.user?.image || ""} />
+                  <AvatarImage src={user?.avatar_url || ""} />
                   <AvatarFallback>
-                    {session?.user?.name?.slice(0, 2).toUpperCase()}
+                    {user?.full_name?.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left">
-                  <p className="text-sm font-medium">{session?.user?.name}</p>
+                  <p className="text-sm font-medium">{user?.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {session?.user?.email}
+                    {user?.email}
                   </p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end">
               <DropdownMenuItem>
-                <Link href="/admin/profile" className="w-full">
+                <Link to="/admin/profile" className="w-full">
                   Profil
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/admin/settings" className="w-full">
+                <Link to="/admin/settings" className="w-full">
                   Pengaturan
                 </Link>
               </DropdownMenuItem>
@@ -356,7 +363,7 @@ const Sidebar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Link href="/login">
+          <Link to="/login">
             <Button variant="outline">Masuk</Button>
           </Link>
         )}
@@ -366,10 +373,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-import { MenuIcon } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";

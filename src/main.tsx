@@ -1,3 +1,4 @@
+
 import './polyfills/global';
 if (typeof global === "undefined") {
   window.global = window;
@@ -5,13 +6,11 @@ if (typeof global === "undefined") {
 
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import React, { useEffect } from 'react';
+import React from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import './index.css'
 import 'leaflet/dist/leaflet.css';
 import ThemeInitializer from './ThemeInitializer';
-import PerpustakaanDigital from "@/pages/PerpustakaanDigital.tsx";
-import ManajemenKonten from "@/pages/ManajemenKonten.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
