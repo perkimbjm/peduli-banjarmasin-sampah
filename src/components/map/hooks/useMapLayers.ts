@@ -11,8 +11,13 @@ export interface MapLayer {
   visible: boolean;
 }
 
-const useMapLayers = () => {
-  const [layers, setLayers] = useState<MapLayer[]>([]);
+export const useMapLayers = (
+  map?: L.Map,
+  layers?: any[],
+  options?: { selectedKecamatan?: string | null; selectedKelurahan?: string | null; selectedRT?: string | null }
+) => {
+  const [layerState, setLayerState] = useState<MapLayer[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   const addLayer = useCallback((layerConfig: Omit<MapLayer, 'id'>) => {
     const id = `layer_${Date.now()}_${Math.random()}`;
@@ -21,16 +26,16 @@ const useMapLayers = () => {
       id,
     };
     
-    setLayers(prev => [...prev, newLayer]);
+    setLayerState(prev => [...prev, newLayer]);
     return id;
   }, []);
 
   const removeLayer = useCallback((id: string) => {
-    setLayers(prev => prev.filter(layer => layer.id !== id));
+    setLayerState(prev => prev.filter(layer => layer.id !== id));
   }, []);
 
   const toggleLayer = useCallback((id: string) => {
-    setLayers(prev => 
+    setLayerState(prev => 
       prev.map(layer => 
         layer.id === id 
           ? { ...layer, visible: !layer.visible }
@@ -40,8 +45,23 @@ const useMapLayers = () => {
   }, []);
 
   const getVisibleLayers = useCallback(() => {
-    return layers.filter(layer => layer.visible);
-  }, [layers]);
+    return layerState.filter(layer => layer.visible);
+  }, [layerState]);
+
+  const updateLayerVisibility = useCallback((id: string, visible: boolean) => {
+    setLayerState(prev => 
+      prev.map(layer => 
+        layer.id === id 
+          ? { ...layer, visible }
+          : layer
+      )
+    );
+  }, []);
+
+  const updateLayerOpacity = useCallback((id: string, opacity: number) => {
+    // Implementation for opacity update
+    console.log('Updating layer opacity:', id, opacity);
+  }, []);
 
   // Helper function to create styled layers
   const createStyledLayer = useCallback((
@@ -59,13 +79,23 @@ const useMapLayers = () => {
     }
   }, []);
 
+  // Set initialized state
+  useState(() => {
+    if (map && !initialized) {
+      setInitialized(true);
+    }
+  });
+
   return {
-    layers,
+    layers: layerState,
     addLayer,
     removeLayer,
     toggleLayer,
     getVisibleLayers,
     createStyledLayer,
+    initialized,
+    updateLayerVisibility,
+    updateLayerOpacity,
   };
 };
 

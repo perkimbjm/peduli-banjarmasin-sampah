@@ -1,296 +1,375 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Home,
+  BarChart3,
+  BookOpen,
+  Building2,
+  Users,
+  FileText,
+  Map,
+  Settings,
+  User,
+  LogOut,
+  Monitor,
+  MapPin,
+  TrendingUp,
+  Trash2,
+  Recycle,
+  Truck,
+  BarChart,
+  Users2,
+  UserCheck,
+  ClipboardList,
+  Package,
+  Handshake,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible";
-import {
-  LayoutDashboard,
-  Map,
-  BarChart3,
-  BookOpen,
-  Users,
-  Settings,
-  Building,
-  ClipboardList,
-  Truck,
-  AlignJustify,
-  FileBarChart,
-  MapPin,
-  CircleDollarSign,
-  UserCog,
-  Bell,
-  Shield,
-  Monitor
-} from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from "next-themes";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { usePathname } from 'next/navigation'
 
-interface NavItem {
+interface MenuItem {
   title: string;
-  href: string;
+  url?: string;
   icon: any;
-  roles?: string[];
+  submenu?: MenuItem[];
 }
 
 const Sidebar = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, signOut, userRole } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { data: session } = useSession();
+	const pathname = usePathname()
 
-  // Define the new sidebar menu structure (replace old menu)
-  const sidebarMenu = [
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light");
+  };
+
+  const menuItems = [
+    {
+      title: "Beranda",
+      url: "/",
+      icon: Home,
+    },
     {
       title: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/dashboard",
-      roles: ["admin", "leader", "stakeholder", "user"],
+      url: "/dashboard",
+      icon: BarChart3,
+    },
+    {
+      title: "Edukasi",
+      url: "/edukasi",
+      icon: BookOpen,
+    },
+    {
+      title: "Bank Sampah",
+      url: "/bank-sampah",
+      icon: Building2,
+    },
+    {
+      title: "Kolaborasi",
+      icon: Users,
+      submenu: [
+        {
+          title: "Program Kolaborasi",
+          url: "/kolaborasi",
+          icon: Handshake,
+        },
+        {
+          title: "Perpustakaan Digital",
+          url: "/kolaborasi/perpustakaan",
+          icon: BookOpen,
+        },
+      ],
+    },
+    {
+      title: "Pelaporan",
+      url: "/pelaporan",
+      icon: FileText,
     },
     {
       title: "WebGIS",
+      url: "/webgis",
       icon: Map,
-      submenus: [
-        { title: "Peta Monitoring", href: "/webgis-admin/peta-monitoring" },
-        { title: "GIS Analitik", href: "/webgis-admin/gis-analitik" },
-      ],
-      roles: ["admin", "leader", "stakeholder", "user"],
     },
+  ];
+
+  const adminMenuItems = [
     {
-      title: "Monitoring",
+      title: "Dashboard Admin",
+      url: "/admin/dashboard",
       icon: BarChart3,
-      submenus: [
-        { title: "Sumber Sampah", href: "/monitoring/sumber-sampah" },
-        { title: "Ritase Kendaraan", href: "/monitoring/ritase-kendaraan" },
-        { title: "Kinerja Wilayah", href: "/monitoring/kinerja-wilayah" },
-        { title: "Kinerja Fasilitas", href: "/monitoring/kinerja-fasilitas" },
-      ],
-      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
       title: "Edukasi & Kampanye",
       icon: BookOpen,
-      submenus: [
-        { title: "Konten Edukasi", href: "/edukasi/konten" },
-        { title: "Statistik Kampanye", href: "/edukasi/statistik" },
+      submenu: [
+        {
+          title: "Konten Edukasi",
+          url: "/admin/edukasi/konten",
+          icon: FileText,
+        },
       ],
-      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
-      title: "Kolaborasi",
-      icon: AlignJustify,
-      submenus: [
-        { title: "Forum Diskusi", href: "/kolaborasi/forum" },
-        { title: "Perpustakaan Digital", href: "/kolaborasi/perpustakaan" },
+      title: "WebGIS",
+      icon: Map,
+      submenu: [
+        {
+          title: "Peta Interaktif",
+          url: "/admin/webgis",
+          icon: MapPin,
+        },
+        {
+          title: "Peta Monitoring",
+          url: "/admin/webgis-admin",
+          icon: Monitor,
+        },
       ],
-      roles: ["admin", "leader", "stakeholder", "user"],
     },
     {
-      title: "Bank Sampah",
-      icon: Building,
-      submenus: [
-        { title: "Data Bank Sampah", href: "/bank-sampah/data" },
-        { title: "Data TPS 3R", href: "/bank-sampah/tps3r" },
+      title: "Monitoring",
+      icon: Monitor,
+      submenu: [
+        {
+          title: "Kinerja Wilayah",
+          url: "/admin/monitoring/kinerja",
+          icon: TrendingUp,
+        },
+        {
+          title: "Sumber Sampah",
+          url: "/admin/monitoring/sumber-sampah",
+          icon: Trash2,
+        },
+        {
+          title: "Ekonomi Sirkular",
+          url: "/admin/monitoring/ekonomi-sirkular",
+          icon: Recycle,
+        },
+        {
+          title: "Ritase Kendaraan",
+          url: "/admin/monitoring/ritase",
+          icon: Truck,
+        },
       ],
-      roles: ["admin", "leader", "stakeholder", "user"],
+    },
+    {
+      title: "GIS Analytics",
+      url: "/admin/gis-analytics",
+      icon: BarChart,
     },
     {
       title: "Manajemen",
       icon: Users,
-      submenus: [
-        { title: "Petugas", href: "/manajemen/petugas" },
-        { title: "Tugas", href: "/manajemen/tugas" },
-        { title: "Armada & Rute", href: "/manajemen/armada-rute" },
-        { title: "Pengguna", href: "/manajemen/pengguna", roles: ["admin"] },
+      submenu: [
+        {
+          title: "Petugas",
+          url: "/admin/manajemen/petugas",
+          icon: UserCheck,
+        },
+        {
+          title: "Tugas",
+          url: "/admin/manajemen/tugas",
+          icon: ClipboardList,
+        },
+        {
+          title: "Pengguna",
+          url: "/admin/users",
+          icon: Users,
+        },
       ],
-      roles: ["admin", "leader", "stakeholder"],
+    },
+    {
+      title: "Logistik",
+      url: "/admin/logistik",
+      icon: Package,
     },
     {
       title: "Pengaturan",
+      url: "/admin/settings",
       icon: Settings,
-      submenus: [
-        { title: "Profil", href: "/pengaturan/profil", icon: UserCog },
-        { title: "Notifikasi", href: "/pengaturan/notifikasi", icon: Bell },
-        { title: "Keamanan", href: "/pengaturan/keamanan", icon: Shield },
-        { title: "Tampilan", href: "/pengaturan/tampilan", icon: Monitor },
-      ],
-      roles: ["admin", "leader", "stakeholder", "user"],
     },
   ];
 
-  const handleLogout = () => {
-    signOut();
-    navigate("/login");
-  };
-
-  // Helper to check role access
-  const hasAccess = (itemRoles?: string[]) => {
-    if (!itemRoles) return true;
-    if (!user?.role && !user?.user_metadata?.role && !user?.app_metadata?.role && !userRole) return false;
-    const role = userRole || user?.role || user?.user_metadata?.role || user?.app_metadata?.role;
-    return itemRoles.includes(role);
-  };
-
-  // Render sidebar menu (replace all previous nav rendering)
-  const renderSidebarMenu = () => {
-    return sidebarMenu.map((item) => {
-      if (!hasAccess(item.roles)) return null;
-      if (!item.submenus) {
-        // Direct link (no submenu)
-        return (
-          <Button
-            key={item.title}
-            variant="ghost"
-            className={cn(
-              "w-full justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50",
-              location.pathname.startsWith(item.href)
-                ? "bg-secondary/50 text-primary"
-                : "text-secondary-foreground"
-            )}
-            onClick={() => navigate(item.href)}
-          >
-            <item.icon className="mr-2 h-4 w-4" />
-            <span>{item.title}</span>
-          </Button>
-        );
-      }
-      // Collapsible with submenus
-      return (
-        <Collapsible key={item.title}>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start rounded-md px-2.5 py-2 font-medium hover:bg-secondary/50 flex items-center",
-                item.submenus.some((sm) => location.pathname.startsWith(sm.href))
-                  ? "bg-secondary/50 text-primary"
-                  : "text-secondary-foreground"
-              )}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              <span className="flex-1 text-left">{item.title}</span>
-              <span className="ml-auto">▸</span>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pl-6">
-            {item.submenus.map((submenu) => {
-              if (!hasAccess(submenu.roles)) return null;
-              return (
-                <Button
-                  key={submenu.title}
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start rounded-md px-2 py-1 text-sm font-normal hover:bg-secondary/40",
-                    location.pathname.startsWith(submenu.href)
-                      ? "bg-secondary/40 text-primary"
-                      : "text-secondary-foreground"
-                  )}
-                  onClick={() => navigate(submenu.href)}
-                >
-                  {submenu.icon && <submenu.icon className="mr-2 h-4 w-4" />}
-                  {submenu.title}
-                </Button>
-              );
-            })}
-          </CollapsibleContent>
-        </Collapsible>
-      );
-    });
-  };
+  const userRole = session?.user?.role;
+  const userMenuItems = userRole === "admin" ? adminMenuItems : [];
 
   return (
-    <>
-      <aside className="hidden border-r bg-sidebar-background w-60 flex-col py-3 md:flex">
-        <ScrollArea className="flex-1 space-y-2 px-3">
-          <div className="flex items-center justify-between rounded-md px-2 py-1.5">
-            <span className="font-bold">
-              {user?.email}
-            </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                    <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Akun</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>Profil</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings")}>Pengaturan</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          {renderSidebarMenu()}
-        </ScrollArea>
-      </aside>
-
-      <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            className="absolute bottom-4 left-4 rounded-full md:hidden"
-          >
-            <AlignJustify className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="bottom" className="flex h-screen flex-col">
-          <SheetHeader className="px-5 pt-5 pb-2.5">
-            <SheetTitle>Menu</SheetTitle>
-          </SheetHeader>
-          <ScrollArea className="flex-1 space-y-2 px-3">
-            <div className="flex items-center justify-between rounded-md px-2 py-1.5">
-              <span className="font-bold">
-                {user?.email}
-              </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                      <AvatarFallback>CN</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Akun</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>Profil</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>Pengaturan</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>Keluar</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {renderSidebarMenu()}
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
-    </>
+    <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setIsMenuOpen(true)}
+        >
+          <MenuIcon className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-64 flex flex-col gap-4 pr-0">
+        <Link href="/" className="flex items-center gap-2 font-bold">
+          <Recycle className="w-6 h-6" />
+          <span>SIGAP</span>
+        </Link>
+        <Separator />
+        <div className="flex flex-col gap-2">
+          {menuItems.map((item, index) =>
+            item.submenu ? (
+              <Accordion type="single" collapsible key={index}>
+                <AccordionItem value={item.title}>
+                  <AccordionTrigger className="font-medium">
+                    <item.icon className="w-4 h-4 mr-2" />
+                    {item.title}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col pl-4">
+                      {item.submenu.map((subItem, subIndex) => (
+                        <Link
+													key={subIndex}
+													href={subItem.url || "#"}
+													className={cn(
+														"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+														pathname === subItem.url ? "font-semibold" : ""
+													)}
+													onClick={() => setIsMenuOpen(false)}
+												>
+                          <subItem.icon className="w-4 h-4 mr-2" />
+                          {subItem.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : (
+              <Link
+								key={index}
+								href={item.url || "#"}
+								className={cn(
+									"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+									pathname === item.url ? "font-semibold" : ""
+								)}
+								onClick={() => setIsMenuOpen(false)}
+							>
+                <item.icon className="w-4 h-4 mr-2" />
+                {item.title}
+              </Link>
+            )
+          )}
+          {userRole && (
+            <>
+              <Separator />
+              <p className="font-semibold text-sm">Admin Menu</p>
+              {userMenuItems.map((item, index) =>
+                item.submenu ? (
+                  <Accordion type="single" collapsible key={index}>
+                    <AccordionItem value={item.title}>
+                      <AccordionTrigger className="font-medium">
+                        <item.icon className="w-4 h-4 mr-2" />
+                        {item.title}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="flex flex-col pl-4">
+                          {item.submenu.map((subItem, subIndex) => (
+                            <Link
+															key={subIndex}
+															href={subItem.url || "#"}
+															className={cn(
+																"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+																pathname === subItem.url ? "font-semibold" : ""
+															)}
+															onClick={() => setIsMenuOpen(false)}
+														>
+                              <subItem.icon className="w-4 h-4 mr-2" />
+                              {subItem.title}
+                            </Link>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ) : (
+                  <Link
+										key={index}
+										href={item.url || "#"}
+										className={cn(
+											"flex items-center gap-2 py-2 hover:bg-secondary rounded-md",
+											pathname === item.url ? "font-semibold" : ""
+										)}
+										onClick={() => setIsMenuOpen(false)}
+									>
+                    <item.icon className="w-4 h-4 mr-2" />
+                    {item.title}
+                  </Link>
+                )
+              )}
+            </>
+          )}
+        </div>
+        <Separator />
+        {session?.user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="justify-start gap-2 w-full">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={session?.user?.image || ""} />
+                  <AvatarFallback>
+                    {session?.user?.name?.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col text-left">
+                  <p className="text-sm font-medium">{session?.user?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {session?.user?.email}
+                  </p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48" align="end">
+              <DropdownMenuItem>
+                <Link href="/admin/profile" className="w-full">
+                  Profil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/admin/settings" className="w-full">
+                  Pengaturan
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()}>
+                Keluar
+                <LogOut className="ml-auto h-4 w-4" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/login">
+            <Button variant="outline">Masuk</Button>
+          </Link>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };
 
 export default Sidebar;
+import { MenuIcon } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
