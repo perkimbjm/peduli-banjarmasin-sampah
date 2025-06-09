@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+
+import React, { useState } from "react";
 import { 
   Building, 
   Building2, 
@@ -17,76 +18,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const kecamatanOptions = [
   { value: "all", label: "Semua Kecamatan" },
-  { value: "utara", label: "Banjarmasin Utara" },
-  { value: "selatan", label: "Banjarmasin Selatan" },
-  { value: "tengah", label: "Banjarmasin Tengah" },
-  { value: "timur", label: "Banjarmasin Timur" },
-  { value: "barat", label: "Banjarmasin Barat" },
+  { value: "kec-1", label: "Banjarmasin Utara" },
+  { value: "kec-2", label: "Banjarmasin Selatan" },
+  { value: "kec-3", label: "Banjarmasin Tengah" },
+  { value: "kec-4", label: "Banjarmasin Timur" },
+  { value: "kec-5", label: "Banjarmasin Barat" },
 ];
 
-// Real kelurahan data based on kecamatan
-const kelurahanData = {
-  "utara": [
-    { value: "all", label: "Semua Kelurahan" },
-    { value: "alalak-utara", label: "Alalak Utara" },
-    { value: "alalak-selatan", label: "Alalak Selatan" },
-    { value: "alalak-tengah", label: "Alalak Tengah" },
-    { value: "kuin-utara", label: "Kuin Utara" },
-    { value: "kuin-selatan", label: "Kuin Selatan" },
-    { value: "sungai-miai", label: "Sungai Miai" },
-    { value: "pangeran", label: "Pangeran" },
-    { value: "sungai-jingah", label: "Sungai Jingah" },
-    { value: "surgi-mufti", label: "Surgi Mufti" },
-  ],
-  "selatan": [
-    { value: "all", label: "Semua Kelurahan" },
-    { value: "basirih", label: "Basirih" },
-    { value: "basirih-selatan", label: "Basirih Selatan" },
-    { value: "kelayan-barat", label: "Kelayan Barat" },
-    { value: "kelayan-selatan", label: "Kelayan Selatan" },
-    { value: "kelayan-tengah", label: "Kelayan Tengah" },
-    { value: "kelayan-timur", label: "Kelayan Timur" },
-    { value: "murung-raya", label: "Murung Raya" },
-    { value: "pekauman", label: "Pekauman" },
-    { value: "pemurus-baru", label: "Pemurus Baru" },
-    { value: "pemurus-dalam", label: "Pemurus Dalam" },
-    { value: "tanjung-pagar", label: "Tanjung Pagar" },
-  ],
-  "tengah": [
-    { value: "all", label: "Semua Kelurahan" },
-    { value: "antasan-kecil-timur", label: "Antasan Kecil Timur" },
-    { value: "gadang", label: "Gadang" },
-    { value: "kelayan-dalam", label: "Kelayan Dalam" },
-    { value: "kertak-baru-ilir", label: "Kertak Baru Ilir" },
-    { value: "kertak-baru-ulu", label: "Kertak Baru Ulu" },
-    { value: "mawar", label: "Mawar" },
-    { value: "melayu", label: "Melayu" },
-    { value: "pasar-lama", label: "Pasar Lama" },
-    { value: "seberang-masjid", label: "Seberang Masjid" },
-    { value: "sungai-baru", label: "Sungai Baru" },
-    { value: "telawang", label: "Telawang" },
-    { value: "teluk-dalam", label: "Teluk Dalam" },
-  ],
-  "timur": [
-    { value: "all", label: "Semua Kelurahan" },
-    { value: "karang-mekar", label: "Karang Mekar" },
-    { value: "kebun-bunga", label: "Kebun Bunga" },
-    { value: "kuripan", label: "Kuripan" },
-    { value: "pekapuran-raya", label: "Pekapuran Raya" },
-    { value: "pengambangan", label: "Pengambangan" },
-    { value: "sungai-bilu", label: "Sungai Bilu" },
-    { value: "sungai-lulut", label: "Sungai Lulut" },
-  ],
-  "barat": [
-    { value: "all", label: "Semua Kelurahan" },
-    { value: "belitung-selatan", label: "Belitung Selatan" },
-    { value: "belitung-utara", label: "Belitung Utara" },
-    { value: "kuin-cerucuk", label: "Kuin Cerucuk" },
-    { value: "pelambuan", label: "Pelambuan" },
-    { value: "telaga-biru", label: "Telaga Biru" },
-    { value: "teluk-tiram", label: "Teluk Tiram" },
-  ]
-};
+const kelurahanOptions = [
+  { value: "all", label: "Semua Kelurahan" },
+  { value: "kel-1", label: "Sungai Jingah" },
+  { value: "kel-2", label: "Surgi Mufti" },
+  { value: "kel-3", label: "Antasan Kecil Timur" },
+  { value: "kel-4", label: "Kuin Utara" },
+  { value: "kel-5", label: "Pangeran" },
+  { value: "kel-6", label: "Sungai Miai" },
+];
 
 // Mock data for the regions
 const regionData = [
@@ -173,19 +120,6 @@ export default function MonitoringKinerja() {
   const [viewMode, setViewMode] = useState("overview");
   const [selectedKecamatan, setSelectedKecamatan] = useState("all");
   const [selectedKelurahan, setSelectedKelurahan] = useState("all");
-
-  // Get kelurahan options based on selected kecamatan
-  const kelurahanOptions = useMemo(() => {
-    if (selectedKecamatan === "all") {
-      return [{ value: "all", label: "Semua Kelurahan" }];
-    }
-    return kelurahanData[selectedKecamatan as keyof typeof kelurahanData] || [{ value: "all", label: "Semua Kelurahan" }];
-  }, [selectedKecamatan]);
-
-  // Reset kelurahan when kecamatan changes
-  React.useEffect(() => {
-    setSelectedKelurahan("all");
-  }, [selectedKecamatan]);
 
   return (
     <div className="space-y-6">

@@ -1,11 +1,13 @@
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ContentForm from "@/components/content-management/ContentForm";
 import ContentFilters from "@/components/content-management/ContentFilters";
@@ -27,49 +29,6 @@ interface EducationalContent {
   updated_at: string;
 }
 
-// Mock data for demonstration
-const mockContentData: EducationalContent[] = [
-  {
-    id: "1",
-    title: "Cara Memilah Sampah yang Benar",
-    content: "Pemilahan sampah adalah langkah awal yang penting dalam pengelolaan sampah yang baik...",
-    category: "Artikel",
-    type: "Edukasi",
-    status: "published",
-    author_id: "admin-1",
-    author_name: "Admin System",
-    views: 1250,
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Video Tutorial Komposting",
-    content: "Video panduan lengkap cara membuat kompos dari sampah organik rumah tangga...",
-    category: "Video",
-    type: "Tutorial",
-    status: "published",
-    author_id: "admin-1",
-    author_name: "Admin System",
-    views: 890,
-    created_at: "2024-01-10T14:30:00Z",
-    updated_at: "2024-01-10T14:30:00Z",
-  },
-  {
-    id: "3",
-    title: "Infografik Dampak Sampah Plastik",
-    content: "Infografik yang menunjukkan dampak negatif sampah plastik terhadap lingkungan...",
-    category: "Infografik",
-    type: "Kampanye",
-    status: "draft",
-    author_id: "admin-1",
-    author_name: "Admin System",
-    views: 0,
-    created_at: "2024-01-20T09:15:00Z",
-    updated_at: "2024-01-20T09:15:00Z",
-  },
-];
-
 const ManajemenKonten = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -78,9 +37,132 @@ const ManajemenKonten = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<EducationalContent | null>(null);
-  const [content, setContent] = useState<EducationalContent[]>(mockContentData);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Fetch educational content from Supabase
+  const { data: content = [], isLoading } = useQuery({
+    queryKey: ['educational-content'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('educational_content')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching content:', error);
+        throw error;
+      }
+      
+      return data as EducationalContent[];
+    },
+  });
+
+  // Create content mutation
+  const createContentMutation = useMutation({
+    mutationFn: async (newContent: Omit<EducationalContent, 'id' | 'created_at' | 'updated_at' | 'views' | 'author_id'>) => {
+      const { data, error } = await supabase
+        .from('educational_content')
+        .insert([{
+          ...newContent,
+          author_id: user?.id,
+          author_name: user?.full_name || 'Admin',
+          status: 'draft'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['educational-content'] });
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Konten berhasil ditambahkan",
+        description: "Konten edukasi baru telah ditambahkan sebagai draft.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Gagal menambahkan konten",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update content mutation
+  const updateContentMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EducationalContent> }) => {
+      const { data, error } = await supabase
+        .from('educational_content')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['educational-content'] });
+      setIsEditDialogOpen(false);
+      setSelectedContent(null);
+      toast({
+        title: "Konten berhasil diperbarui",
+        description: "Perubahan konten telah disimpan.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Gagal memperbarui konten",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete content mutation
+  const deleteContentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('educational_content')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['educational-content'] });
+      toast({
+        title: "Konten berhasil dihapus",
+        description: "Konten edukasi telah dihapus dari sistem.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Gagal menghapus konten",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Increment views mutation
+  const incrementViewsMutation = useMutation({
+    mutationFn: async (contentId: string) => {
+      const { error } = await supabase.rpc('increment_content_views', {
+        content_id: contentId
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['educational-content'] });
+    },
+  });
 
   const filteredContent = content.filter((item) => {
     const matchesSearch = item.title
@@ -97,25 +179,11 @@ const ManajemenKonten = () => {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement);
     
-    const newContent: EducationalContent = {
-      id: Date.now().toString(),
+    createContentMutation.mutate({
       title: formData.get("title") as string,
       category: formData.get("category") as string,
       type: formData.get("type") as string,
       content: formData.get("content") as string,
-      status: "draft",
-      author_id: user?.id || "unknown",
-      author_name: user?.user_metadata?.full_name || "Admin",
-      views: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    setContent(prev => [newContent, ...prev]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Konten berhasil ditambahkan",
-      description: "Konten edukasi baru telah ditambahkan sebagai draft.",
     });
   };
 
@@ -125,57 +193,48 @@ const ManajemenKonten = () => {
     
     const formData = new FormData(event.target as HTMLFormElement);
     
-    const updatedContent = {
-      ...selectedContent,
-      title: formData.get("title") as string,
-      category: formData.get("category") as string,
-      type: formData.get("type") as string,
-      content: formData.get("content") as string,
-      updated_at: new Date().toISOString(),
-    };
-
-    setContent(prev => prev.map(item => 
-      item.id === selectedContent.id ? updatedContent : item
-    ));
-    setIsEditDialogOpen(false);
-    setSelectedContent(null);
-    toast({
-      title: "Konten berhasil diperbarui",
-      description: "Perubahan konten telah disimpan.",
+    updateContentMutation.mutate({
+      id: selectedContent.id,
+      updates: {
+        title: formData.get("title") as string,
+        category: formData.get("category") as string,
+        type: formData.get("type") as string,
+        content: formData.get("content") as string,
+      }
     });
   };
 
   const handleDelete = (id: string) => {
-    setContent(prev => prev.filter(item => item.id !== id));
-    toast({
-      title: "Konten berhasil dihapus",
-      description: "Konten edukasi telah dihapus dari sistem.",
-    });
+    deleteContentMutation.mutate(id);
   };
 
   const handlePublish = (id: string) => {
-    setContent(prev => prev.map(item => 
-      item.id === id ? { ...item, status: "published", updated_at: new Date().toISOString() } : item
-    ));
-    toast({
-      title: "Konten berhasil dipublikasi",
-      description: "Konten sekarang dapat dilihat oleh publik.",
+    updateContentMutation.mutate({
+      id,
+      updates: { status: "published" }
     });
   };
 
   const handleView = (item: EducationalContent) => {
     setSelectedContent(item);
     setIsViewDialogOpen(true);
-    // Increment views
-    setContent(prev => prev.map(contentItem => 
-      contentItem.id === item.id ? { ...contentItem, views: contentItem.views + 1 } : contentItem
-    ));
+    incrementViewsMutation.mutate(item.id);
   };
 
   const handleEdit = (item: EducationalContent) => {
     setSelectedContent(item);
     setIsEditDialogOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Memuat konten...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -198,7 +257,7 @@ const ManajemenKonten = () => {
             </DialogTrigger>
             <ContentForm
               onSubmit={handleAddContent}
-              isLoading={false}
+              isLoading={createContentMutation.isPending}
               onCancel={() => setIsAddDialogOpen(false)}
             />
           </Dialog>
@@ -227,8 +286,8 @@ const ManajemenKonten = () => {
               onEdit={handleEdit}
               onPublish={handlePublish}
               onDelete={handleDelete}
-              isUpdating={false}
-              isDeleting={false}
+              isUpdating={updateContentMutation.isPending}
+              isDeleting={deleteContentMutation.isPending}
             />
           </CardContent>
         </Card>
@@ -242,7 +301,7 @@ const ManajemenKonten = () => {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <ContentForm
             onSubmit={handleEditContent}
-            isLoading={false}
+            isLoading={updateContentMutation.isPending}
             defaultValues={selectedContent ? {
               title: selectedContent.title,
               category: selectedContent.category,

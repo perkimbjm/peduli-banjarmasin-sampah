@@ -1,9 +1,8 @@
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { createLegendControl } from './utils/leaflet-config';
+import { getBaseMaps, createLegendControl } from './utils/leaflet-config';
 import MapHeader from './MapHeader';
 import MapControls from './MapControls';
 import MapLayers from './MapLayers';
@@ -57,22 +56,8 @@ const MapView = ({ activeLayers, fullscreenMode, splitViewEnabled }: MapViewProp
         attributionControl: false,
       }).setView([-3.3194, 114.5921], 14);
       
-      // Add default OSM base tile layer
-      const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      });
-      osmLayer.addTo(mapRef.current);
-      
-      // Create base maps object for layer control
-      const baseMaps = {
-        "OpenStreetMap": osmLayer,
-        "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-          attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
-        }),
-        "Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-        })
-      };
+      // Add base tile layers
+      const baseMaps = getBaseMaps();
       
       // Add layer control
       L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(mapRef.current);

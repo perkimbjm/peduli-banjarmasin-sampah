@@ -35,7 +35,7 @@ import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
-import ThemeInitializer from "@/ThemeInitializer";
+import ThemeInitializer from "@/components/ThemeInitializer";
 import PerpustakaanDigital from "@/pages/PerpustakaanDigital";
 import ManajemenKonten from "@/pages/ManajemenKonten";
 
@@ -89,7 +89,7 @@ function App() {
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute requiredRole="admin">
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="edukasi" element={<EdukasiAdmin />} />
@@ -116,7 +116,7 @@ function App() {
         <Route
           path="/staff/*"
           element={
-            <ProtectedRoute allowedRoles={["staff"]}>
+            <ProtectedRoute requiredRole="staff">
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="schedule" element={<WasteManagementSchedule />} />
