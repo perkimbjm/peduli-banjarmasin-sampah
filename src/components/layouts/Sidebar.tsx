@@ -125,7 +125,7 @@ const Sidebar = () => {
       submenu: [
         {
           title: "Konten Edukasi",
-          url: "/admin/edukasi/konten",
+          url: "/admin/education/konten",
           icon: FileText,
         },
       ],

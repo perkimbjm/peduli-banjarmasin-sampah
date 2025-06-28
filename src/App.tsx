@@ -92,8 +92,8 @@ function App() {
             <ProtectedRoute requiredRole="admin">
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="edukasi" element={<EdukasiAdmin />} />
-                <Route path="edukasi/konten" element={<ManajemenKonten />} />
+                <Route path="education" element={<EdukasiAdmin />} />
+                <Route path="education/konten" element={<ManajemenKonten />} />
                 <Route path="webgis" element={<WebGIS />} />
                 <Route path="webgis-admin" element={<WebGisAdmin />} />
                 <Route path="monitoring/kinerja" element={<MonitoringKinerja />} />

@@ -106,8 +106,8 @@ const ProtectedLayout = () => {
       title: "Edukasi",
       icon: BookOpen,
       submenus: [
-        { title: "Konten Edukasi", href: "/edukasi/konten" },
-        { title: "Statistik Kampanye", href: "/edukasi/statistik" },
+        { title: "Konten Edukasi", href: "/education/konten" },
+        { title: "Statistik Kampanye", href: "/education/statistik" },
       ],
       roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
     },
