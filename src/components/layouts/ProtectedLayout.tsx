@@ -125,7 +125,7 @@ const ProtectedLayout = () => {
       icon: Building2,
       submenus: [
         { title: "Data Bank Sampah", href: "/bank-sampah/data" },
-        { title: "Data TPS 3R", href: "/bank-sampah/tps3r" },
+  
       ],
       roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
     },
