@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Edukasi from "@/pages/Edukasi";
@@ -37,7 +38,6 @@ import ResetPassword from "@/pages/ResetPassword";
 import ThemeInitializer from "@/components/ThemeInitializer";
 import PerpustakaanDigital from "@/pages/PerpustakaanDigital";
 import ManajemenKonten from "@/pages/ManajemenKonten";
-import EdukasiStatistik from "@/pages/EdukasiStatistik";
 
 function App() {
   return (
@@ -47,7 +47,6 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Index />} />
         <Route path="/edukasi" element={<Edukasi />} />
-        <Route path="/edukasi/statistik" element={<EdukasiStatistik />} />
         <Route path="/bank-sampah" element={<BankSampah />} />
         <Route path="/bank-sampah/:id" element={<BankSampahDetail />} />
         <Route path="/kolaborasi" element={<Kolaborasi />} />
@@ -95,7 +94,6 @@ function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="education" element={<EdukasiAdmin />} />
                 <Route path="education/konten" element={<ManajemenKonten />} />
-                <Route path="education/statistik" element={<EdukasiStatistik />} />
                 <Route path="webgis" element={<WebGIS />} />
                 <Route path="webgis-admin" element={<WebGisAdmin />} />
                 <Route path="monitoring/kinerja" element={<MonitoringKinerja />} />
