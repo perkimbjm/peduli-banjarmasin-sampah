@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Home,
@@ -57,7 +56,7 @@ interface MenuItem {
 const Sidebar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { user, signOut, profile } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
 
   const toggleTheme = () => {
@@ -331,13 +330,13 @@ const Sidebar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="justify-start gap-2 w-full">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={profile?.avatar_url || ""} />
+                  <AvatarImage src="" />
                   <AvatarFallback>
-                    {profile?.full_name?.slice(0, 2).toUpperCase() || user.email?.slice(0, 2).toUpperCase()}
+                    {user.email?.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left">
-                  <p className="text-sm font-medium">{profile?.full_name || user.email}</p>
+                  <p className="text-sm font-medium">{user.email}</p>
                   <p className="text-xs text-muted-foreground">
                     {user?.email}
                   </p>

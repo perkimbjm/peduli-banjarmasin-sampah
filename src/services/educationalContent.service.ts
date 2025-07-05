@@ -3,7 +3,7 @@ import { Tables } from '@/integrations/supabase/types';
 
 // Extended interface for content with engagement data
 export interface ContentWithEngagement extends Tables<'educational_content'> {
-  author_name?: string;
+  author_name: string;
   author_avatar?: string;
   likes_count: number;
   bookmarks_count: number;
@@ -130,13 +130,14 @@ class EducationalContentService {
           };
         }
 
+        // Handle profiles data properly
         const profiles = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
         const engagement = engagementData as any || { likes: 0, bookmarks: 0, shares: 0, comments: 0 };
 
         return {
           ...item,
-          author_name: profiles?.full_name || 'Anonymous',
-          author_avatar: profiles?.avatar_url,
+          author_name: (profiles as any)?.full_name || item.author_name || 'Anonymous',
+          author_avatar: (profiles as any)?.avatar_url,
           likes_count: engagement.likes || 0,
           bookmarks_count: engagement.bookmarks || 0,
           shares_count: engagement.shares || 0,
