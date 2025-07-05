@@ -1,8 +1,12 @@
 
-import { useEffect } from 'react';
+import { useEffect, ReactNode } from 'react';
+
+interface ThemeInitializerProps {
+  children: ReactNode;
+}
 
 // Theme initialization component
-const ThemeInitializer = () => {
+const ThemeInitializer = ({ children }: ThemeInitializerProps) => {
   useEffect(() => {
     // Check for user preference
     const storedTheme = localStorage.getItem('theme');
@@ -18,7 +22,7 @@ const ThemeInitializer = () => {
     }
   }, []);
 
-  return null;
+  return <>{children}</>;
 };
 
 export default ThemeInitializer;
