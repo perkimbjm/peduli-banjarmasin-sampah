@@ -46,9 +46,9 @@ const EdukasiStatistik = () => {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{contentStats?.total_content || 0}</div>
+              <div className="text-2xl font-bold">{contentStats?.totalContent || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {contentStats?.published_content || 0} dipublikasikan
+                {contentStats?.publishedContent || 0} dipublikasikan
               </p>
             </CardContent>
           </Card>
@@ -165,7 +165,7 @@ const EdukasiStatistik = () => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{campaignStats?.total_campaigns || 0}</div>
+                  <div className="text-2xl font-bold">{campaignStats?.totalCampaigns || 0}</div>
                 </CardContent>
               </Card>
 
@@ -175,7 +175,7 @@ const EdukasiStatistik = () => {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{campaignStats?.active_campaigns || 0}</div>
+                  <div className="text-2xl font-bold">{campaignStats?.activeCampaigns || 0}</div>
                 </CardContent>
               </Card>
 
@@ -185,7 +185,7 @@ const EdukasiStatistik = () => {
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{campaignStats?.completed_campaigns || 0}</div>
+                  <div className="text-2xl font-bold">{campaignStats?.completedCampaigns || 0}</div>
                 </CardContent>
               </Card>
 

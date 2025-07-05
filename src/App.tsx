@@ -30,7 +30,6 @@ import WasteManagementSchedule from "@/pages/WasteManagementSchedule";
 import ScheduleDetail from "@/pages/ScheduleDetail";
 import CommunityReport from "@/pages/CommunityReport";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PublicLayout from "@/components/layouts/PublicLayout";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 import AuthCallback from "@/pages/AuthCallback";
@@ -62,30 +61,9 @@ function App() {
         <Route path="/dashboard" element={<DashboardPublic />} />
         
         {/* Authentication routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicLayout>
-              <Login />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicLayout>
-              <Register />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicLayout>
-              <ForgotPassword />
-            </PublicLayout>
-          }
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Admin routes */}
         <Route

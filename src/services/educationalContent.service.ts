@@ -1,10 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 // Extended interface for content with engagement data
 export interface ContentWithEngagement extends Tables<'educational_content'> {
-  author_name: string;
+  author_name?: string;
   author_avatar?: string;
   likes_count: number;
   bookmarks_count: number;
@@ -25,6 +24,10 @@ export interface ContentStats {
   totalBookmarks: number;
   totalShares: number;
   totalComments: number;
+  content_this_month?: number;
+  avg_views_per_content?: number;
+  total_interactions?: number;
+  top_categories?: Array<{ category: string; count: number }>;
 }
 
 export interface CampaignStats {
@@ -33,6 +36,7 @@ export interface CampaignStats {
   completedCampaigns: number;
   totalParticipants: number;
   avgParticipationRate: number;
+  avg_participants_per_campaign?: number;
 }
 
 // Query parameters interface
