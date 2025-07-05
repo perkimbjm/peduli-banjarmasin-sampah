@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Edukasi from "@/pages/Edukasi";
@@ -30,10 +29,12 @@ import WasteManagementSchedule from "@/pages/WasteManagementSchedule";
 import ScheduleDetail from "@/pages/ScheduleDetail";
 import CommunityReport from "@/pages/CommunityReport";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicLayout from "@/components/layouts/PublicLayout";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
+import ThemeInitializer from "@/components/ThemeInitializer";
 import PerpustakaanDigital from "@/pages/PerpustakaanDigital";
 import ManajemenKonten from "@/pages/ManajemenKonten";
 import EdukasiStatistik from "@/pages/EdukasiStatistik";
@@ -41,6 +42,7 @@ import EdukasiStatistik from "@/pages/EdukasiStatistik";
 function App() {
   return (
     <Router>
+      <ThemeInitializer />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Index />} />
@@ -59,15 +61,36 @@ function App() {
         <Route path="/dashboard" element={<DashboardPublic />} />
         
         {/* Authentication routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/login"
+          element={
+            <PublicLayout>
+              <Login />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicLayout>
+              <Register />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicLayout>
+              <ForgotPassword />
+            </PublicLayout>
+          }
+        />
 
         {/* Protected Admin routes */}
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="admin">
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="education" element={<EdukasiAdmin />} />
@@ -95,7 +118,7 @@ function App() {
         <Route
           path="/staff/*"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="staff">
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="schedule" element={<WasteManagementSchedule />} />

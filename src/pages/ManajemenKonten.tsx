@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
@@ -66,7 +67,7 @@ const ManajemenKonten = () => {
         .insert([{
           ...newContent,
           author_id: user?.id,
-          author_name: user?.email || 'Admin',
+          author_name: user?.full_name || 'Admin',
           status: 'draft'
         }])
         .select()
@@ -183,9 +184,6 @@ const ManajemenKonten = () => {
       category: formData.get("category") as string,
       type: formData.get("type") as string,
       content: formData.get("content") as string,
-      status: 'draft',
-      author_name: user?.email || 'Admin',
-      thumbnail_url: null,
     });
   };
 

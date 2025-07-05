@@ -1,4 +1,3 @@
-
 // src/components/layouts/ProtectedLayout.tsx
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -126,6 +125,10 @@ const ProtectedLayout = () => {
       icon: Building2,
       submenus: [
         { title: "Data Bank Sampah", href: "/bank-sampah/data" },
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 62d33f905292ba5986f275d483dec730ae2dff72
       ],
       roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
     },
