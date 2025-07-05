@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Edukasi from "@/pages/Edukasi";
@@ -90,7 +91,7 @@ function App() {
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute>
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="education" element={<EdukasiAdmin />} />
@@ -118,7 +119,7 @@ function App() {
         <Route
           path="/staff/*"
           element={
-            <ProtectedRoute requiredRole="staff">
+            <ProtectedRoute>
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="schedule" element={<WasteManagementSchedule />} />

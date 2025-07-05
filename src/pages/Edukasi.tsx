@@ -321,43 +321,6 @@ interface EducationPost {
   };
 }
 
-// Data dummy untuk konten edukasi
-const dummyEducationContent: EducationPost[] = [
-  {
-    id: "1",
-    type: "image",
-    media: [
-      "/images/edu/composting-1.jpg",
-      "/images/edu/composting-2.jpg",
-    ],
-    caption: "Mari belajar cara membuat kompos dari sampah dapur! Dengan metode sederhana ini, kita bisa mengubah sampah organik menjadi pupuk berkualitas. Swipe untuk melihat langkah-langkahnya. 🌱♻️ #KomposCerdas #NolSampah #PeduliLingkungan",
-    timestamp: new Date(2024, 2, 15, 10, 30),
-    category: "composting",
-    likes: 245,
-    isLiked: false,
-    isBookmarked: false,
-    author: {
-      name: "Tim Peduli Sampah",
-      avatar: "/images/avatars/team-1.jpg"
-    }
-  },
-  {
-    id: "2",
-    type: "video",
-    media: ["/videos/recycling-tutorial.mp4"],
-    caption: "Tutorial singkat cara mendaur ulang botol plastik menjadi pot tanaman yang cantik! 🌿 #DaurUlang #KreatifRamahLingkungan",
-    timestamp: new Date(2024, 2, 14, 15, 45),
-    category: "recycling",
-    likes: 367,
-    isLiked: false,
-    isBookmarked: false,
-    author: {
-      name: "Kreasi Daur Ulang",
-      avatar: "/images/avatars/team-2.jpg"
-    }
-  }
-];
-
 // PostModal component for desktop view
 const PostModal = ({ 
   post, 
@@ -374,8 +337,8 @@ const PostModal = ({
     setIsLiked(!isLiked);
   };
 
-    const [shareModalOpen, setShareModalOpen] = useState(false);
-    const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -494,7 +457,7 @@ const Edukasi = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<"all" | "bookmarks" | "images" | "videos">("all");
-  const [sortBy, setSortBy] = useState<"latest" | "popular" | "loved">("latest");
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "most_liked">("latest");
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -629,7 +592,7 @@ const Edukasi = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="flex items-center gap-2">
                       <Filter className="w-4 h-4" />
-                      Urutkan: {sortBy === "latest" ? "Terbaru" : sortBy === "popular" ? "Populer" : "Favorit"}
+                      Urutkan: {sortBy === "latest" ? "Terbaru" : sortBy === "popular" ? "Populer" : "Terfavorit"}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -641,9 +604,9 @@ const Edukasi = () => {
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Populer
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("loved")}>
+                    <DropdownMenuItem onClick={() => setSortBy("most_liked")}>
                       <Star className="w-4 h-4 mr-2" />
-                      Favorit
+                      Terfavorit
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
