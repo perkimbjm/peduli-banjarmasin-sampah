@@ -29,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabase";
 
 // Skeleton component with shimmer effect
 const PostSkeleton = () => (
@@ -305,56 +306,29 @@ const Caption = ({
 // Tipe data untuk konten edukasi
 interface EducationPost {
   id: string;
-  type: 'image' | 'video';
-  media: string[];
-  caption: string;
-  timestamp: Date;
+  title: string;
+  content: string;
   category: string;
-  likes: number;
-  isLiked: boolean;
-  isBookmarked: boolean;
-  author: {
-    name: string;
-    avatar: string;
+  type: string;
+  status: string;
+  author_id?: string;
+  author_name: string;
+  thumbnail_url?: string;
+  views: number;
+  media_urls: string[];
+  hashtags?: string[];
+  engagement_stats?: {
+    likes: number;
+    bookmarks: number;
+    shares: number;
+    comments: number;
   };
+  created_at: string;
+  updated_at: string;
+  // Derived fields for UI state only (not from DB):
+  isLiked?: boolean;
+  isBookmarked?: boolean;
 }
-
-// Data dummy untuk konten edukasi
-const dummyEducationContent: EducationPost[] = [
-  {
-    id: "1",
-    type: "image",
-    media: [
-      "/images/edu/composting-1.jpg",
-      "/images/edu/composting-2.jpg",
-    ],
-    caption: "Mari belajar cara membuat kompos dari sampah dapur! Dengan metode sederhana ini, kita bisa mengubah sampah organik menjadi pupuk berkualitas. Swipe untuk melihat langkah-langkahnya. 🌱♻️ #KomposCerdas #NolSampah #PeduliLingkungan",
-    timestamp: new Date(2024, 2, 15, 10, 30),
-    category: "composting",
-    likes: 245,
-    isLiked: false,
-    isBookmarked: false,
-    author: {
-      name: "Tim Peduli Sampah",
-      avatar: "/images/avatars/team-1.jpg"
-    }
-  },
-  {
-    id: "2",
-    type: "video",
-    media: ["/videos/recycling-tutorial.mp4"],
-    caption: "Tutorial singkat cara mendaur ulang botol plastik menjadi pot tanaman yang cantik! 🌿 #DaurUlang #KreatifRamahLingkungan",
-    timestamp: new Date(2024, 2, 14, 15, 45),
-    category: "recycling",
-    likes: 367,
-    isLiked: false,
-    isBookmarked: false,
-    author: {
-      name: "Kreasi Daur Ulang",
-      avatar: "/images/avatars/team-2.jpg"
-    }
-  }
-];
 
 // PostModal component for desktop view
 const PostModal = ({ 
@@ -393,28 +367,29 @@ const PostModal = ({
           <div className="w-2/3">
             {post.type === 'image' ? (
               <MediaCarousel 
-                media={post.media} 
+                media={post.media_urls} 
                 aspectRatio="4:5"
                 onDoubleTap={handleLike}
                 isModal
               />
             ) : (
-              <VideoPlayer src={post.media[0]} isModal />
+              <VideoPlayer src={post.media_urls[0]} isModal />
             )}
           </div>
           <div className="w-1/3 p-4 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
                 <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover"
+                  src={"/images/default-avatar.png"}
+                  alt={post.author_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                  loading="lazy"
                 />
-                <span className="font-medium">{post.author.name}</span>
-              </div>
+                <span className="font-medium">{post.author_name}</span>
+                </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <Caption text={post.caption} author={post.author.name} />
+              <Caption text={post.content} author={post.author_name} />
             </div>
             <div className="flex items-center justify-between mt-4">
               <div className="flex space-x-4">
@@ -488,9 +463,18 @@ const ScrollToTop = () => {
   );
 };
 
+// Helper untuk generate public URL dari path Supabase Storage
+const getPublicUrl = (path: string) => {
+  if (!path) return "";
+  // Hilangkan leading slash jika ada
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  // Ganti sesuai nama bucket di Supabase Anda
+  return `https://kkflsccbuzecubyjvxqw.supabase.co/storage/v1/object/public/educational-content/${cleanPath}`;
+};
+
 const Edukasi = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [posts, setPosts] = useState<EducationPost[]>(dummyEducationContent);
+  const [posts, setPosts] = useState<EducationPost[]>([]); // Awalnya kosong
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<"all" | "bookmarks" | "images" | "videos">("all");
@@ -519,27 +503,41 @@ const Edukasi = () => {
   ];
   
   const [activeCategory, setActiveCategory] = useState("all");
-  
+
+  // Fetch data dari Supabase
+  useEffect(() => {
+    setLoading(true);
+    supabase
+      .from("educational_content")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setPosts(data as EducationPost[]);
+        setLoading(false);
+      });
+  }, []);
+
   // Filter and sort posts
   const filteredAndSortedContent = posts
     .filter(post => {
-      const matchesCategory = activeCategory === "all" || post.category === activeCategory;
-      const matchesSearch = post.caption.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = activeCategory === "all" || (post.category ?? "") === activeCategory;
+      const matchesSearch = (post.content ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+      const typeVal = (post.type ?? "").toLowerCase();
       const matchesFilter = 
         activeFilter === "all" ||
         (activeFilter === "bookmarks" && post.isBookmarked) ||
-        (activeFilter === "images" && post.type === "image") ||
-        (activeFilter === "videos" && post.type === "video");
+        (activeFilter === "images" && (typeVal === "image" || typeVal === "infografik")) ||
+        (activeFilter === "videos" && typeVal === "video");
       return matchesCategory && matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "latest":
-          return b.timestamp.getTime() - a.timestamp.getTime();
+          return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
         case "popular":
-          return b.likes - a.likes;
+          return (b.views ?? 0) - (a.views ?? 0);
         case "loved":
-          return (b.isLiked ? 1 : 0) - (a.isLiked ? 1 : 0);
+          return ((b.isLiked ? 1 : 0) - (a.isLiked ? 1 : 0));
         default:
           return 0;
       }
@@ -589,17 +587,17 @@ const Edukasi = () => {
     if (!isInfiniteScrollEnabled) return; // hanya aktif jika tanpa filter/bookmark
     if (inView && !loading) {
       setLoading(true);
-      // Simulate API call to load more posts
-      setTimeout(() => {
-        // Jangan ubah tanggal konten
-        const newPosts = [...dummyEducationContent].map(post => ({
-          ...post,
-          id: `${post.id}-${page}`
-        }));
-        setPosts(prev => [...prev, ...newPosts]);
-        setPage(prev => prev + 1);
-        setLoading(false);
-      }, 1000);
+      // Fetch more posts dari Supabase (pagination)
+      supabase
+        .from("educational_content")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(page * 10, (page + 1) * 10 - 1)
+        .then(({ data, error }) => {
+          if (!error && data) setPosts(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          setLoading(false);
+        });
     }
   }, [inView, page, loading, isInfiniteScrollEnabled]);
 
@@ -712,90 +710,109 @@ const Edukasi = () => {
             
             {/* Posts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
-              {filteredAndSortedContent.map((post) => (
-                <Card 
-                  key={post.id} 
-                  className="overflow-hidden cursor-pointer"
-                  onClick={() => {
-                    setSelectedPost(post);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  <CardHeader className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                        loading="lazy"
-                      />
-                      <div>
-                        <CardTitle className="text-sm font-medium">{post.author.name}</CardTitle>
+              {filteredAndSortedContent.length === 0 && !loading ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-24">
+                  <img
+                    src="/images/empty-state-education.svg"
+                    alt="Tidak ada konten edukasi"
+                    className="w-40 h-40 mb-6 opacity-80"
+                  />
+                  <h2 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">Belum ada konten edukasi</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4 text-center max-w-md">
+                    Konten edukasi akan segera tersedia di sini. Silakan kembali lagi nanti atau gunakan fitur pencarian/filter lain.
+                  </p>
+                </div>
+              ) : (
+                filteredAndSortedContent.map((post) => (
+                  <Card 
+                    key={post.id} 
+                    className="overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setSelectedPost(post);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <CardHeader className="p-4">
+                      <div className="flex items-center space-x-4">
+                        <img
+                          src={"/images/default-avatar.png"}
+                          alt={post.author_name ?? ""}
+                          className="w-10 h-10 rounded-full object-cover"
+                          loading="lazy"
+                        />
+                        <div>
+                          <CardTitle className="text-sm font-medium">{post.author_name ?? ""}</CardTitle>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    {post.type === 'image' ? (
-                      <MediaCarousel media={post.media} />
-                    ) : (
-                      <VideoPlayer src={post.media[0]} />
-                    )}
-                  </CardContent>
-                  
-                  <CardFooter className="flex flex-col p-4 space-y-4">
-                    <div className="flex justify-between w-full">
-                      <div className="flex space-x-4">
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {(() => {
+                        const typeVal = (post.type ?? "").toLowerCase();
+                        let media: string[] = (post.media_urls ?? []).map(getPublicUrl);
+                        // Fallback: jika media_urls kosong, gunakan thumbnail_url jika ada
+                        if ((!media || media.length === 0) && post.thumbnail_url) {
+                          media = [getPublicUrl(post.thumbnail_url)];
+                        }
+                        if (typeVal === 'image' || typeVal === 'infografik') {
+                          return <MediaCarousel media={media} />;
+                        } else if (typeVal === 'video' && media.length > 0) {
+                          return <VideoPlayer src={media[0]} />;
+                        } else {
+                          return null;
+                        }
+                      })()}
+                    </CardContent>
+                    <CardFooter className="flex flex-col p-4 space-y-4">
+                      <div className="flex justify-between w-full">
+                        <div className="flex space-x-4">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLike(post.id);
+                            }}
+                            className={post.isLiked ? "text-red-500" : ""}
+                          >
+                            <Heart className={post.isLiked ? "fill-current" : ""} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPostId(post.id);
+                              setShareModalOpen(true);
+                            }}
+                          >
+                            <PaperPlaneIcon className="w-5 h-5" />
+                          </Button>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleLike(post.id);
+                            handleBookmark(post.id);
                           }}
-                          className={post.isLiked ? "text-red-500" : ""}
+                          className={post.isBookmarked ? "text-yellow-500" : ""}
                         >
-                          <Heart className={post.isLiked ? "fill-current" : ""} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPostId(post.id);
-                            setShareModalOpen(true);
-                          }}
-                        >
-                          <PaperPlaneIcon className="w-5 h-5" />
+                          <Bookmark className={post.isBookmarked ? "fill-current" : ""} />
                         </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookmark(post.id);
-                        }}
-                        className={post.isBookmarked ? "text-yellow-500" : ""}
-                      >
-                        <Bookmark className={post.isBookmarked ? "fill-current" : ""} />
-                      </Button>
-                    </div>
-                    
-                    <Caption text={post.caption} author={post.author.name} />
-                    
-                    <div className="flex mt-2 mx-6">
-                      <span className="text-xs text-gray-500 mr-3">
-                        {formatTimeAgo(post.timestamp)}
-                      </span>
-                      <Badge variant="secondary">
-                        {eduCategories.find(cat => cat.id === post.category)?.name}
-                      </Badge>
-                      
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
+                      <Caption text={post.content ?? ""} author={post.author_name ?? ""} />
+                      <div className="flex mt-2 mx-6">
+                        <span className="text-xs text-gray-500 mr-3">
+                          {formatTimeAgo(new Date(post.created_at ?? 0))}
+                        </span>
+                        <Badge variant="secondary">
+                          {eduCategories.find(cat => cat.id === (post.category ?? ""))?.name ?? post.category ?? ""}
+                        </Badge>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
             </div>
 
             {/* Loading indicator */}
@@ -828,7 +845,8 @@ const Edukasi = () => {
             {/* Scroll to Top */}
             <ScrollToTop />
 
-            {filteredAndSortedContent.length === 0 && (
+            {/* Empty state for no match after filter/search */}
+            {filteredAndSortedContent.length === 0 && !loading && (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-300 text-lg">
                   Tidak ada konten yang sesuai dengan filter yang dipilih.

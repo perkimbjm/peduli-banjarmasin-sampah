@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,109 +65,44 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Mock data for education content
-const mockArticles = [
-  {
-    id: "1",
-    title: "Panduan Dasar Pemilahan Sampah",
-    category: "Artikel",
-    status: "published",
-    type: "Edukasi",
-    author: "Admin",
-    date: "2025-04-01",
-    views: 245,
-  },
-  {
-    id: "2",
-    title: "Manfaat Ekonomi dari Bank Sampah",
-    category: "Artikel",
-    status: "published",
-    type: "Kampanye",
-    author: "Admin",
-    date: "2025-04-03",
-    views: 189,
-  },
-  {
-    id: "3",
-    title: "Tips Mengurangi Sampah Plastik di Rumah",
-    category: "Artikel",
-    status: "draft",
-    type: "Edukasi",
-    author: "Admin",
-    date: "2025-04-05",
-    views: 0,
-  },
-  {
-    id: "4",
-    title: "Kisah Sukses Bank Sampah di Banjarmasin",
-    category: "Video",
-    status: "published",
-    type: "Kampanye",
-    author: "Admin",
-    date: "2025-04-02",
-    views: 325,
-  },
-  {
-    id: "5",
-    title: "Workshop Online: Daur Ulang Plastik",
-    category: "Video",
-    status: "published",
-    type: "Edukasi",
-    author: "Admin",
-    date: "2025-04-04",
-    views: 215,
-  },
-];
-
-// Mock data for campaigns
-const mockCampaigns = [
-  {
-    id: "1",
-    title: "Bersih-bersih Sungai Martapura",
-    status: "active",
-    startDate: "2025-04-15",
-    endDate: "2025-05-15",
-    participants: 45,
-    target: "Masyarakat umum",
-  },
-  {
-    id: "2",
-    title: "Bank Sampah untuk Sekolah",
-    status: "active",
-    startDate: "2025-04-10",
-    endDate: "2025-06-10",
-    participants: 12,
-    target: "Sekolah",
-  },
-  {
-    id: "3",
-    title: "Kurangi Penggunaan Plastik Sekali Pakai",
-    status: "upcoming",
-    startDate: "2025-05-01",
-    endDate: "2025-06-01",
-    participants: 0,
-    target: "Masyarakat umum",
-  },
-  {
-    id: "4",
-    title: "Lomba Karya Daur Ulang",
-    status: "finished",
-    startDate: "2025-03-01",
-    endDate: "2025-03-31",
-    participants: 67,
-    target: "Pelajar",
-  },
-];
-
+// EdukasiAdmin Component
 const EdukasiAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const filteredArticles = mockArticles.filter((article) => {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+
+  // Tambah state untuk form
+  const [form, setForm] = useState({
+    title: "",
+    category: "",
+    type: "",
+    content: "",
+    hashtags: "", // string, comma or space separated
+    thumbnail: null as File | null,
+  });
+
+  // Fetch data from Supabase
+  useEffect(() => {
+    supabase
+      .from("educational_content")
+      .select("*")
+      .then(({ data }) => setArticles(data || []));
+    supabase
+      .from("educational_campaigns")
+      .select("*")
+      .then(({ data }) => setCampaigns(data || []));
+  }, []);
+
+  const filteredArticles = articles.filter((article) => {
     const matchesSearch = article.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -178,13 +113,84 @@ const EdukasiAdmin = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleAddContent = (event: React.FormEvent) => {
+  // Perbaiki handleAddContent agar insert ke Supabase
+  const handleAddContent = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!user) {
+      toast({
+        title: "Gagal",
+        description: "Anda harus login untuk menambah konten.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Validasi sederhana
+    if (!form.title || !form.category || !form.type || !form.content) {
+      toast({
+        title: "Gagal",
+        description: "Semua field wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Upload thumbnail jika ada
+    let mediaUrl = "";
+    if (form.thumbnail) {
+      const { data, error } = await supabase.storage
+        .from("educational-content")
+        .upload(
+          `thumbnails/${Date.now()}-${form.thumbnail.name}`,
+          form.thumbnail
+        );
+      if (error) {
+        toast({
+          title: "Gagal upload gambar",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      mediaUrl = data?.path ? data.path : "";
+    }
+    // Ambil author_id dan author_name dari user login
+    const author_id = user.id;
+    const author_name = user.user_metadata?.full_name || user.email || "User";
+    // Insert ke Supabase
+    const { error } = await supabase.from("educational_content").insert([
+      {
+        title: form.title,
+        category: form.category,
+        type: form.type,
+        content: form.content,
+        hashtags: form.hashtags
+          ? form.hashtags
+              .split(/[ ,]+/)
+              .map((tag: string) => tag.replace(/^#/, "").trim())
+              .filter(Boolean)
+          : [],
+        media_urls: mediaUrl ? [mediaUrl] : [],
+        status: "draft",
+        author_id,
+        author_name,
+        // Tambahkan field lain sesuai skema jika perlu
+      },
+    ]);
+    if (error) {
+      toast({
+        title: "Gagal menambah konten",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
     setIsAddDialogOpen(false);
     toast({
       title: "Konten berhasil ditambahkan",
       description: "Konten edukasi baru telah ditambahkan ke sistem.",
     });
+    // Refresh data
+    const { data } = await supabase.from("educational_content").select("*");
+    setArticles(data || []);
   };
 
   const handleDelete = (id: string) => {
@@ -232,12 +238,25 @@ const EdukasiAdmin = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="title">Judul</Label>
-                    <Input id="title" placeholder="Judul konten" required />
+                    <Input
+                      id="title"
+                      placeholder="Judul konten"
+                      required
+                      value={form.title}
+                      onChange={(e) =>
+                        setForm({ ...form, title: e.target.value })
+                      }
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="category">Kategori</Label>
-                      <Select>
+                      <Select
+                        value={form.category}
+                        onValueChange={(value) =>
+                          setForm({ ...form, category: value })
+                        }
+                      >
                         <SelectTrigger id="category">
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
@@ -250,7 +269,12 @@ const EdukasiAdmin = () => {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="type">Tipe</Label>
-                      <Select>
+                      <Select
+                        value={form.type}
+                        onValueChange={(value) =>
+                          setForm({ ...form, type: value })
+                        }
+                      >
                         <SelectTrigger id="type">
                           <SelectValue placeholder="Pilih tipe" />
                         </SelectTrigger>
@@ -268,7 +292,26 @@ const EdukasiAdmin = () => {
                       placeholder="Tulis konten edukasi di sini..."
                       className="min-h-[150px]"
                       required
+                      value={form.content}
+                      onChange={(e) =>
+                        setForm({ ...form, content: e.target.value })
+                      }
                     />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="hashtags">Hashtag</Label>
+                    <Input
+                      id="hashtags"
+                      placeholder="#edukasi #sampah (pisahkan dengan spasi atau koma)"
+                      value={form.hashtags}
+                      onChange={(e) =>
+                        setForm({ ...form, hashtags: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Gunakan tanda # untuk setiap hashtag, pisahkan dengan spasi
+                      atau koma.
+                    </p>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="thumbnail">Gambar/Thumbnail</Label>
@@ -277,6 +320,10 @@ const EdukasiAdmin = () => {
                         id="thumbnail"
                         type="file"
                         className="max-w-xs"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setForm({ ...form, thumbnail: file });
+                        }}
                       />
                       <Button type="button" variant="outline" size="icon">
                         <Upload className="h-4 w-4" />
@@ -519,7 +566,7 @@ const EdukasiAdmin = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockCampaigns.map((campaign) => (
+                      {campaigns.map((campaign) => (
                         <TableRow key={campaign.id}>
                           <TableCell className="font-medium">
                             {campaign.title}
