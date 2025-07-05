@@ -34,7 +34,6 @@ import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
-import ThemeInitializer from "@/components/ThemeInitializer";
 import PerpustakaanDigital from "@/pages/PerpustakaanDigital";
 import ManajemenKonten from "@/pages/ManajemenKonten";
 import EdukasiStatistik from "@/pages/EdukasiStatistik";
@@ -42,7 +41,6 @@ import EdukasiStatistik from "@/pages/EdukasiStatistik";
 function App() {
   return (
     <Router>
-      <ThemeInitializer />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Index />} />
