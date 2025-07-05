@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -53,22 +52,19 @@ const FilterCard = ({
   banjarmasinDistricts,
 }: FilterCardProps) => {
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center">
+          <Filter className="h-4 w-4 mr-2" />
           Filter Data
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Row 1: Kecamatan and Kelurahan */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Kecamatan
-            </label>
+            <label className="text-sm font-medium">Kecamatan</label>
             <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih Kecamatan" />
               </SelectTrigger>
               <SelectContent>
@@ -83,15 +79,13 @@ const FilterCard = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Kelurahan
-            </label>
+            <label className="text-sm font-medium">Kelurahan</label>
             <Select
               value={selectedSubdistrict}
               onValueChange={setSelectedSubdistrict}
-              disabled={!selectedDistrict || selectedDistrict === "semua-kecamatan"}
+              disabled={!selectedDistrict}
             >
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih Kelurahan" />
               </SelectTrigger>
               <SelectContent>
@@ -104,16 +98,11 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        {/* Row 2: Jenis and Kelompok */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Jenis
-            </label>
+            <label className="text-sm font-medium">Jenis</label>
             <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih Jenis" />
               </SelectTrigger>
               <SelectContent>
@@ -127,11 +116,9 @@ const FilterCard = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Kelompok
-            </label>
+            <label className="text-sm font-medium">Kelompok</label>
             <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pilih Kelompok" />
               </SelectTrigger>
               <SelectContent>
@@ -143,22 +130,19 @@ const FilterCard = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        {/* Row 3: Search */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            Cari Lokasi
-          </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Cari berdasarkan nama lokasi..."
-              className="pl-10 h-10"
-              value={selectedSearch}
-              onChange={(e) => setSelectedSearch(e.target.value)}
-            />
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Lokasi</label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Cari lokasi..."
+                className="pl-8"
+                value={selectedSearch}
+                onChange={(e) => setSelectedSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </CardContent>

@@ -106,8 +106,8 @@ const ProtectedLayout = () => {
       title: "Edukasi",
       icon: BookOpen,
       submenus: [
-        { title: "Konten Edukasi", href: "/education/konten" },
-        { title: "Statistik Kampanye", href: "/education/statistik" },
+        { title: "Konten Edukasi", href: "/edukasi/konten" },
+        { title: "Statistik Kampanye", href: "/edukasi/statistik" },
       ],
       roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
     },
@@ -125,10 +125,7 @@ const ProtectedLayout = () => {
       icon: Building2,
       submenus: [
         { title: "Data Bank Sampah", href: "/bank-sampah/data" },
-<<<<<<< HEAD
-=======
-  
->>>>>>> 62d33f905292ba5986f275d483dec730ae2dff72
+        { title: "Data TPS 3R", href: "/bank-sampah/tps3r" },
       ],
       roles: ["admin", "leader", "stakeholder", "volunteer", "user"],
     },

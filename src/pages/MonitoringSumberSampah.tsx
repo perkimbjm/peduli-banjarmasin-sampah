@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import PageHeader from "@/components/monitoring-sumber/PageHeader";
 import FilterCard from "@/components/monitoring-sumber/FilterCard";
@@ -15,7 +14,7 @@ const MonitoringSumberSampah = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10); // You can adjust this value
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -64,16 +63,15 @@ const MonitoringSumberSampah = () => {
   const availableSubdistricts = [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 max-w-7xl space-y-6">
-        <PageHeader
-          handleRefresh={handleRefresh}
-          handleExport={handleExport}
-          isRefreshing={isRefreshing}
-        />
-        
-        {/* Filter Section */}
-        <div className="w-full">
+    <div className="container mx-auto p-4 max-w-7xl space-y-6">
+      <PageHeader
+        handleRefresh={handleRefresh}
+        handleExport={handleExport}
+        isRefreshing={isRefreshing}
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
           <FilterCard
             selectedDistrict={filters.district}
             setSelectedDistrict={(val) => setFilters({ ...filters, district: val })}
@@ -86,39 +84,34 @@ const MonitoringSumberSampah = () => {
             selectedSearch={filters.search}
             setSelectedSearch={(val) => setFilters({ ...filters, search: val })}
             availableSubdistricts={availableSubdistricts}
-            banjarmasinDistricts={[]}
+            banjarmasinDistricts={[]} // This will be replaced by the internal array in FilterCard
           />
         </div>
         
-        {/* Content Section */}
-        <div className="w-full space-y-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold">Data Sumber Sampah</h3>
             <ViewToggle viewMode={view} setViewMode={setView} />
           </div>
           
-          <div className="w-full">
-            {view === 'map' ? (
-              <div className="w-full h-[600px] rounded-lg overflow-hidden border border-border">
-                <MapView 
-                  activeLayers={activeLayers}
-                  fullscreenMode={false}
-                  splitViewEnabled={false}
-                />
-              </div>
-            ) : (
-              <DataTable 
-                currentItems={currentItems}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                indexOfFirstItem={indexOfFirstItem}
-                indexOfLastItem={indexOfLastItem}
-                filteredSources={filteredSources}
-                goToNextPage={goToNextPage}
-                goToPrevPage={goToPrevPage}
-              />
-            )}
-          </div>
+          {view === 'map' ? (
+            <MapView 
+              activeLayers={activeLayers}
+              fullscreenMode={false}
+              splitViewEnabled={false}
+            />
+          ) : (
+            <DataTable 
+              currentItems={currentItems}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              indexOfFirstItem={indexOfFirstItem}
+              indexOfLastItem={indexOfLastItem}
+              filteredSources={filteredSources}
+              goToNextPage={goToNextPage}
+              goToPrevPage={goToPrevPage}
+            />
+          )}
         </div>
       </div>
     </div>

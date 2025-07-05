@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
 
@@ -34,16 +33,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { CalendarIcon } from "lucide-react";
-
-// Districts in Banjarmasin
-const banjarmasinDistricts = [
-  "Banjarmasin Utara",
-  "Banjarmasin Selatan", 
-  "Banjarmasin Timur",
-  "Banjarmasin Barat",
-  "Banjarmasin Tengah"
-];
 
 const data = [
   { name: "Jan", uv: 4000, pv: 2400, amt: 2400 },
@@ -61,22 +50,65 @@ const data = [
 ];
 
 const MonitoringRitase = () => {
-  const [selectedRegion, setSelectedRegion] = useState("Banjarmasin Utara");
+  const [selectedRegion, setSelectedRegion] = useState("Banjarmasin");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(2024, 0, 1),
     to: new Date(2024, 11, 31),
   });
-  const [truckId, setTruckId] = useState("");
 
   const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
     setDateRange(newDateRange);
   };
 
-  const formatDateRange = (range: DateRange | undefined) => {
-    if (!range?.from) return "Pilih tanggal";
-    if (!range.to) return range.from.toLocaleDateString("id-ID");
-    return `${range.from.toLocaleDateString("id-ID")} - ${range.to.toLocaleDateString("id-ID")}`;
-  };
+  const RegionSelector = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <div className="grid gap-2">
+      <Label htmlFor="region">Wilayah</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id="region">
+          <SelectValue placeholder="Pilih wilayah" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Banjarmasin">Banjarmasin</SelectItem>
+          <SelectItem value="Banjarbaru">Banjarbaru</SelectItem>
+          <SelectItem value="Martapura">Martapura</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const DateRangePicker = ({ value, onValueChange, className }: { value: DateRange | undefined; onValueChange: (value: DateRange | undefined) => void; className?: string }) => (
+    <div className={className}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={"outline"}
+            className="w-full justify-start text-left font-normal"
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            {value?.from ? (
+              value.to ? (
+                `${value.from?.toLocaleDateString()} - ${value.to?.toLocaleDateString()}`
+              ) : (
+                value.from?.toLocaleDateString()
+              )
+            ) : (
+              <span>Pilih tanggal</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            defaultMonth={value?.from}
+            selected={value}
+            onSelect={onValueChange}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -87,63 +119,25 @@ const MonitoringRitase = () => {
         </p>
       </header>
 
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="region">Wilayah</Label>
-            <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-              <SelectTrigger id="region">
-                <SelectValue placeholder="Pilih wilayah" />
-              </SelectTrigger>
-              <SelectContent>
-                {banjarmasinDistricts.map((district) => (
-                  <SelectItem key={district} value={district}>
-                    {district}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="flex flex-col md:flex-row gap-6 justify-between">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <RegionSelector value={selectedRegion} onChange={setSelectedRegion} />
           
-          <div className="space-y-2">
-            <Label>Periode Tanggal</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formatDateRange(dateRange)}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={handleDateRangeChange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="truck-id">ID Kendaraan</Label>
-            <Input 
-              id="truck-id" 
-              placeholder="Masukkan ID Kendaraan" 
-              value={truckId}
-              onChange={(e) => setTruckId(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-end">
-            <Button className="w-full">Cari</Button>
-          </div>
+          {/* Correct the props for DateRangePicker */}
+          <DateRangePicker 
+            value={dateRange} 
+            onValueChange={handleDateRangeChange}
+            className="w-full sm:w-auto" 
+          />
         </div>
-      </Card>
+        <div className="flex items-center space-x-4">
+          <div className="grid gap-2">
+            <Label htmlFor="truck-id">ID Kendaraan</Label>
+            <Input id="truck-id" placeholder="Masukkan ID Kendaraan" />
+          </div>
+          <Button>Cari</Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
