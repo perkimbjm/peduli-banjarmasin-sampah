@@ -346,8 +346,8 @@ const PostModal = ({
     setIsLiked(!isLiked);
   };
 
-    const [shareModalOpen, setShareModalOpen] = useState(false);
-    const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -466,10 +466,19 @@ const ScrollToTop = () => {
 // Helper untuk generate public URL dari path Supabase Storage
 const getPublicUrl = (path: string) => {
   if (!path) return "";
+  
+  // Jika sudah berupa URL lengkap, return as is
+  if (path.startsWith('http')) return path;
+  
   // Hilangkan leading slash jika ada
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-  // Ganti sesuai nama bucket di Supabase Anda
-  return `https://kkflsccbuzecubyjvxqw.supabase.co/storage/v1/object/public/educational-content/${cleanPath}`;
+  
+  // Generate URL public dari Supabase storage
+  const { data } = supabase.storage
+    .from('educational-content')
+    .getPublicUrl(cleanPath);
+    
+  return data.publicUrl;
 };
 
 const Edukasi = () => {
@@ -506,15 +515,37 @@ const Edukasi = () => {
 
   // Fetch data dari Supabase
   useEffect(() => {
-    setLoading(true);
-    supabase
-      .from("educational_content")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data) setPosts(data as EducationPost[]);
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("educational_content")
+          .select("*")
+          .eq("status", "published")
+          .order("created_at", { ascending: false });
+          
+        if (error) {
+          console.error("Error fetching posts:", error);
+        } else {
+          // Transform media_urls untuk memastikan format yang benar
+          const transformedPosts = (data || []).map(post => ({
+            ...post,
+            media_urls: Array.isArray(post.media_urls) ? post.media_urls : 
+                       typeof post.media_urls === 'string' ? [post.media_urls] : [],
+            views: post.views || 0,
+            isLiked: false,
+            isBookmarked: false
+          }));
+          setPosts(transformedPosts as EducationPost[]);
+        }
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchPosts();
   }, []);
 
   // Filter and sort posts
@@ -591,10 +622,21 @@ const Edukasi = () => {
       supabase
         .from("educational_content")
         .select("*")
+        .eq("status", "published")
         .order("created_at", { ascending: false })
         .range(page * 10, (page + 1) * 10 - 1)
         .then(({ data, error }) => {
-          if (!error && data) setPosts(prev => [...prev, ...data]);
+          if (!error && data) {
+            const transformedPosts = data.map(post => ({
+              ...post,
+              media_urls: Array.isArray(post.media_urls) ? post.media_urls : 
+                         typeof post.media_urls === 'string' ? [post.media_urls] : [],
+              views: post.views || 0,
+              isLiked: false,
+              isBookmarked: false
+            }));
+            setPosts(prev => [...prev, ...transformedPosts]);
+          }
           setPage(prev => prev + 1);
           setLoading(false);
         });
@@ -748,17 +790,27 @@ const Edukasi = () => {
                     <CardContent className="p-0">
                       {(() => {
                         const typeVal = (post.type ?? "").toLowerCase();
-                        let media: string[] = (post.media_urls ?? []).map(getPublicUrl);
+                        let media: string[] = [];
+                        
+                        // Proses media_urls dengan benar
+                        if (post.media_urls && Array.isArray(post.media_urls)) {
+                          media = post.media_urls.map(url => getPublicUrl(url)).filter(Boolean);
+                        }
+                        
                         // Fallback: jika media_urls kosong, gunakan thumbnail_url jika ada
-                        if ((!media || media.length === 0) && post.thumbnail_url) {
+                        if (media.length === 0 && post.thumbnail_url) {
                           media = [getPublicUrl(post.thumbnail_url)];
                         }
-                        if (typeVal === 'image' || typeVal === 'infografik') {
-                          return <MediaCarousel media={media} />;
-                        } else if (typeVal === 'video' && media.length > 0) {
+                        
+                        // Tambahkan fallback gambar default jika tidak ada media
+                        if (media.length === 0) {
+                          media = ["/images/default-thumbnail.jpg"];
+                        }
+                        
+                        if (typeVal === 'video' && media.length > 0) {
                           return <VideoPlayer src={media[0]} />;
                         } else {
-                          return null;
+                          return <MediaCarousel media={media} />;
                         }
                       })()}
                     </CardContent>
