@@ -29,6 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useEducationalContent, useContentInteraction } from "@/hooks/useEducationalContent";
+import { ContentWithEngagement } from "@/services/educationalContent.service";
 
 // Skeleton component with shimmer effect
 const PostSkeleton = () => (
@@ -362,11 +364,11 @@ const PostModal = ({
   isOpen, 
   onClose 
 }: { 
-  post: EducationPost; 
+  post: ContentWithEngagement; 
   isOpen: boolean; 
   onClose: () => void;
 }) => {
-  const [isLiked, setIsLiked] = useState(post.isLiked);
+  const [isLiked, setIsLiked] = useState(post.is_liked_by_user);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -391,30 +393,30 @@ const PostModal = ({
         </button>
         <div className="flex">
           <div className="w-2/3">
-            {post.type === 'image' ? (
+            {post.type === 'image' && post.media_urls ? (
               <MediaCarousel 
-                media={post.media} 
+                media={post.media_urls as string[]}
                 aspectRatio="4:5"
                 onDoubleTap={handleLike}
                 isModal
               />
             ) : (
-              <VideoPlayer src={post.media[0]} isModal />
+              <VideoPlayer src={post.media_urls?.[0] as string} isModal />
             )}
           </div>
           <div className="w-1/3 p-4 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
+                  src={post.author_avatar}
+                  alt={post.author_name}
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <span className="font-medium">{post.author.name}</span>
+                <span className="font-medium">{post.author_name}</span>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <Caption text={post.caption} author={post.author.name} />
+              <Caption text={post.content} author={post.author_name} />
             </div>
             <div className="flex items-center justify-between mt-4">
               <div className="flex space-x-4">
@@ -437,9 +439,9 @@ const PostModal = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className={post.isBookmarked ? "text-yellow-500" : ""}
+                className={post.is_bookmarked_by_user ? "text-yellow-500" : ""}
               >
-                <Bookmark className={post.isBookmarked ? "fill-current" : ""} />
+                <Bookmark className={post.is_bookmarked_by_user ? "fill-current" : ""} />
               </Button>
             </div>
           </div>
@@ -490,121 +492,73 @@ const ScrollToTop = () => {
 
 const Edukasi = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [posts, setPosts] = useState<EducationPost[]>(dummyEducationContent);
-  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<"all" | "bookmarks" | "images" | "videos">("all");
   const [sortBy, setSortBy] = useState<"latest" | "popular" | "loved">("latest");
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const { ref, inView } = useInView({
-    threshold: 0.5,
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedPost, setSelectedPost] = useState<ContentWithEngagement | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { ref, inView } = useInView({ threshold: 0.5 });
+
+  // Use dynamic data instead of dummy data
+  const { data: contentData, isLoading, error } = useEducationalContent({
+    page,
+    limit: 10,
+    category: activeCategory !== "all" ? activeCategory : undefined,
+    search: searchQuery,
+    sortBy
   });
-  
+
+  const contentInteraction = useContentInteraction();
+
   const eduCategories = [
     { id: "all", name: "Semua" },
     { id: "composting", name: "Komposting" },
     { id: "recycling", name: "Daur Ulang" },
-    { id: "reduction", name: "Pengurangan Sampah (Reduce)" },
+    { id: "reduction", name: "Pengurangan Sampah" },
     { id: "eco-lifestyle", name: "Gaya Hidup Ramah Lingkungan" },
-    { id: "reuse", name: "Gunakan Kembali (Reuse)" },
-    { id: "recycle", name: "Daur Ulang" },
+    { id: "reuse", name: "Gunakan Kembali" },
     { id: "bank", name: "Bank Sampah" },
     { id: "segregation", name: "Pemilahan" },
-    { id: "eco-activism", name: "Aksi Sosial"},
     { id: "awareness", name: "Kesadaran" },
     { id: "policy", name: "Kebijakan & Regulasi" },
     { id: "community", name: "Peran Masyarakat" },
     { id: "other", name: "Lainnya" },
   ];
-  
-  const [activeCategory, setActiveCategory] = useState("all");
-  
-  // Filter and sort posts
-  const filteredAndSortedContent = posts
-    .filter(post => {
-      const matchesCategory = activeCategory === "all" || post.category === activeCategory;
-      const matchesSearch = post.caption.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = 
-        activeFilter === "all" ||
-        (activeFilter === "bookmarks" && post.isBookmarked) ||
-        (activeFilter === "images" && post.type === "image") ||
-        (activeFilter === "videos" && post.type === "video");
-      return matchesCategory && matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "latest":
-          return b.timestamp.getTime() - a.timestamp.getTime();
-        case "popular":
-          return b.likes - a.likes;
-        case "loved":
-          return (b.isLiked ? 1 : 0) - (a.isLiked ? 1 : 0);
-        default:
-          return 0;
-      }
-    });
-  
+
+  // Handle user interactions
+  const handleLike = (contentId: string) => {
+    contentInteraction.mutate({ contentId, type: 'like' });
+  };
+
+  const handleBookmark = (contentId: string) => {
+    contentInteraction.mutate({ contentId, type: 'bookmark' });
+  };
+
+  const handleShare = (contentId: string) => {
+    setSelectedPostId(contentId);
+    setShareModalOpen(true);
+  };
+
   // Format timestamp to relative time
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: string) => {
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const postDate = new Date(date);
+    const diffInMinutes = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 60) {
       return `${diffInMinutes} menit yang lalu`;
     } else if (diffInMinutes < 1440) {
       return `${Math.floor(diffInMinutes / 60)} jam yang lalu`;
     } else {
-      return format(date, "d MMMM yyyy", { locale: id });
+      return format(postDate, "d MMMM yyyy", { locale: id });
     }
   };
 
-  // Handle post actions
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
-  };
-
-  const handleBookmark = (postId: string) => {
-    setPosts(posts.map(post =>
-      post.id === postId
-        ? { ...post, isBookmarked: !post.isBookmarked }
-        : post
-    ));
-  };
-
-  const handleShare = (postId: string) => {
-    // Implementasi sharing functionality
-    console.log("Sharing post:", postId);
-  };
-
-  // Helper: apakah infinite scroll diaktifkan?
-  const isInfiniteScrollEnabled = activeFilter === "all";
-
-  // Load more posts when scrolling
-  useEffect(() => {
-    if (!isInfiniteScrollEnabled) return; // hanya aktif jika tanpa filter/bookmark
-    if (inView && !loading) {
-      setLoading(true);
-      // Simulate API call to load more posts
-      setTimeout(() => {
-        // Jangan ubah tanggal konten
-        const newPosts = [...dummyEducationContent].map(post => ({
-          ...post,
-          id: `${post.id}-${page}`
-        }));
-        setPosts(prev => [...prev, ...newPosts]);
-        setPage(prev => prev + 1);
-        setLoading(false);
-      }, 1000);
-    }
-  }, [inView, page, loading, isInfiniteScrollEnabled]);
-
-  const [selectedPost, setSelectedPost] = useState<EducationPost | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Load more functionality can be implemented later for infinite scroll
+  const posts = contentData?.data || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -710,98 +664,144 @@ const Edukasi = () => {
               ))}
             </div>
             
+            {/* Loading State */}
+            {isLoading && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <PostSkeleton key={index} />
+                ))}
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-red-600 dark:text-red-400 text-lg">
+                  Terjadi kesalahan saat memuat konten. Silakan coba lagi.
+                </p>
+              </div>
+            )}
+            
             {/* Posts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
-              {filteredAndSortedContent.map((post) => (
-                <Card 
-                  key={post.id} 
-                  className="overflow-hidden cursor-pointer"
+            {!isLoading && !error && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
+                {posts.map((post) => (
+                  <Card 
+                    key={post.id} 
+                    className="overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setSelectedPost(post);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <CardHeader className="p-4">
+                      <div className="flex items-center space-x-4">
+                        <img
+                          src={post.author_avatar || '/placeholder.svg'}
+                          alt={post.author_name || 'Author'}
+                          className="w-10 h-10 rounded-full object-cover"
+                          loading="lazy"
+                        />
+                        <div>
+                          <CardTitle className="text-sm font-medium">{post.author_name}</CardTitle>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="p-0">
+                      {post.type === 'image' && post.media_urls && (
+                        <MediaCarousel media={post.media_urls as string[]} />
+                      )}
+                      {post.type === 'video' && post.media_urls && post.media_urls[0] && (
+                        <VideoPlayer src={post.media_urls[0] as string} />
+                      )}
+                      {!post.media_urls && (
+                        <div className="aspect-square bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500">Tidak ada media</span>
+                        </div>
+                      )}
+                    </CardContent>
+                    
+                    <CardFooter className="flex flex-col p-4 space-y-4">
+                      <div className="flex justify-between w-full">
+                        <div className="flex space-x-4">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLike(post.id);
+                            }}
+                            className={post.is_liked_by_user ? "text-red-500" : ""}
+                          >
+                            <Heart className={post.is_liked_by_user ? "fill-current" : ""} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShare(post.id);
+                            }}
+                          >
+                            <PaperPlaneIcon className="w-5 h-5" />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookmark(post.id);
+                          }}
+                          className={post.is_bookmarked_by_user ? "text-yellow-500" : ""}
+                        >
+                          <Bookmark className={post.is_bookmarked_by_user ? "fill-current" : ""} />
+                        </Button>
+                      </div>
+                      
+                      <div className="w-full text-left">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-sm">{post.likes_count} suka</span>
+                          <span className="text-xs text-gray-500">•</span>
+                          <span className="text-xs text-gray-500">{post.views} views</span>
+                        </div>
+                        <Caption text={post.content} author={post.author_name || ''} />
+                      </div>
+                      
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(post.created_at)}
+                        </span>
+                        <Badge variant="secondary">
+                          {eduCategories.find(cat => cat.id === post.category)?.name || post.category}
+                        </Badge>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && posts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-300 text-lg">
+                  Tidak ada konten yang sesuai dengan filter yang dipilih.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
                   onClick={() => {
-                    setSelectedPost(post);
-                    setIsModalOpen(true);
+                    setActiveCategory("all");
+                    setSearchQuery("");
+                    setActiveFilter("all");
                   }}
                 >
-                  <CardHeader className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                        loading="lazy"
-                      />
-                      <div>
-                        <CardTitle className="text-sm font-medium">{post.author.name}</CardTitle>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    {post.type === 'image' ? (
-                      <MediaCarousel media={post.media} />
-                    ) : (
-                      <VideoPlayer src={post.media[0]} />
-                    )}
-                  </CardContent>
-                  
-                  <CardFooter className="flex flex-col p-4 space-y-4">
-                    <div className="flex justify-between w-full">
-                      <div className="flex space-x-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLike(post.id);
-                          }}
-                          className={post.isLiked ? "text-red-500" : ""}
-                        >
-                          <Heart className={post.isLiked ? "fill-current" : ""} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPostId(post.id);
-                            setShareModalOpen(true);
-                          }}
-                        >
-                          <PaperPlaneIcon className="w-5 h-5" />
-                        </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookmark(post.id);
-                        }}
-                        className={post.isBookmarked ? "text-yellow-500" : ""}
-                      >
-                        <Bookmark className={post.isBookmarked ? "fill-current" : ""} />
-                      </Button>
-                    </div>
-                    
-                    <Caption text={post.caption} author={post.author.name} />
-                    
-                    <div className="flex mt-2 mx-6">
-                      <span className="text-xs text-gray-500 mr-3">
-                        {formatTimeAgo(post.timestamp)}
-                      </span>
-                      <Badge variant="secondary">
-                        {eduCategories.find(cat => cat.id === post.category)?.name}
-                      </Badge>
-                      
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-
-            {/* Loading indicator */}
-            <div ref={ref} className="w-full py-8 text-center">
-              {loading && isInfiniteScrollEnabled && <PostSkeleton />}
-            </div>
+                  Reset Filter
+                </Button>
+              </div>
+            )}
 
             {/* Share Modal */}
             <ShareModal
@@ -827,29 +827,9 @@ const Edukasi = () => {
 
             {/* Scroll to Top */}
             <ScrollToTop />
-
-            {filteredAndSortedContent.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-600 dark:text-gray-300 text-lg">
-                  Tidak ada konten yang sesuai dengan filter yang dipilih.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => {
-                    setActiveCategory("all");
-                    setSearchQuery("");
-                    setActiveFilter("all");
-                  }}
-                >
-                  Reset Filter
-                </Button>
-              </div>
-            )}
           </div>
         </section>
       </div>
-      
     </div>
   );
 };
